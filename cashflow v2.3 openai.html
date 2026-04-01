@@ -1,4 +1,4 @@
-+<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Cashflow"/>
 <meta name="theme-color" content="#080810" id="theme-meta"/>
-<title>Cashflow — Freelancer Tracker</title>
+<title>Cashflow — Freelancer Tracker (OpenAI)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -966,6 +966,12 @@ const CATS = [
   {name:'Other',            icon:'📦', color:'#94a3b8'},
 ];
 const SK = 'cashflow_v2';
+
+// ═══════════════════════════════════════════
+//  ⚠ PASTE YOUR OPENAI API KEY HERE
+// ═══════════════════════════════════════════
+const OPENAI_KEY = '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';
+const OPENAI_MODEL = 'gpt-4o-mini'; // or 'gpt-4o' for smarter analysis
 const PAGE_META = {
   dashboard: {title:'Dashboard',sub:'Your financial overview'},
   charts:    {title:'Charts',sub:'Visual spending breakdown'},
@@ -1656,13 +1662,13 @@ Respond ONLY with valid JSON (no markdown):
 {"verdict":"one brutal sentence on their financial health","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month"}`;
 
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${OPENAI_KEY}`},
+      body:JSON.stringify({model:OPENAI_MODEL,max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     const json=await res.json();
-    const text=json.content?.map(b=>b.text||'').join('')||'';
+    const text=json.choices?.[0]?.message?.content||'';
     const a=JSON.parse(text.replace(/```json|```/g,'').trim());
     S.lastAnalysis=a; S.lastAnalysisDate=new Date().toLocaleDateString(); S.lastAnalysisMonthKey=activeMonth;
     save();
@@ -1729,9 +1735,9 @@ async function runCheckin() {
 Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn} | Daily rate: ${fmt(dailyRate)}
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${OPENAI_KEY}`},body:JSON.stringify({model:OPENAI_MODEL,max_tokens:300,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
-    const text=json.content?.map(b=>b.text||'').join('')||'';
+    const text=json.choices?.[0]?.message?.content||'';
     S.lastCheckin=text; S.lastCheckinDate=new Date().toISOString(); save();
     out.innerHTML=`<div class="checkin-output">${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`;
     renderCheckinBanner();
@@ -1766,9 +1772,9 @@ Categories available: ${CATS.map(c=>c.name).join(', ')}
 JSON format: {"amount":number,"category":"exact category name from list","note":"brief description","date":"YYYY-MM-DD"}
 If amount not found, use 0. Pick the closest matching category.`;
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${OPENAI_KEY}`},body:JSON.stringify({model:OPENAI_MODEL,max_tokens:200,messages:[{role:'user',content:prompt}]})});
     const json=await res.json();
-    const text=json.content?.map(b=>b.text||'').join('')||'';
+    const text=json.choices?.[0]?.message?.content||'';
     nlpParsed=JSON.parse(text.replace(/```json|```/g,'').trim());
     document.getElementById('np-amount').textContent=fmt(nlpParsed.amount||0);
     document.getElementById('np-cat').textContent=nlpParsed.category||'—';
