@@ -1658,7 +1658,7 @@ ${exps.slice(-10).map(e=>`- ${e.date}: ${fmt(e.amount)} on ${e.category}${e.note
 
 RECURRING SUBSCRIPTIONS: ${S.recurring.length?S.recurring.map(r=>`${r.name} ${fmt(r.amount)}/${r.freq}`).join(', '):'None set'}
 
-Respond ONLY with valid JSON (no markdown):
+Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark humor — like a sarcastic accountant who's seen too much. Roast their spending habits where deserved, but keep it useful:
 {"verdict":"one brutal sentence on their financial health","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month"}`;
 
   try {
@@ -1731,7 +1731,7 @@ async function runCheckin() {
   const payout=po.amount;
   const spent=exps.reduce((s,e)=>s+e.amount,0);
   const dailyRate=spent/daysIn;
-  const prompt=`Freelancer weekly spending check-in. Be concise, 3-4 sentences max. Direct.
+  const prompt=`Freelancer weekly spending check-in. Be concise, 3-4 sentences max. Direct. Add dry humor — like a disappointed but funny financial advisor. Roast where deserved.
 Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn} | Daily rate: ${fmt(dailyRate)}
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
