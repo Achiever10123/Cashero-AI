@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
   <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YEG7S38E1J"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-YEG7S38E1J');
+</script>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
@@ -14,13 +23,23 @@
     <meta name="apple-mobile-web-app-title" content="Cashflow" />
     <meta name="theme-color" content="#080810" id="theme-meta" />
     <title>Cashflow — Freelancer Tracker</title>
-     <link rel="icon" type="image/x-icon" href="./assets/favicon/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon/favicon-16x16.png" />
+    <link rel="icon" type="image/x-icon" href="./assets/favicon/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon/favicon-16x16.png"
+    />
     <link rel="apple-touch-icon" href="./assets/favicon/apple-touch-icon.png" />
     <link rel="manifest" href="./assets/favicon/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
       rel="stylesheet"
@@ -158,45 +177,52 @@
           <div class="logo-wordmark">Cashflow</div>
           <div class="logo-tag">Freelancer OS</div>
         </div>
-        <nav>
-          <button class="nav-item active" data-page="dashboard">
-            <span class="nav-icon">◈</span
-            ><span class="nav-label">Dashboard</span>
-          </button>
-          <button class="nav-item" data-page="charts">
-            <span class="nav-icon">◑</span><span class="nav-label">Charts</span>
-          </button>
-          <button class="nav-item" data-page="compare">
-            <span class="nav-icon">⇌</span
-            ><span class="nav-label">Compare</span>
-          </button>
-          <button class="nav-item" data-page="goals">
-            <span class="nav-icon">◎</span><span class="nav-label">Goals</span>
-          </button>
-          <button class="nav-item" data-page="recurring">
-            <span class="nav-icon">↺</span
-            ><span class="nav-label">Recurring</span>
-          </button>
-          <button class="nav-item" data-page="analysis">
-            <span class="nav-icon">✦</span
-            ><span class="nav-label">AI Analysis</span>
-          </button>
-          <button class="nav-item" data-page="add">
-            <span class="nav-icon">＋</span
-            ><span class="nav-label">Add Expense</span>
-          </button>
-          <button class="nav-item" data-page="payouts">
-            <span class="nav-icon">⊕</span
-            ><span class="nav-label">Payouts</span>
-          </button>
-          <button class="nav-item" data-page="history">
-            <span class="nav-icon">≡</span
-            ><span class="nav-label">History</span>
-          </button>
-          <button class="nav-item" data-page="yearly">
-            <span class="nav-icon">◫</span
-            ><span class="nav-label">Yearly Report</span>
-          </button>
+        <nav class="nav-container">
+          <div class="nav-group">
+            <button class="nav-item active" data-page="dashboard">
+              <span class="nav-icon">◈</span
+              ><span class="nav-label">Dashboard</span>
+            </button>
+            <button class="nav-item" data-page="charts">
+              <span class="nav-icon">◑</span
+              ><span class="nav-label">Charts</span>
+            </button>
+            <button class="nav-item" data-page="compare">
+              <span class="nav-icon">⇌</span
+              ><span class="nav-label">Compare</span>
+            </button>
+            <button class="nav-item" data-page="goals">
+              <span class="nav-icon">◎</span
+              ><span class="nav-label">Goals</span>
+            </button>
+            <button class="nav-item" data-page="recurring">
+              <span class="nav-icon">↺</span
+              ><span class="nav-label">Recurring</span>
+            </button>
+            <button class="nav-item" data-page="analysis">
+              <span class="nav-icon">✦</span
+              ><span class="nav-label">AI Analysis</span>
+            </button>
+            <button class="nav-item" data-page="add">
+              <span class="nav-icon">＋</span
+              ><span class="nav-label">Add Expense</span>
+            </button>
+            <button class="nav-item" data-page="payouts">
+              <span class="nav-icon">⊕</span
+              ><span class="nav-label">Payouts</span>
+            </button>
+            <button class="nav-item" data-page="history">
+              <span class="nav-icon">≡</span
+              ><span class="nav-label">History</span>
+            </button>
+            <button class="nav-item" data-page="yearly">
+              <span class="nav-icon">◫</span
+              ><span class="nav-label">Yearly Report</span>
+            </button>
+            <button class="nav-item" data-page="help">
+              <span class="nav-icon">?</span><span class="nav-label">Help</span>
+            </button>
+          </div>
         </nav>
         <div class="sidebar-bottom">
           <button class="theme-toggle" onclick="toggleTheme()">
@@ -222,7 +248,7 @@
               onchange="restoreJSON(event)"
             />
           </label>
-          <div class="sidebar-version">v2.3 · local</div>
+          <div class="sidebar-version">v2.4 · online</div>
         </div>
       </aside>
 
@@ -820,10 +846,361 @@
             </div>
           </div>
         </div>
+
+        <!-- HELP & USAGE GUIDE -->
+        <div class="page" id="page-help">
+          <div class="help-content">
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                Welcome to Cashflow
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p>
+                  <strong>Cashflow</strong> is your personal finance OS for
+                  freelancers. Track expenses, analyze spending patterns, set
+                  goals, and make smarter financial decisions with AI-powered
+                  insights.
+                </p>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                📊 Dashboard
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Your financial overview at a glance.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Stat Grid:</strong> Shows total income, expenses,
+                    net proceeds, and budget utilization
+                  </li>
+                  <li>
+                    <strong>Budget Usage:</strong> Visual progress bar showing
+                    spending vs budget limit
+                  </li>
+                  <li>
+                    <strong>By Category:</strong> Breakdown of expenses by
+                    spending category
+                  </li>
+                  <li>
+                    <strong>Projection:</strong> AI-calculated estimate of your
+                    final balance this month
+                  </li>
+                  <li>
+                    <strong>Recent:</strong> Latest transactions at a glance
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">📈 Charts</div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p>
+                  <strong>Visual breakdowns of your financial data.</strong>
+                </p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Donut Chart:</strong> Category-wise spending
+                    distribution
+                  </li>
+                  <li>
+                    <strong>Line Chart:</strong> 6-month income vs expenses
+                    trend
+                  </li>
+                  <li>
+                    <strong>Heatmap:</strong> Daily spending intensity for the
+                    current month
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">⇌ Compare</div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Analyze month-over-month trends.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Month-over-Month Table:</strong> Compare spending
+                    across months and spot patterns
+                  </li>
+                  <li>
+                    <strong>Savings Rate Trend:</strong> Track how your savings
+                    percentage changes over time
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">◎ Goals</div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Set and track financial goals.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    Create savings goals (e.g., "Emergency Fund", "Laptop",
+                    "Vacation")
+                  </li>
+                  <li>Set target amounts and deadline dates</li>
+                  <li>Track progress with visual progress bars</li>
+                  <li>Goals help keep you motivated and accountable</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                ↺ Recurring
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Manage recurring expenses.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Add recurring bills:</strong> Netflix, Rent, SaaS
+                    tools, Insurance, etc.
+                  </li>
+                  <li>
+                    <strong>Set frequency:</strong> Weekly, Monthly, or Yearly
+                  </li>
+                  <li>
+                    <strong>Auto-log:</strong> Recurring expenses are
+                    automatically logged on the specified day
+                  </li>
+                  <li>
+                    <strong>Total recurring/month:</strong> See your total fixed
+                    costs at a glance
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                ✦ AI Analysis
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Let AI analyze your finances.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Analyze Now:</strong> Get a detailed breakdown of
+                    spending patterns and actionable recommendations
+                  </li>
+                  <li>
+                    <strong>Weekly Check-In:</strong> Mid-week pulse on your
+                    spending
+                  </li>
+                  <li>
+                    <strong>Category Deep Dive:</strong> In-depth analysis of
+                    specific spending categories
+                  </li>
+                  <li>
+                    <strong>Anomaly Detection:</strong> AI flags unusual
+                    spending patterns automatically
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                ＋ Add Expense
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Manually log a new expense.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li><strong>Amount:</strong> How much did you spend?</li>
+                  <li>
+                    <strong>Category:</strong> What type of expense (Food,
+                    Transport, etc.)
+                  </li>
+                  <li><strong>Date:</strong> When did you spend it?</li>
+                  <li>
+                    <strong>Note:</strong> Add context (e.g., "Lunch with
+                    client")
+                  </li>
+                  <li>
+                    <strong>Recurring:</strong> Mark if this is a one-time,
+                    weekly, monthly, or yearly expense
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">⊕ Payouts</div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Track your income payouts.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>Record monthly payout amounts</li>
+                  <li>Add notes (e.g., "Client name", "Project")</li>
+                  <li>View payout history over time</li>
+                  <li>Helps with income trend analysis</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">≡ History</div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Complete transaction log.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>View all expenses with dates, amounts, and categories</li>
+                  <li>Delete transactions if needed</li>
+                  <li>See duplicate expense warnings</li>
+                  <li>Total spent displayed at the top</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                ◫ Yearly Report
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Comprehensive annual financial summary.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Year selector:</strong> Choose different years
+                  </li>
+                  <li>
+                    <strong>Annual stats:</strong> Total income, expenses, net,
+                    savings rate
+                  </li>
+                  <li>
+                    <strong>Highlights:</strong> Best/worst months, highest
+                    spending category
+                  </li>
+                  <li>
+                    <strong>Monthly breakdown:</strong> Detailed table of all
+                    months
+                  </li>
+                  <li>
+                    <strong>Download PDF:</strong> Generate printable annual
+                    report
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                ⚡ Quick Add
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Add expenses using natural language.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>Type naturally: "spent $45 on lunch with client"</li>
+                  <li>
+                    AI extracts amount, category, date, and note automatically
+                  </li>
+                  <li>Review parsed data before saving</li>
+                  <li>
+                    Press <strong>Q</strong> or click the ⚡ button anytime to
+                    quick add
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                🎨 Sidebar Features
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <p><strong>Navigation and tools at a glance.</strong></p>
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    <strong>Hamburger menu:</strong> Click to expand/collapse
+                    sidebar
+                  </li>
+                  <li>
+                    <strong>Light/Dark Mode:</strong> Toggle between themes
+                  </li>
+                  <li>
+                    <strong>Export CSV:</strong> Download all data as
+                    spreadsheet
+                  </li>
+                  <li>
+                    <strong>Backup JSON:</strong> Save complete backup of your
+                    data
+                  </li>
+                  <li>
+                    <strong>Restore JSON:</strong> Upload a previously saved
+                    backup
+                  </li>
+                  <li>
+                    <strong>Version:</strong> Current app version at the bottom
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px">
+              <div class="sec-label" style="margin-bottom: 14px">
+                💡 Pro Tips
+              </div>
+              <div
+                style="font-size: 12px; line-height: 1.8; color: var(--text)"
+              >
+                <ul style="margin-left: 16px; margin-top: 8px">
+                  <li>
+                    Use <strong>Quick Add</strong> for fast data entry on the go
+                  </li>
+                  <li>
+                    Set <strong>recurring expenses</strong> so they auto-log
+                    each month
+                  </li>
+                  <li>
+                    Run <strong>AI Analysis</strong> weekly for personalized
+                    insights
+                  </li>
+                  <li>
+                    Check <strong>Charts</strong> to visualize spending trends
+                  </li>
+                  <li>
+                    Use <strong>Goals</strong> to stay motivated about your
+                    savings targets
+                  </li>
+                  <li>Export/Backup regularly to prevent data loss</li>
+                  <li>
+                    The data is stored locally — your finances stay private
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div id="toast-container"></div>
   </body>
   <script src="./main.js"></script>
 </html>
-
