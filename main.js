@@ -240,7 +240,7 @@
           : "var(--accent)";
     document.getElementById("budget-pct-label").textContent =
       barPct.toFixed(0) + "% used";
-    document.getElementById("budget-left").textContent = fmt(spent) + " spent";
+    document.getElementById("budget-left").textContent = payout > 0 ? fmt(spent) + " spent" : "Set payout";
     document.getElementById("budget-right").textContent =
       "of " + (payout > 0 ? fmt(payout) : "$—");
 
