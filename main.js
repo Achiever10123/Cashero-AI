@@ -1,4 +1,4 @@
-  // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
   //  CONSTANTS & STATE
   // ═══════════════════════════════════════════
   const MONTHS = [
@@ -66,6 +66,8 @@
     savingsChart = null,
     yrLineChart = null;
   let nlpParsed = null;
+  let analysisLastRun = null;
+  let analysisCountdownInterval = null;
   let notifications = [];
 
   // ═══════════════════════════════════════════
@@ -75,6 +77,12 @@
     try {
       const r = localStorage.getItem(SK);
       if (r) S = JSON.parse(r);
+      
+      // Restore cooldown timestamp from localStorage
+      const lastAnalysisTime = localStorage.getItem("cashflow_last_analysis");
+      if (lastAnalysisTime) {
+        analysisLastRun = parseInt(lastAnalysisTime);
+      }
     } catch {}
   }
   function save() {
@@ -993,6 +1001,19 @@
   async function runAnalysis() {
     const btn = document.getElementById("analysis-btn");
     const out = document.getElementById("analysis-output");
+    
+    // ═══ COOLDOWN CHECK ═══
+    const now = Date.now();
+    const timeSinceLastRun = analysisLastRun ? now - analysisLastRun : Infinity;
+    const cooldownMs = 60000; // 60 seconds
+    
+    if (timeSinceLastRun < cooldownMs) {
+      const secondsLeft = Math.ceil((cooldownMs - timeSinceLastRun) / 1000);
+      toast(`Wait ${secondsLeft}s before analyzing again`, "err");
+      startCooldownTimer(btn, secondsLeft);
+      return;
+    }
+    
     const exps = monthExpenses(activeMonth);
     const po = monthPayout(activeMonth);
     const payout = po?.amount || 0;
@@ -1067,12 +1088,18 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
       save();
       out.innerHTML = buildAnalysisHTML(a);
       toast("Analysis complete ✓");
+      
+      // ═══ SET COOLDOWN TIMESTAMP ═══
+      analysisLastRun = Date.now();
+      localStorage.setItem("cashflow_last_analysis", analysisLastRun.toString());
+      startCooldownTimer(btn, 60);
+      
     } catch (e) {
       out.innerHTML = `<div style="color:var(--red);font-size:12px">Analysis failed — try again</div>`;
       toast("Analysis failed", "err");
+      btn.disabled = false;
+      btn.textContent = "✦ Analyze Now";
     }
-    btn.disabled = false;
-    btn.textContent = "✦ Analyze Now";
   }
   function buildAnalysisHTML(a) {
     return `
@@ -1096,6 +1123,33 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
       ${(a.quickWins || []).map((w) => `<div class="wins-item"><span style="color:var(--red)">×</span>${w}</div>`).join("")}
     </div>
     <div style="font-size:9px;color:var(--text3);margin-top:14px;letter-spacing:1px">Last updated ${S.lastAnalysisDate || ""}</div>`;
+  }
+
+  // ═══════════════════════════════════════════
+  //  ANALYSIS COOLDOWN TIMER
+  // ═══════════════════════════════════════════
+  function startCooldownTimer(btn, secondsLeft) {
+    // Clear any existing interval
+    if (analysisCountdownInterval) {
+      clearInterval(analysisCountdownInterval);
+    }
+    
+    btn.disabled = true;
+    
+    const updateButton = () => {
+      if (secondsLeft > 0) {
+        btn.textContent = `✦ Analyze (${secondsLeft}s)`;
+        secondsLeft--;
+      } else {
+        btn.textContent = "✦ Analyze Now";
+        btn.disabled = false;
+        clearInterval(analysisCountdownInterval);
+        analysisCountdownInterval = null;
+      }
+    };
+    
+    updateButton(); // Show initial countdown immediately
+    analysisCountdownInterval = setInterval(updateButton, 1000);
   }
 
   // ═══════════════════════════════════════════
@@ -1987,3 +2041,21 @@ If amount not found, use 0. Pick the closest matching category.`;
 
   // Run on load
   checkAllNotifications();
+
+  // ═══════════════════════════════════════════
+  //  RESTORE COOLDOWN ON PAGE LOAD
+  // ═══════════════════════════════════════════
+  (function() {
+    const lastAnalysisTime = localStorage.getItem("cashflow_last_analysis");
+    if (lastAnalysisTime) {
+      analysisLastRun = parseInt(lastAnalysisTime);
+      const now = Date.now();
+      const elapsed = now - analysisLastRun;
+      const remaining = Math.max(0, 60 - Math.floor(elapsed / 1000));
+      
+      if (remaining > 0) {
+        const btn = document.getElementById("analysis-btn");
+        if (btn) startCooldownTimer(btn, remaining);
+      }
+    }
+  })();
