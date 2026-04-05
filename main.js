@@ -2130,23 +2130,13 @@ async function verifyRecoveryPhrase(phrase) {
 
 // Initialize PIN on app load
 async function initPin() {
-  // For new users, set default PIN to 0000
-  if (!S.pinEnabled && !isPinSet()) {
-    const defaultPin = "0000";
-    const hash = await hashPin(defaultPin);
-    localStorage.setItem("cashflow_pin_hash", hash);
-    S.pinEnabled = true;
-    save();
-    console.log("✓ Default PIN set to: " + defaultPin);
-  }
-
   if (S.pinEnabled && isPinSet()) {
     // Show verification screen only if PIN is enabled
     showPinOverlay("verify");
     // Show forgot PIN button
     document.getElementById("forgot-pin-btn").style.display = "block";
   }
-  // If PIN is not enabled, app loads normally without PIN overlay
+  // PIN is disabled by default - app loads normally without PIN overlay
 }
 
 // ═══════════════════════════════════════════
