@@ -29,6 +29,220 @@ const CATS = [
 const SK = "cashflow_v2";
 
 // ═══════════════════════════════════════════
+//  EFF WORDLIST (for recovery phrases)
+// ═══════════════════════════════════════════
+const EFF_WORDLIST = [
+  "ability",
+  "able",
+  "about",
+  "above",
+  "absent",
+  "absorb",
+  "abstract",
+  "absurd",
+  "abuse",
+  "access",
+  "accident",
+  "account",
+  "accuse",
+  "achieve",
+  "acid",
+  "acoustic",
+  "acquire",
+  "acre",
+  "across",
+  "act",
+  "action",
+  "activate",
+  "active",
+  "activity",
+  "actual",
+  "acute",
+  "adapt",
+  "add",
+  "addict",
+  "added",
+  "address",
+  "adjust",
+  "admin",
+  "admit",
+  "adobe",
+  "adopt",
+  "adore",
+  "adorn",
+  "adult",
+  "advance",
+  "advent",
+  "adverb",
+  "advice",
+  "advise",
+  "affair",
+  "afford",
+  "afraid",
+  "africa",
+  "after",
+  "again",
+  "against",
+  "agency",
+  "agenda",
+  "agent",
+  "agree",
+  "ahead",
+  "aimed",
+  "aiming",
+  "air",
+  "airplane",
+  "aisle",
+  "alarm",
+  "album",
+  "alert",
+  "alien",
+  "align",
+  "alike",
+  "alive",
+  "all",
+  "alley",
+  "allied",
+  "allies",
+  "allot",
+  "allow",
+  "alloy",
+  "allude",
+  "allure",
+  "ally",
+  "almond",
+  "almost",
+  "alone",
+  "along",
+  "aloud",
+  "alpha",
+  "already",
+  "also",
+  "altar",
+  "alter",
+  "always",
+  "amateur",
+  "amaze",
+  "amber",
+  "ambiance",
+  "ambiguous",
+  "ambition",
+  "ambitious",
+  "ambush",
+  "amend",
+  "amendment",
+  "amends",
+  "amenity",
+  "amid",
+  "amidst",
+  "amiss",
+  "ammo",
+  "among",
+  "amongst",
+  "amount",
+  "amour",
+  "ample",
+  "amuse",
+  "amusement",
+  "amusing",
+  "an",
+  "ana",
+  "anachronism",
+  "anaemic",
+  "anagramming",
+  "anal",
+  "anally",
+  "analogies",
+  "analogical",
+  "analogously",
+  "analogue",
+  "analogy",
+  "analyse",
+  "analysed",
+  "analyses",
+  "analysing",
+  "analysis",
+  "analyst",
+  "analytic",
+  "analytical",
+  "analytically",
+  "analytics",
+  "analyze",
+  "analyzed",
+  "analyzer",
+  "analyzing",
+  "anarchy",
+  "anatomical",
+  "anatomically",
+  "anatomies",
+  "anatomise",
+  "anatomised",
+  "anatomises",
+  "anatomising",
+  "anatomist",
+  "anatomy",
+  "ancestor",
+  "ancestral",
+  "ancestors",
+  "ancestries",
+  "ancestry",
+  "anchor",
+  "anchorages",
+  "anchored",
+  "anchoring",
+  "anchors",
+  "anchovy",
+  "ancient",
+  "ancientest",
+  "anciently",
+  "ancientness",
+  "ancients",
+  "ancillaries",
+  "ancillary",
+  "and",
+  "andante",
+  "andiron",
+  "andirrons",
+  "andirons",
+  "android",
+  "androids",
+  "anecdotal",
+  "anecdotally",
+  "anecdote",
+  "anecdotes",
+  "anecdotist",
+  "anele",
+  "aneles",
+  "aneling",
+  "anemia",
+  "anemias",
+  "anaemic",
+  "anemically",
+  "anemometer",
+  "anemometers",
+  "anemone",
+  "anemones",
+  "anent",
+  "anergy",
+  "aneroid",
+  "aneroids",
+  "anesthesia",
+  "anesthesias",
+  "anesthetic",
+  "anesthetically",
+  "anestheticist",
+  "anesthetics",
+  "anesthetisation",
+  "anesthetise",
+  "anesthetised",
+  "anesthetises",
+  "anesthetising",
+  "anesthetist",
+  "anesthetists",
+  "anesthetization",
+];
+
+// ═══════════════════════════════════════════
 //  ⚠ PASTE YOUR OPENAI API KEY HERE
 // ═══════════════════════════════════════════
 const OPENAI_KEY =
@@ -1440,7 +1654,7 @@ function renderSettings() {
 function updatePinToggleButton() {
   const btn = document.getElementById("pin-toggle-btn");
   const changePinSection = document.getElementById("change-pin-section");
-  
+
   if (S.pinEnabled) {
     btn.textContent = "Disable";
     btn.classList.remove("btn-ghost");
@@ -1457,7 +1671,9 @@ function updatePinToggleButton() {
 async function togglePinLock() {
   if (S.pinEnabled) {
     // Disable PIN lock
-    if (confirm("Disable PIN lock? Your data will be accessible without a PIN.")) {
+    if (
+      confirm("Disable PIN lock? Your data will be accessible without a PIN.")
+    ) {
       localStorage.removeItem("cashflow_pin_hash");
       S.pinEnabled = false;
       save();
@@ -1548,8 +1764,19 @@ function updatePinDots(count) {
 
 // Validate PIN input (numbers only, max 4)
 function validatePinInput(input) {
+  // Only enforce numeric/4-digit limit for PIN modes, not for recovery phrase
+  if (pinMode === "recoverVerify") {
+    // Recovery phrase mode - allow text input, no restrictions
+    return;
+  }
+  // PIN modes - restrict to 4 digits
   input.value = input.value.replace(/[^0-9]/g, "").slice(0, 4);
   updatePinDots(input.value.length);
+
+  // Auto-submit when 4 digits are entered
+  if (input.value.length === 4) {
+    setTimeout(() => submitPin(), 100);
+  }
 }
 
 // Handle PIN key press
@@ -1568,14 +1795,29 @@ async function submitPin() {
   const msg = document.getElementById("pin-message");
   const btn = document.querySelector(".pin-submit-btn");
 
-  if (pin.length !== 4) {
-    msg.textContent = "PIN must be 4 digits";
-    msg.classList.add("error");
-    input.classList.add("error");
-    setTimeout(() => {
-      input.classList.remove("error");
-    }, 500);
-    return;
+  // Validate based on mode
+  if (pinMode !== "recoverVerify") {
+    // PIN mode validation - must be exactly 4 digits
+    if (pin.length !== 4) {
+      msg.textContent = "PIN must be 4 digits";
+      msg.classList.add("error");
+      input.classList.add("error");
+      setTimeout(() => {
+        input.classList.remove("error");
+      }, 500);
+      return;
+    }
+  } else {
+    // Recovery phrase mode - must have content
+    if (!pin || pin.length < 5) {
+      msg.textContent = "Please enter your recovery phrase";
+      msg.classList.add("error");
+      input.classList.add("error");
+      setTimeout(() => {
+        input.classList.remove("error");
+      }, 500);
+      return;
+    }
   }
 
   btn.disabled = true;
@@ -1597,7 +1839,9 @@ async function submitPin() {
         hidePinOverlay();
         input.value = "";
         updatePinToggleButton();
-        toast("PIN secured", "ok");
+        // Generate and show recovery phrase
+        const recoveryPhrase = generateRecoveryPhrase();
+        showRecoveryPhrase(recoveryPhrase);
       }, 500);
     } else if (pinMode === "verify") {
       // Verify PIN for app access
@@ -1671,6 +1915,54 @@ async function submitPin() {
           input.classList.remove("error");
         }, 500);
       }
+    } else if (pinMode === "recoverVerify") {
+      // Verify recovery phrase for PIN reset
+      const phrase = pin.trim().toLowerCase();
+      const isValid = await verifyRecoveryPhrase(phrase);
+
+      if (isValid) {
+        msg.textContent = "Recovery phrase verified ✓";
+        msg.classList.add("success");
+        setTimeout(() => {
+          // Reset to PIN input mode for new PIN
+          pinMode = "recoverNewPin";
+          input.type = "password";
+          input.placeholder = "••••";
+          input.maxLength = "4";
+          input.inputMode = "numeric";
+          input.value = "";
+          document.getElementById("pin-dots").style.display = "flex";
+          msg.textContent = "";
+          msg.classList.remove("error", "success");
+          modeLabel.textContent = "Enter your new PIN";
+          input.focus();
+          updatePinDots(0);
+        }, 500);
+      } else {
+        msg.textContent = "Invalid recovery phrase";
+        msg.classList.add("error");
+        input.classList.add("error");
+        input.value = "";
+        setTimeout(() => {
+          input.classList.remove("error");
+        }, 500);
+      }
+    } else if (pinMode === "recoverNewPin") {
+      // Set new PIN after recovery
+      const newPinHash = await hashPin(pin);
+      localStorage.setItem("cashflow_pin_hash", newPinHash);
+      save();
+      msg.textContent = "PIN reset successfully ✓";
+      msg.classList.add("success");
+      setTimeout(() => {
+        hidePinOverlay();
+        input.value = "";
+        input.type = "password";
+        document.getElementById("pin-dots").style.display = "flex";
+        document.getElementById("forgot-pin-btn").style.display = "block";
+        pinMode = "verify";
+        toast("PIN reset complete", "ok");
+      }, 500);
     }
   } catch (e) {
     msg.textContent = "Error: " + e.message;
@@ -1680,11 +1972,179 @@ async function submitPin() {
   btn.disabled = false;
 }
 
+// ═══════════════════════════════════════════
+//  RECOVERY PHRASE
+// ═══════════════════════════════════════════
+
+// Generate cryptographically secure random bytes
+function getRandomBytes(count) {
+  const array = new Uint8Array(count);
+  crypto.getRandomValues(array);
+  return array;
+}
+
+// Generate recovery phrase (8 words from EFF wordlist)
+function generateRecoveryPhrase() {
+  const words = [];
+  const randomBytes = getRandomBytes(8); // 8 words
+
+  for (let i = 0; i < 8; i++) {
+    const index = randomBytes[i] % EFF_WORDLIST.length;
+    words.push(EFF_WORDLIST[index]);
+  }
+
+  return words.join(" ");
+}
+
+// Hash recovery phrase with SHA-256 + salt
+async function hashRecoveryPhrase(phrase, salt = null) {
+  if (!salt) {
+    // Generate new salt if not provided
+    salt = Array.from(getRandomBytes(16))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  const encoder = new TextEncoder();
+  const saltedPhrase = phrase + salt;
+  const data = encoder.encode(saltedPhrase);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return { salt, hash: hashHex };
+}
+
+// Show recovery phrase modal
+function showRecoveryPhrase(phrase) {
+  const overlay = document.getElementById("recovery-overlay");
+  const wordsContainer = document.getElementById("recovery-words");
+  const checkbox = document.getElementById("recovery-confirm-checkbox");
+  const continueBtn = document.getElementById("recovery-continue-btn");
+
+  // Display words in numbered list
+  const words = phrase.split(" ");
+  wordsContainer.innerHTML = words
+    .map(
+      (word, idx) => `
+      <div style="display: flex; gap: 8px; align-items: center; padding: 8px; background: var(--bg3); border-radius: 6px;">
+        <span style="font-size: 10px; color: var(--text3); min-width: 20px;">${idx + 1}.</span>
+        <span style="font-size: 12px; font-weight: 500; color: var(--text);">${word}</span>
+      </div>
+    `,
+    )
+    .join("");
+
+  // Reset checkbox and button
+  checkbox.checked = false;
+  continueBtn.disabled = true;
+
+  // Show overlay
+  overlay.classList.add("active");
+}
+
+// Hide recovery phrase modal
+function hideRecoveryPhrase() {
+  const overlay = document.getElementById("recovery-overlay");
+  overlay.classList.remove("active");
+}
+
+// Copy recovery phrase to clipboard
+async function copyRecoveryPhrase() {
+  const wordsText = Array.from(
+    document.querySelectorAll("#recovery-words > div"),
+  )
+    .map((div) => div.textContent.split(".")[1].trim())
+    .join(" ");
+
+  try {
+    await navigator.clipboard.writeText(wordsText);
+    toast("Recovery phrase copied to clipboard", "ok");
+  } catch (e) {
+    toast("Failed to copy recovery phrase", "err");
+  }
+}
+
+// Finish recovery phrase setup - store hash + salt
+async function finishRecoveryPhrase() {
+  const wordsText = Array.from(
+    document.querySelectorAll("#recovery-words > div"),
+  )
+    .map((div) => div.textContent.split(".")[1].trim())
+    .join(" ");
+
+  // Hash recovery phrase
+  const { salt, hash } = await hashRecoveryPhrase(wordsText);
+
+  // Store in localStorage
+  localStorage.setItem("cashflow_recovery_salt", salt);
+  localStorage.setItem("cashflow_recovery_hash", hash);
+
+  hideRecoveryPhrase();
+  navigate("dashboard");
+  toast("Recovery phrase secured", "ok");
+}
+
+// Show forgot PIN flow - ask for recovery phrase
+function startForgotPinFlow() {
+  pinMode = "recoverVerify";
+  const overlay = document.getElementById("pin-overlay");
+  const modeLabel = document.getElementById("pin-mode-label");
+  const input = document.getElementById("pin-input");
+  const msg = document.getElementById("pin-message");
+  const btn = document.querySelector(".pin-submit-btn");
+  const forgotBtn = document.getElementById("forgot-pin-btn");
+
+  // Hide forgot button and change UI for recovery flow
+  forgotBtn.style.display = "none";
+  btn.textContent = "Verify";
+  modeLabel.textContent =
+    "Enter your recovery phrase (8 words, space-separated)";
+  input.type = "text";
+  input.placeholder = "word1 word2 word3 word4 word5 word6 word7 word8";
+  input.maxLength = "100";
+  input.inputMode = "text";
+  input.value = "";
+  msg.textContent = "";
+  msg.classList.remove("error", "success");
+  input.focus();
+
+  // Hide PIN dots
+  document.getElementById("pin-dots").style.display = "none";
+}
+
+// Verify recovery phrase for PIN reset
+async function verifyRecoveryPhrase(phrase) {
+  const storedSalt = localStorage.getItem("cashflow_recovery_salt");
+  const storedHash = localStorage.getItem("cashflow_recovery_hash");
+
+  if (!storedSalt || !storedHash) {
+    return false;
+  }
+
+  const { hash } = await hashRecoveryPhrase(phrase, storedSalt);
+  return hash === storedHash;
+}
+
 // Initialize PIN on app load
-function initPin() {
+async function initPin() {
+  // For new users, set default PIN to 0000
+  if (!S.pinEnabled && !isPinSet()) {
+    const defaultPin = "0000";
+    const hash = await hashPin(defaultPin);
+    localStorage.setItem("cashflow_pin_hash", hash);
+    S.pinEnabled = true;
+    save();
+    console.log("✓ Default PIN set to: " + defaultPin);
+  }
+
   if (S.pinEnabled && isPinSet()) {
     // Show verification screen only if PIN is enabled
     showPinOverlay("verify");
+    // Show forgot PIN button
+    document.getElementById("forgot-pin-btn").style.display = "block";
   }
   // If PIN is not enabled, app loads normally without PIN overlay
 }
@@ -1692,37 +2152,50 @@ function initPin() {
 // ═══════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════
+
+// DEBUG: Reset PIN to default (use in console if stuck)
+async function resetPinToDefault() {
+  const defaultPin = "0000";
+  const hash = await hashPin(defaultPin);
+  localStorage.setItem("cashflow_pin_hash", hash);
+  S.pinEnabled = true;
+  save();
+  console.log("✓ PIN reset to: " + defaultPin);
+  location.reload();
+}
+
 load();
 applyTheme();
-initPin();
-initSelects();
-renderMonthPills();
-renderAll();
-autoLogRecurring();
-initYearPills();
+initPin().then(() => {
+  initSelects();
+  renderMonthPills();
+  renderAll();
+  autoLogRecurring();
+  initYearPills();
 
-// Restore saved analysis if exists
-if (S.lastAnalysis) {
-  document.getElementById("analysis-output").innerHTML = buildAnalysisHTML(
-    S.lastAnalysis,
-  );
-}
-if (S.lastCheckin) {
-  document.getElementById("checkin-output").innerHTML =
-    `<div class="checkin-output">${S.lastCheckin.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</div>`;
-}
+  // Restore saved analysis if exists
+  if (S.lastAnalysis) {
+    document.getElementById("analysis-output").innerHTML = buildAnalysisHTML(
+      S.lastAnalysis,
+    );
+  }
+  if (S.lastCheckin) {
+    document.getElementById("checkin-output").innerHTML =
+      `<div class="checkin-output">${S.lastCheckin.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</div>`;
+  }
 
-// Auto weekly analysis trigger
-if (
-  S.lastAnalysisMonthKey === mkNow() &&
-  S.lastAnalysisDate &&
-  isOlderThan(S.lastAnalysisDate, 7)
-) {
-  setTimeout(
-    () => toast("Weekly analysis due — head to AI Analysis", "inf"),
-    2000,
-  );
-}
+  // Auto weekly analysis trigger
+  if (
+    S.lastAnalysisMonthKey === mkNow() &&
+    S.lastAnalysisDate &&
+    isOlderThan(S.lastAnalysisDate, 7)
+  ) {
+    setTimeout(
+      () => toast("Weekly analysis due — head to AI Analysis", "inf"),
+      2000,
+    );
+  }
+});
 
 // ═══════════════════════════════════════════
 //  DUPLICATE DETECTION

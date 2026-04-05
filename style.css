@@ -1973,6 +1973,18 @@ nav {
   font-weight: 600;
 }
 
+/* ═══ RECOVERY PHRASE ═══ */
+.recovery-phrase-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+#recovery-words > div {
+  font-family: var(--mono);
+  user-select: all;
+}
+
 @media (max-width: 768px) {
   .pin-modal {
     padding: 36px 28px;

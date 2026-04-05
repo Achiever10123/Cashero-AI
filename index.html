@@ -196,6 +196,103 @@
         <button class="btn btn-primary pin-submit-btn" onclick="submitPin()">
           Verify
         </button>
+        <button
+          class="btn btn-ghost"
+          id="forgot-pin-btn"
+          onclick="startForgotPinFlow()"
+          style="width: 100%; margin-top: 12px; display: none"
+        >
+          Forgot PIN?
+        </button>
+      </div>
+    </div>
+
+    <!-- Recovery Phrase Modal -->
+    <div id="recovery-overlay" class="pin-overlay">
+      <div class="pin-modal" style="max-width: 500px">
+        <div class="pin-header">
+          <h1 class="pin-title">⚠ Recovery Phrase</h1>
+          <p class="pin-subtitle">
+            Save this safely. You cannot recover your PIN without it.
+          </p>
+        </div>
+        <div class="recovery-phrase-box" id="recovery-phrase-box">
+          <div
+            id="recovery-words"
+            style="
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 8px;
+              margin: 20px 0;
+            "
+          ></div>
+          <button
+            class="btn btn-ghost"
+            onclick="copyRecoveryPhrase()"
+            style="width: 100%; margin: 16px 0 0 0; font-size: 11px"
+          >
+            📋 Copy to Clipboard
+          </button>
+        </div>
+        <div
+          style="
+            background: var(--bg3);
+            border-left: 3px solid var(--yellow);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 16px 0;
+          "
+        >
+          <div
+            style="
+              font-size: 10px;
+              color: var(--yellow);
+              font-weight: 600;
+              margin-bottom: 4px;
+            "
+          >
+            ⚠ IMPORTANT
+          </div>
+          <div style="font-size: 11px; color: var(--text2); line-height: 1.5">
+            Write down these words in order. Store them offline in a safe place.
+            This is the ONLY way to recover your PIN if forgotten.
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--bg3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 16px 0;
+          "
+        >
+          <input
+            type="checkbox"
+            id="recovery-confirm-checkbox"
+            style="width: 18px; height: 18px; cursor: pointer"
+            onchange="
+              document.getElementById('recovery-continue-btn').disabled =
+                !this.checked
+            "
+          />
+          <label
+            for="recovery-confirm-checkbox"
+            style="font-size: 11px; color: var(--text2); cursor: pointer"
+            >I have saved my recovery phrase safely</label
+          >
+        </div>
+        <button
+          class="btn btn-primary"
+          id="recovery-continue-btn"
+          onclick="finishRecoveryPhrase()"
+          style="width: 100%; padding: 12px"
+          disabled
+        >
+          Continue
+        </button>
       </div>
     </div>
 
@@ -257,7 +354,8 @@
               ><span class="nav-label">Yearly Report</span>
             </button>
             <button class="nav-item" data-page="settings">
-              <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+              <span class="nav-icon">⚙</span
+              ><span class="nav-label">Settings</span>
             </button>
             <button class="nav-item" data-page="help">
               <span class="nav-icon">?</span><span class="nav-label">Help</span>
@@ -890,22 +988,85 @@
         <!-- SETTINGS -->
         <div class="page" id="page-settings">
           <div class="card">
-            <div class="sec-label" style="margin-bottom: 20px">Security Settings</div>
-            
+            <div class="sec-label" style="margin-bottom: 20px">
+              Security Settings <br />
+            </div>
+            <!-- Recovery Phrase Help Banner -->
+            <div
+              style="
+                background: linear-gradient(
+                  135deg,
+                  #6c47ff15 0%,
+                  #6c47ff08 100%
+                );
+                border-left: 4px solid var(--accent);
+                border-radius: 8px;
+                padding: 16px;
+                margin: 0 0 20px 0;
+                display: flex;
+                gap: 12px;
+                align-items: flex-start;
+              "
+            >
+              <div style="font-size: 20px; flex-shrink: 0">💾</div>
+              <div>
+                <div
+                  style="
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text);
+                    margin-bottom: 4px;
+                  "
+                >
+                  Lost Your Recovery Phrase?
+                </div>
+                <div
+                  style="font-size: 11px; color: var(--text2); line-height: 1.5"
+                >
+                  Disable PIN Lock below, then re-enable it to generate a new
+                  recovery phrase. Save it immediately in a safe location. <br>
+                <strong>You'll need it to set up a new PIN again and access your data.</strong>
+                </div>
+              </div>
+            </div>
             <!-- PIN Lock Toggle -->
             <div class="setting-item">
               <div class="setting-header">
                 <div>
                   <div class="setting-title">PIN Lock</div>
-                  <div class="setting-desc">Require a 4-digit PIN to access your data</div>
+                  <div class="setting-desc">
+                    Require a 4-digit PIN to access your data
+                  </div>
                 </div>
-                <button class="btn btn-ghost" id="pin-toggle-btn" onclick="togglePinLock()" style="padding: 8px 18px;">Enable</button>
+                <button
+                  class="btn btn-ghost"
+                  id="pin-toggle-btn"
+                  onclick="togglePinLock()"
+                  style="padding: 8px 18px"
+                >
+                  Enable
+                </button>
               </div>
             </div>
-            
+
             <!-- Change PIN (only show if enabled) -->
-            <div class="setting-item" id="change-pin-section" style="display: none; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
-              <button class="btn btn-primary" onclick="startChangePinFlow()" style="width: 100%; padding: 12px;">Change PIN</button>
+            <div
+              class="setting-item"
+              id="change-pin-section"
+              style="
+                display: none;
+                border-top: 1px solid var(--border);
+                padding-top: 16px;
+                margin-top: 16px;
+              "
+            >
+              <button
+                class="btn btn-primary"
+                onclick="startChangePinFlow()"
+                style="width: 100%; padding: 12px"
+              >
+                Change PIN
+              </button>
             </div>
           </div>
         </div>
