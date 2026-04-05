@@ -166,6 +166,39 @@
       </div>
     </div>
 
+    <!-- PIN Modal -->
+    <div id="pin-overlay" class="pin-overlay active">
+      <div class="pin-modal">
+        <div class="pin-header">
+          <h1 class="pin-title">Cashflow Secure</h1>
+          <p class="pin-subtitle">Enter your 4-digit PIN</p>
+        </div>
+        <div class="pin-mode-label" id="pin-mode-label">Setup your PIN</div>
+        <div class="pin-input-group">
+          <input
+            type="password"
+            id="pin-input"
+            class="pin-input"
+            placeholder="••••"
+            maxlength="4"
+            inputmode="numeric"
+            onkeydown="handlePinKey(event)"
+            onInput="validatePinInput(this)"
+          />
+          <div class="pin-dots" id="pin-dots">
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+          </div>
+        </div>
+        <div class="pin-message" id="pin-message"></div>
+        <button class="btn btn-primary pin-submit-btn" onclick="submitPin()">
+          Verify
+        </button>
+      </div>
+    </div>
+
     <div id="app">
       <!-- Sidebar -->
       <aside id="sidebar">
