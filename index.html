@@ -256,6 +256,9 @@
               <span class="nav-icon">◫</span
               ><span class="nav-label">Yearly Report</span>
             </button>
+            <button class="nav-item" data-page="settings">
+              <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+            </button>
             <button class="nav-item" data-page="help">
               <span class="nav-icon">?</span><span class="nav-label">Help</span>
             </button>
@@ -880,6 +883,29 @@
                   <canvas id="yr-line-chart"></canvas>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="page" id="page-settings">
+          <div class="card">
+            <div class="sec-label" style="margin-bottom: 20px">Security Settings</div>
+            
+            <!-- PIN Lock Toggle -->
+            <div class="setting-item">
+              <div class="setting-header">
+                <div>
+                  <div class="setting-title">PIN Lock</div>
+                  <div class="setting-desc">Require a 4-digit PIN to access your data</div>
+                </div>
+                <button class="btn btn-ghost" id="pin-toggle-btn" onclick="togglePinLock()" style="padding: 8px 18px;">Enable</button>
+              </div>
+            </div>
+            
+            <!-- Change PIN (only show if enabled) -->
+            <div class="setting-item" id="change-pin-section" style="display: none; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+              <button class="btn btn-primary" onclick="startChangePinFlow()" style="width: 100%; padding: 12px;">Change PIN</button>
             </div>
           </div>
         </div>

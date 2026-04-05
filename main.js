@@ -45,6 +45,7 @@ const PAGE_META = {
   payouts: { title: "Payouts", sub: "Monthly income" },
   history: { title: "History", sub: "All transactions" },
   yearly: { title: "Yearly Report", sub: "Annual overview + PDF export" },
+  settings: { title: "Settings", sub: "Preferences & security" },
 };
 
 let S = {
@@ -58,6 +59,7 @@ let S = {
   lastCheckinDate: null,
   lastAnalysisMonthKey: null,
   theme: "dark",
+  pinEnabled: false,
 };
 let activeMonth = mkNow();
 let activeYear = new Date().getFullYear();
@@ -199,6 +201,7 @@ function renderPage(page) {
     detectDuplicates();
   } else if (page === "yearly") renderYearly();
   else if (page === "payouts") renderPayoutHistory();
+  else if (page === "settings") renderSettings();
 }
 
 // ═══════════════════════════════════════════
@@ -1428,8 +1431,57 @@ function initSelects() {
 }
 
 // ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings() {
+  updatePinToggleButton();
+}
+
+function updatePinToggleButton() {
+  const btn = document.getElementById("pin-toggle-btn");
+  const changePinSection = document.getElementById("change-pin-section");
+  
+  if (S.pinEnabled) {
+    btn.textContent = "Disable";
+    btn.classList.remove("btn-ghost");
+    btn.classList.add("btn-danger");
+    changePinSection.style.display = "block";
+  } else {
+    btn.textContent = "Enable";
+    btn.classList.remove("btn-danger");
+    btn.classList.add("btn-ghost");
+    changePinSection.style.display = "none";
+  }
+}
+
+async function togglePinLock() {
+  if (S.pinEnabled) {
+    // Disable PIN lock
+    if (confirm("Disable PIN lock? Your data will be accessible without a PIN.")) {
+      localStorage.removeItem("cashflow_pin_hash");
+      S.pinEnabled = false;
+      save();
+      updatePinToggleButton();
+      toast("PIN lock disabled", "ok");
+    }
+  } else {
+    // Enable PIN lock - show setup
+    S.pinEnabled = true;
+    save();
+    pinMode = "setup";
+    showPinOverlay("setup");
+  }
+}
+
+function startChangePinFlow() {
+  pinMode = "changeVerify";
+  showPinOverlay("changeVerify");
+}
+
+// ═══════════════════════════════════════════
 //  PIN SECURITY
 // ═══════════════════════════════════════════
+let pinMode = "verify"; // verify, setup, changeVerify, changeNew
 
 // Hash PIN using SubtleCrypto (Web Crypto API)
 async function hashPin(pin) {
@@ -1463,8 +1515,14 @@ function showPinOverlay(mode = "verify") {
 
   if (mode === "setup") {
     modeLabel.textContent = "Setup your 4-digit PIN";
-  } else {
+  } else if (mode === "verify") {
     modeLabel.textContent = "Enter your PIN to continue";
+  } else if (mode === "changeVerify") {
+    modeLabel.textContent = "Enter your current PIN";
+  } else if (mode === "changeNew") {
+    modeLabel.textContent = "Enter your new PIN";
+  } else if (mode === "changeConfirm") {
+    modeLabel.textContent = "Confirm your new PIN";
   }
 
   input.focus();
@@ -1473,6 +1531,7 @@ function showPinOverlay(mode = "verify") {
 function hidePinOverlay() {
   const overlay = document.getElementById("pin-overlay");
   overlay.classList.remove("active");
+  pinMode = "verify";
 }
 
 // Update PIN dots display
@@ -1500,6 +1559,8 @@ function handlePinKey(event) {
   }
 }
 
+let tempNewPin = null; // Store first new PIN entry for confirmation
+
 // Submit PIN
 async function submitPin() {
   const input = document.getElementById("pin-input");
@@ -1518,15 +1579,28 @@ async function submitPin() {
   }
 
   btn.disabled = true;
-  msg.textContent = "Verifying...";
+  msg.textContent = "Processing...";
   msg.classList.remove("error", "success");
 
   try {
     const pinHash = await hashPin(pin);
     const storedHash = localStorage.getItem("cashflow_pin_hash");
 
-    if (isPinSet()) {
-      // Verify existing PIN
+    if (pinMode === "setup") {
+      // Set new PIN
+      localStorage.setItem("cashflow_pin_hash", pinHash);
+      S.pinEnabled = true;
+      save();
+      msg.textContent = "PIN set successfully ✓";
+      msg.classList.add("success");
+      setTimeout(() => {
+        hidePinOverlay();
+        input.value = "";
+        updatePinToggleButton();
+        toast("PIN secured", "ok");
+      }, 500);
+    } else if (pinMode === "verify") {
+      // Verify PIN for app access
       if (pinHash === storedHash) {
         msg.textContent = "Access granted ✓";
         msg.classList.add("success");
@@ -1544,16 +1618,59 @@ async function submitPin() {
           input.classList.remove("error");
         }, 500);
       }
-    } else {
-      // Set new PIN (setup mode)
-      localStorage.setItem("cashflow_pin_hash", pinHash);
-      msg.textContent = "PIN set successfully ✓";
-      msg.classList.add("success");
-      setTimeout(() => {
-        hidePinOverlay();
+    } else if (pinMode === "changeVerify") {
+      // Verify old PIN before allowing change
+      if (pinHash === storedHash) {
+        msg.textContent = "✓ Verified";
+        msg.classList.add("success");
+        setTimeout(() => {
+          pinMode = "changeNew";
+          showPinOverlay("changeNew");
+        }, 500);
+      } else {
+        msg.textContent = "Incorrect PIN";
+        msg.classList.add("error");
+        input.classList.add("error");
         input.value = "";
-        toast("PIN secured. Use it to access your data next time.", "ok");
+        updatePinDots(0);
+        setTimeout(() => {
+          input.classList.remove("error");
+        }, 500);
+      }
+    } else if (pinMode === "changeNew") {
+      // Store new PIN and ask for confirmation
+      msg.textContent = "✓ Entered";
+      msg.classList.add("success");
+      tempNewPin = pin;
+      setTimeout(() => {
+        pinMode = "changeConfirm";
+        showPinOverlay("changeConfirm");
       }, 500);
+    } else if (pinMode === "changeConfirm") {
+      // Confirm new PIN matches
+      if (pin === tempNewPin) {
+        const newHash = await hashPin(pin);
+        localStorage.setItem("cashflow_pin_hash", newHash);
+        save();
+        msg.textContent = "PIN changed ✓";
+        msg.classList.add("success");
+        tempNewPin = null;
+        setTimeout(() => {
+          hidePinOverlay();
+          input.value = "";
+          navigate("settings");
+          toast("PIN updated successfully", "ok");
+        }, 500);
+      } else {
+        msg.textContent = "PINs don't match";
+        msg.classList.add("error");
+        input.classList.add("error");
+        input.value = "";
+        updatePinDots(0);
+        setTimeout(() => {
+          input.classList.remove("error");
+        }, 500);
+      }
     }
   } catch (e) {
     msg.textContent = "Error: " + e.message;
@@ -1565,13 +1682,11 @@ async function submitPin() {
 
 // Initialize PIN on app load
 function initPin() {
-  if (isPinSet()) {
-    // Show verification screen
+  if (S.pinEnabled && isPinSet()) {
+    // Show verification screen only if PIN is enabled
     showPinOverlay("verify");
-  } else {
-    // Show setup screen
-    showPinOverlay("setup");
   }
+  // If PIN is not enabled, app loads normally without PIN overlay
 }
 
 // ═══════════════════════════════════════════
