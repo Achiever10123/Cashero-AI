@@ -29,6 +29,107 @@ const CATS = [
 const SK = "cashflow_v2";
 
 // ═══════════════════════════════════════════
+//  API ERROR LOGGING SYSTEM
+// ═══════════════════════════════════════════
+const APILogger = {
+  logs: [],
+  maxLogs: 50,
+
+  log(endpoint, status, duration, error = null, details = {}) {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      endpoint,
+      status,
+      duration: `${duration}ms`,
+      error: error ? error.message : null,
+      stack: error ? error.stack : null,
+      ...details,
+    };
+
+    this.logs.push(entry);
+    if (this.logs.length > this.maxLogs) this.logs.shift();
+
+    // Always log errors to console
+    if (error || status >= 400) {
+      console.error(`[API ERROR] ${endpoint}`, {
+        status,
+        duration: `${duration}ms`,
+        error: error?.message,
+        details,
+      });
+    }
+
+    return entry;
+  },
+
+  getLogs() {
+    return this.logs;
+  },
+
+  getLastError() {
+    return this.logs.reverse().find((log) => log.error || log.status >= 400);
+  },
+
+  exportLogs() {
+    return JSON.stringify(this.logs, null, 2);
+  },
+
+  clear() {
+    this.logs = [];
+  },
+};
+
+// Expose for debugging
+window.APILogger = APILogger;
+
+// ═══════════════════════════════════════════
+//  API CALL WRAPPER WITH ERROR HANDLING
+// ═══════════════════════════════════════════
+async function fetchAPI(endpoint, options = {}) {
+  const startTime = performance.now();
+
+  try {
+    const response = await fetch(endpoint, options);
+    const duration = Math.round(performance.now() - startTime);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error = new Error(
+        errorData.error?.message || `HTTP ${response.status}`,
+      );
+      error.status = response.status;
+      error.data = errorData;
+
+      APILogger.log(endpoint, response.status, duration, error, {
+        method: options.method || "GET",
+        errorDetails: errorData,
+      });
+
+      throw error;
+    }
+
+    const data = await response.json();
+    APILogger.log(endpoint, response.status, duration, null, {
+      method: options.method || "GET",
+    });
+
+    return data;
+  } catch (error) {
+    const duration = Math.round(performance.now() - startTime);
+
+    // Only log if we haven't already logged this error
+    if (!error.status) {
+      APILogger.log(endpoint, 0, duration, error, {
+        method: options.method || "GET",
+        isNetworkError: true,
+      });
+    }
+
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════
 //  EFF WORDLIST (for recovery phrases)
 // ═══════════════════════════════════════════
 const EFF_WORDLIST = [
@@ -1283,19 +1384,22 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 {"verdict":"one brutal sentence on their financial health","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month"}`;
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
+    const json = await fetchAPI(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_KEY}`,
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }],
+        }),
       },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    const json = await res.json();
+    );
+
     const text = json.choices?.[0]?.message?.content || "";
     const a = JSON.parse(text.replace(/```json|```/g, "").trim());
     S.lastAnalysis = a;
@@ -1310,8 +1414,15 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
     localStorage.setItem("cashflow_last_analysis", analysisLastRun.toString());
     startCooldownTimer(btn, 60);
   } catch (e) {
-    out.innerHTML = `<div style="color:var(--red);font-size:12px">Analysis failed — try again</div>`;
-    toast("Analysis failed", "err");
+    console.error("[ANALYSIS ERROR]", e);
+    const errMsg =
+      e.status === 401
+        ? "Invalid API key"
+        : e.status === 429
+          ? "Rate limited — wait a moment"
+          : "Analysis failed — try again";
+    out.innerHTML = `<div style="color:var(--red);font-size:12px">${errMsg}</div>`;
+    toast(errMsg, "err");
     btn.disabled = false;
     btn.textContent = "✦ Analyze Now";
   }
@@ -1408,19 +1519,22 @@ async function runCheckin() {
 Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn} | Daily rate: ${fmt(dailyRate)}
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
+    const json = await fetchAPI(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_KEY}`,
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          max_tokens: 300,
+          messages: [{ role: "user", content: prompt }],
+        }),
       },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    const json = await res.json();
+    );
+
     const text = json.choices?.[0]?.message?.content || "";
     S.lastCheckin = text;
     S.lastCheckinDate = new Date().toISOString();
@@ -1429,7 +1543,15 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
     renderCheckinBanner();
     toast("Check-in complete ✓");
   } catch (e) {
-    out.innerHTML = `<div style="color:var(--red);font-size:12px">Failed — try again</div>`;
+    console.error("[CHECK-IN ERROR]", e);
+    const errMsg =
+      e.status === 401
+        ? "Invalid API key"
+        : e.status === 429
+          ? "Rate limited — wait a moment"
+          : "Failed — try again";
+    out.innerHTML = `<div style="color:var(--red);font-size:12px">${errMsg}</div>`;
+    toast(errMsg, "err");
   }
 }
 
@@ -1460,19 +1582,22 @@ Categories available: ${CATS.map((c) => c.name).join(", ")}
 JSON format: {"amount":number,"category":"exact category name from list","note":"brief description","date":"YYYY-MM-DD"}
 If amount not found, use 0. Pick the closest matching category.`;
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
+    const json = await fetchAPI(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_KEY}`,
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          max_tokens: 200,
+          messages: [{ role: "user", content: prompt }],
+        }),
       },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        max_tokens: 200,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    const json = await res.json();
+    );
+
     const text = json.choices?.[0]?.message?.content || "";
     nlpParsed = JSON.parse(text.replace(/```json|```/g, "").trim());
     document.getElementById("np-amount").textContent = fmt(
@@ -1497,7 +1622,14 @@ If amount not found, use 0. Pick the closest matching category.`;
       nlpParsed.date || new Date().toISOString().slice(0, 10);
     document.getElementById("nlp-form").style.display = "block";
   } catch (e) {
-    toast("Could not parse — fill manually", "err");
+    console.error("[NLP PARSE ERROR]", e);
+    const errMsg =
+      e.status === 401
+        ? "Invalid API key"
+        : e.status === 429
+          ? "Rate limited — wait a moment"
+          : "Could not parse — fill manually";
+    toast(errMsg, "err");
     document.getElementById("nlp-form").style.display = "block";
     document.getElementById("qa-amount").value = "";
     document.getElementById("qa-date").value = new Date()
