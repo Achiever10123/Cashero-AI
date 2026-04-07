@@ -29,7 +29,16 @@ const CATS = [
 const SK = "cashflow_v2";
 
 // ═══════════════════════════════════════════
-//  API ERROR LOGGING SYSTEM
+//  SECURITY UTILITIES
+// ═══════════════════════════════════════════
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════
 // ═══════════════════════════════════════════
 const APILogger = {
   logs: [],
@@ -981,7 +990,7 @@ function renderGoals() {
         daysLeft !== null && daysLeft < 30 ? "var(--red)" : "var(--text3)";
       return `<div class="goal-track-item">
       <div class="goal-head">
-        <div class="goal-name">${g.name}</div>
+        <div class="goal-name">${escapeHtml(g.name)}</div>
         <div class="goal-pct">${pct.toFixed(0)}%</div>
       </div>
       <div class="prog-wrap" style="height:7px;"><div class="prog-fill" style="width:${pct}%;background:${pct >= 100 ? "var(--green)" : "var(--accent)"}"></div></div>
@@ -1069,7 +1078,7 @@ function renderRecurring() {
       return `<div class="recur-item">
       <div class="recur-icon" style="background:${c.color}22">${c.icon}</div>
       <div class="recur-info">
-        <div class="recur-name">${r.name}</div>
+        <div class="recur-name">${escapeHtml(r.name)}</div>
         <div class="recur-meta">${r.freq} · ${r.cat}${r.day ? ` · day ${r.day}` : ""}</div>
       </div>
       <div class="recur-amount">${fmt(r.amount)}</div>
@@ -1217,7 +1226,7 @@ function renderPayoutHistory() {
       (
         p,
       ) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);">
-    <div><div style="font-size:12px">${MONTHS[p.month]} ${p.year}</div>${p.note ? `<div style="font-size:10px;color:var(--text3)">${p.note}</div>` : ""}</div>
+    <div><div style="font-size:12px">${MONTHS[p.month]} ${p.year}</div>${p.note ? `<div style="font-size:10px;color:var(--text3)">${escapeHtml(p.note)}</div>` : ""}</div>
     <div style="font-size:14px;font-weight:700;color:var(--accent2)">${fmt(p.amount)}</div>
   </div>`,
     )
@@ -1261,7 +1270,7 @@ function renderTxList(id, list, showDel) {
       return `<div class="tx-row">
       <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
       <div class="tx-info">
-        <div class="tx-name">${e.note || e.category}</div>
+        <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
         <div class="tx-meta">${e.date} · ${e.category}</div>
       </div>
       <div class="tx-right">
@@ -1676,8 +1685,21 @@ function toggleTheme() {
 }
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", S.theme);
-  document.getElementById("theme-icon").textContent =
-    S.theme === "dark" ? "◑" : "●";
+
+  // Update theme icon SVG
+  const themeIcon = document.getElementById("theme-icon");
+  if (themeIcon) {
+    if (S.theme === "dark") {
+      // Moon icon for dark mode
+      themeIcon.innerHTML =
+        '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    } else {
+      // Sun icon for light mode
+      themeIcon.innerHTML =
+        '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+    }
+  }
+
   document.getElementById("theme-label").textContent =
     S.theme === "dark" ? "Light Mode" : "Dark Mode";
   document.getElementById("theme-meta").content =
@@ -1687,22 +1709,63 @@ function applyTheme() {
 // ═══════════════════════════════════════════
 //  CSV EXPORT
 // ═══════════════════════════════════════════
+function openCSVExportModal() {
+  const modal = document.getElementById("csv-export-modal");
+
+  // Set default date range (last 30 days)
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  document.getElementById("csv-start-date").value = thirtyDaysAgo
+    .toISOString()
+    .split("T")[0];
+  document.getElementById("csv-end-date").value = today
+    .toISOString()
+    .split("T")[0];
+
+  modal.classList.add("open");
+}
+
+function closeCSVExportModal() {
+  document.getElementById("csv-export-modal").classList.remove("open");
+}
+
 function exportCSV() {
+  const startDateInput = document.getElementById("csv-start-date").value;
+  const endDateInput = document.getElementById("csv-end-date").value;
+
+  // Parse dates
+  const startDate = startDateInput ? new Date(startDateInput) : new Date(0);
+  const endDate = endDateInput ? new Date(endDateInput) : new Date();
+
+  // Filter expenses by date range
+  const filteredExpenses = S.expenses.filter((e) => {
+    const expenseDate = new Date(e.date);
+    return expenseDate >= startDate && expenseDate <= endDate;
+  });
+
+  // Build CSV with headers including Category
   const header = "Date,Category,Note,Amount,Recurring\n";
-  const rows = S.expenses
+  const rows = filteredExpenses
     .map(
       (e) =>
         `"${e.date}","${e.category}","${(e.note || "").replace(/"/g, '""')}","${e.amount}","${e.recurringId ? "Yes" : "No"}"`,
     )
     .join("\n");
+
   const blob = new Blob([header + rows], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `cashflow-export-${new Date().toISOString().slice(0, 10)}.csv`;
+
+  // Create filename with date range
+  const startStr = startDateInput || "start";
+  const endStr = endDateInput || "end";
+  a.download = `cashflow-export-${startStr}-to-${endStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast("CSV exported ✓");
+  toast(`CSV exported (${filteredExpenses.length} records) ✓`);
+  closeCSVExportModal();
 }
 
 // ═══════════════════════════════════════════
@@ -1806,6 +1869,11 @@ async function togglePinLock() {
     if (
       confirm("Disable PIN lock? Your data will be accessible without a PIN.")
     ) {
+      // Clear inactivity timer when disabling PIN
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = null;
+      }
       localStorage.removeItem("cashflow_pin_hash");
       S.pinEnabled = false;
       save();
@@ -1830,6 +1898,8 @@ function startChangePinFlow() {
 //  PIN SECURITY
 // ═══════════════════════════════════════════
 let pinMode = "verify"; // verify, setup, changeVerify, changeNew
+let inactivityTimer = null;
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 // Hash PIN using SubtleCrypto (Web Crypto API)
 async function hashPin(pin) {
@@ -1846,6 +1916,54 @@ async function hashPin(pin) {
 // Check if PIN is set in localStorage
 function isPinSet() {
   return !!localStorage.getItem("cashflow_pin_hash");
+}
+
+// ═══════════════════════════════════════════
+//  AUTO-LOCK FUNCTIONALITY
+// ═══════════════════════════════════════════
+function resetInactivityTimer() {
+  // Only track inactivity if PIN is enabled
+  if (!S.pinEnabled || !isPinSet()) return;
+
+  // Clear existing timer
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+  }
+
+  // Set new timer
+  inactivityTimer = setTimeout(() => {
+    triggerAutoLock();
+  }, INACTIVITY_TIMEOUT);
+}
+
+function triggerAutoLock() {
+  // Lock the app by showing PIN overlay
+  if (S.pinEnabled && isPinSet()) {
+    pinMode = "verify";
+    showPinOverlay("verify");
+    toast("Session locked due to inactivity", "inf");
+  }
+}
+
+function setupActivityListeners() {
+  // Only setup if PIN is enabled
+  if (!S.pinEnabled || !isPinSet()) return;
+
+  const events = [
+    "mousedown",
+    "keydown",
+    "touchstart",
+    "click",
+    "scroll",
+    "wheel",
+  ];
+
+  events.forEach((event) => {
+    document.addEventListener(event, resetInactivityTimer, true);
+  });
+
+  // Start initial timer
+  resetInactivityTimer();
 }
 
 // Show/hide PIN overlay
@@ -1983,6 +2101,8 @@ async function submitPin() {
         setTimeout(() => {
           hidePinOverlay();
           input.value = "";
+          // Reset inactivity timer on successful PIN verification
+          resetInactivityTimer();
         }, 500);
       } else {
         msg.textContent = "Incorrect PIN";
@@ -2262,6 +2382,9 @@ async function verifyRecoveryPhrase(phrase) {
 
 // Initialize PIN on app load
 async function initPin() {
+  // Set up activity listeners (they'll only trigger if PIN is enabled)
+  setupActivityListeners();
+
   if (S.pinEnabled && isPinSet()) {
     // Show verification screen only if PIN is enabled
     showPinOverlay("verify");
@@ -2361,6 +2484,202 @@ function detectDuplicates() {
 // ═══════════════════════════════════════════
 //  BACKUP & RESTORE JSON
 // ═══════════════════════════════════════════
+
+// Schema definition for validation
+const BACKUP_SCHEMA = {
+  expenses: {
+    type: "array",
+    required: true,
+    itemSchema: {
+      id: { type: "number", required: true },
+      amount: { type: "number", required: true },
+      category: { type: "string", required: true },
+      note: { type: "string", required: false },
+      date: { type: "string", required: true },
+      recurringId: { type: "number", required: false },
+    },
+  },
+  payouts: {
+    type: "array",
+    required: true,
+    itemSchema: {
+      id: { type: "number", required: true },
+      amount: { type: "number", required: true },
+      month: { type: "number", required: true },
+      year: { type: "number", required: true },
+      note: { type: "string", required: false },
+    },
+  },
+  goals: {
+    type: "array",
+    required: false,
+    itemSchema: {
+      id: { type: "number", required: true },
+      name: { type: "string", required: true },
+      target: { type: "number", required: true },
+      saved: { type: "number", required: true },
+      deadline: { type: "string", required: false },
+    },
+  },
+  recurring: {
+    type: "array",
+    required: false,
+    itemSchema: {
+      id: { type: "number", required: true },
+      name: { type: "string", required: true },
+      amount: { type: "number", required: true },
+      cat: { type: "string", required: true },
+      freq: { type: "string", required: true },
+      day: { type: "number", required: false },
+    },
+  },
+  lastAnalysis: { type: "string", required: false },
+  lastAnalysisDate: { type: "string", required: false },
+  lastCheckin: { type: "string", required: false },
+  lastCheckinDate: { type: "string", required: false },
+  lastAnalysisMonthKey: { type: "string", required: false },
+  theme: { type: "string", required: false },
+  pinEnabled: { type: "boolean", required: false },
+};
+
+function validateBackupSchema(data) {
+  if (!data || typeof data !== "object") {
+    return { valid: false, error: "Backup file must be a JSON object" };
+  }
+
+  // Check for unexpected top-level fields
+  const allowedFields = Object.keys(BACKUP_SCHEMA);
+  const unexpectedFields = Object.keys(data).filter(
+    (field) => !allowedFields.includes(field),
+  );
+  if (unexpectedFields.length > 0) {
+    return {
+      valid: false,
+      error: `Unexpected fields in backup: ${unexpectedFields.join(", ")}. This file may be corrupted or from a different app.`,
+    };
+  }
+
+  // Validate each field
+  for (const [field, fieldSchema] of Object.entries(BACKUP_SCHEMA)) {
+    const value = data[field];
+
+    // Check if required field is missing
+    if (fieldSchema.required && !(field in data)) {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+
+    // Skip validation if field is not present and not required
+    if (!(field in data)) continue;
+
+    // Type validation for arrays
+    if (fieldSchema.type === "array") {
+      if (!Array.isArray(value)) {
+        return {
+          valid: false,
+          error: `Field "${field}" must be an array, got ${typeof value}`,
+        };
+      }
+
+      // Validate each item in array
+      if (fieldSchema.itemSchema) {
+        for (let i = 0; i < value.length; i++) {
+          const item = value[i];
+          if (
+            typeof item !== "object" ||
+            item === null ||
+            Array.isArray(item)
+          ) {
+            return {
+              valid: false,
+              error: `Item ${i} in "${field}" must be an object`,
+            };
+          }
+
+          // Check for unexpected fields in array items
+          const itemAllowedFields = Object.keys(fieldSchema.itemSchema);
+          const itemUnexpectedFields = Object.keys(item).filter(
+            (f) => !itemAllowedFields.includes(f),
+          );
+          if (itemUnexpectedFields.length > 0) {
+            return {
+              valid: false,
+              error: `Item ${i} in "${field}" has unexpected fields: ${itemUnexpectedFields.join(", ")}`,
+            };
+          }
+
+          // Validate each item field
+          for (const [itemField, itemFieldSchema] of Object.entries(
+            fieldSchema.itemSchema,
+          )) {
+            const itemValue = item[itemField];
+
+            // Check required fields in item
+            if (itemFieldSchema.required && !(itemField in item)) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}" is missing required field: ${itemField}`,
+              };
+            }
+
+            // Skip if not present and not required
+            if (!(itemField in item)) continue;
+
+            // Type validation
+            if (typeof itemValue !== itemFieldSchema.type) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}": field "${itemField}" must be ${itemFieldSchema.type}, got ${typeof itemValue}`,
+              };
+            }
+
+            // Value range validation for specific fields
+            if (itemField === "amount" && itemValue < 0) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}": amount cannot be negative`,
+              };
+            }
+            if (itemField === "id" && itemValue <= 0) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}": id must be positive`,
+              };
+            }
+            if (
+              (itemField === "month" || itemField === "day") &&
+              (itemValue < 0 || itemValue > 31)
+            ) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}": ${itemField} must be between 0 and 31`,
+              };
+            }
+            if (
+              itemField === "year" &&
+              (itemValue < 1900 || itemValue > 2100)
+            ) {
+              return {
+                valid: false,
+                error: `Item ${i} in "${field}": year must be between 1900 and 2100`,
+              };
+            }
+          }
+        }
+      }
+    } else {
+      // Type validation for non-array fields
+      if (typeof value !== fieldSchema.type) {
+        return {
+          valid: false,
+          error: `Field "${field}" must be ${fieldSchema.type}, got ${typeof value}`,
+        };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
 function backupJSON() {
   const blob = new Blob([JSON.stringify(S, null, 2)], {
     type: "application/json",
@@ -2381,10 +2700,15 @@ function restoreJSON(event) {
   reader.onload = (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (!Array.isArray(parsed.expenses) || !Array.isArray(parsed.payouts)) {
-        toast("Invalid backup file", "err");
+
+      // Validate against schema
+      const validation = validateBackupSchema(parsed);
+      if (!validation.valid) {
+        toast(validation.error, "err");
+        event.target.value = "";
         return;
       }
+
       const expCount = parsed.expenses.length;
       const payCount = parsed.payouts.length;
       const goalCount = (parsed.goals || []).length;
@@ -2408,6 +2732,7 @@ function restoreJSON(event) {
         lastCheckinDate: parsed.lastCheckinDate || null,
         lastAnalysisMonthKey: parsed.lastAnalysisMonthKey || null,
         theme: parsed.theme || "dark",
+        pinEnabled: parsed.pinEnabled || false,
       };
       save();
       applyTheme();
@@ -2416,7 +2741,7 @@ function restoreJSON(event) {
       initYearPills();
       toast(`Restored: ${expCount} expenses, ${payCount} payouts ✓`);
     } catch (err) {
-      toast("Failed to parse backup file", "err");
+      toast("Failed to parse backup file - invalid JSON", "err");
     }
     event.target.value = "";
   };
@@ -2639,6 +2964,26 @@ function renderYearly() {
 //  PDF REPORT (browser print)
 // ═══════════════════════════════════════════
 function printPDFReport() {
+  // Check if there are any transactions
+  if (!S.expenses || S.expenses.length === 0) {
+    toast("No transactions yet. Add expenses to generate a report.", "err");
+    return;
+  }
+
+  // Check if there's data for the current year
+  const yearlyExpenses = S.expenses.filter((e) =>
+    e.date.startsWith(activeYear),
+  );
+  const payouts = S.payouts.filter((p) => p.date.startsWith(activeYear));
+
+  if (yearlyExpenses.length === 0 && payouts.length === 0) {
+    toast(
+      `No transactions found for ${activeYear}. Add data to generate a report.`,
+      "err",
+    );
+    return;
+  }
+
   document
     .querySelectorAll(".page")
     .forEach((p) => p.classList.remove("active"));

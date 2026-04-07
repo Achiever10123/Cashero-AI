@@ -327,10 +327,14 @@ nav {
   transition-delay: 0.08s;
 }
 .nav-icon {
-  font-size: 16px;
   width: 22px;
-  text-align: center;
+  height: 22px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  stroke: currentColor;
 }
 .nav-badge {
   margin-left: auto;
@@ -398,7 +402,8 @@ nav {
 
 /* ═══ TOPBAR ═══ */
 #topbar {
-  padding: 18px 32px;
+  height: 64px;
+  padding: 0 32px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -473,6 +478,26 @@ nav {
   background: #5a38e0;
   transform: translateY(-1px);
   box-shadow: 0 6px 20px #6c47ff44;
+}
+
+.topbar-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  transition: all 0.15s;
+}
+
+.topbar-theme-toggle:hover {
+  background: var(--bg3);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 /* ═══ PAGES ═══ */
@@ -1095,6 +1120,20 @@ nav {
 #quick-modal.open {
   display: flex;
 }
+#csv-export-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #00000080;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease;
+}
+#csv-export-modal.open {
+  display: flex;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1384,7 +1423,8 @@ nav {
     display: none;
   }
   #topbar {
-    padding: 14px 20px;
+    height: 60px;
+    padding: 0 20px;
   }
   .page {
     padding: 20px;
