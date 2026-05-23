@@ -570,6 +570,24 @@
                 <path d="M12 8v8" /></svg
               ><span class="nav-label">Compare</span>
             </button>
+            <button class="nav-item" data-page="summary">
+              <svg
+                class="nav-icon"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" /></svg
+              ><span class="nav-label">Summary</span>
+            </button>
             <button class="nav-item" data-page="goals">
               <svg
                 class="nav-icon"
@@ -1018,6 +1036,13 @@
           </div>
         </div>
 
+        <!-- MONTHLY SUMMARY -->
+        <div class="page" id="page-summary">
+          <div class="card">
+            <div id="summary-content"></div>
+          </div>
+        </div>
+
         <!-- GOALS -->
         <div class="page" id="page-goals">
           <div class="g2">
@@ -1421,6 +1446,49 @@
         <!-- SETTINGS -->
         <div class="page" id="page-settings">
           <div class="card">
+            <div class="sec-label" style="margin-bottom: 20px">
+              General Settings
+            </div>
+
+            <!-- Currency Selector -->
+            <div class="setting-item" style="margin-bottom: 24px">
+              <div class="setting-header">
+                <div>
+                  <div class="setting-title">Currency</div>
+                  <div class="setting-desc">
+                    Choose your preferred currency for all transactions
+                  </div>
+                </div>
+              </div>
+              <select
+                id="currency-selector"
+                onchange="changeCurrency()"
+                style="
+                  width: 100%;
+                  padding: 10px;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                  background: var(--bg2);
+                  color: var(--text);
+                  font-size: 13px;
+                  margin-top: 10px;
+                  cursor: pointer;
+                "
+              >
+                <option value="USD">🇺🇸 USD - US Dollar</option>
+                <option value="EUR">🇪🇺 EUR - Euro</option>
+                <option value="GBP">🇬🇧 GBP - British Pound</option>
+                <option value="INR">🇮🇳 INR - Indian Rupee</option>
+                <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+                <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+                <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
+                <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+                <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                <option value="NGN">🇳🇬 NGN - Nigerian Naira</option>
+              </select>
+            </div>
+
             <div class="sec-label" style="margin-bottom: 20px">
               Security Settings <br />
             </div>

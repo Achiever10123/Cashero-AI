@@ -26,6 +26,78 @@ const CATS = [
   { name: "Education", icon: "📚", color: "#34d399" },
   { name: "Other", icon: "📦", color: "#94a3b8" },
 ];
+const CURRENCIES = {
+  USD: { symbol: "$", name: "US Dollar" },
+  EUR: { symbol: "€", name: "Euro" },
+  GBP: { symbol: "£", name: "British Pound" },
+  INR: { symbol: "₹", name: "Indian Rupee" },
+  JPY: { symbol: "¥", name: "Japanese Yen" },
+  CAD: { symbol: "C$", name: "Canadian Dollar" },
+  AUD: { symbol: "A$", name: "Australian Dollar" },
+  CHF: { symbol: "CHF", name: "Swiss Franc" },
+  CNY: { symbol: "¥", name: "Chinese Yuan" },
+  AED: { symbol: "د.إ", name: "UAE Dirham" },
+  NGN: { symbol: "₦", name: "Nigerian Naira" },
+};
+
+// Currency to Regional/Economic Context Mapping
+const CURRENCY_CONTEXT = {
+  USD: {
+    region: "United States",
+    economicContext:
+      "Operating in a developed market with inflation around 3-4%, strong consumer spending trends, tech sector volatility. Cost of living varies significantly by region.",
+  },
+  EUR: {
+    region: "Eurozone",
+    economicContext:
+      "Operating in developed EU markets facing moderate inflation (2-3%), energy cost concerns, stable regulatory environment. Strong purchasing power in most regions.",
+  },
+  GBP: {
+    region: "United Kingdom",
+    economicContext:
+      "Developed market with inflation around 3-4%, post-Brexit economic adjustments, strong finance sector. Standard of living generally high but costs rising.",
+  },
+  INR: {
+    region: "India",
+    economicContext:
+      "Emerging market with growing economy, inflation 5-6%, rapidly rising cost of living in tech hubs, lower overhead costs overall. Strong growth potential.",
+  },
+  JPY: {
+    region: "Japan",
+    economicContext:
+      "Developed market with low inflation (1-2%), conservative consumer spending, strong currency, aging demographic affecting market. Stable costs.",
+  },
+  CAD: {
+    region: "Canada",
+    economicContext:
+      "Developed market with inflation 3-4%, energy sector importance, tech growth, regional cost variations. Similar to US economic patterns.",
+  },
+  AUD: {
+    region: "Australia",
+    economicContext:
+      "Developed market with inflation 3-5%, commodity-driven economy, higher costs of living (especially housing), strong employment trends.",
+  },
+  CHF: {
+    region: "Switzerland",
+    economicContext:
+      "Developed market with low inflation (1-2%), high cost of living, strong currency, banking & finance dominance. Stable but expensive.",
+  },
+  CNY: {
+    region: "China",
+    economicContext:
+      "Emerging economy in transition, moderate inflation (2-3%), significant regional disparities, strong manufacturing base, rapid urbanization.",
+  },
+  AED: {
+    region: "United Arab Emirates",
+    economicContext:
+      "Growing economy dependent on oil/tourism, low inflation, high salaries & expat population, tax advantages. Premium lifestyle costs.",
+  },
+  NGN: {
+    region: "Nigeria",
+    economicContext:
+      "Emerging African market, high inflation (25-30%), currency volatility, oil-dependent economy, rising cost of living in urban areas. Significant growth potential.",
+  },
+};
 const SK = "cashflow_v2";
 
 // ═══════════════════════════════════════════
@@ -360,6 +432,7 @@ const OPENAI_KEY =
 const OPENAI_MODEL = "gpt-4o-mini"; // or 'gpt-4o' for smarter analysis
 const PAGE_META = {
   dashboard: { title: "Dashboard", sub: "Your financial overview" },
+  summary: { title: "Monthly Summary", sub: "Spending insights & analytics" },
   charts: { title: "Charts", sub: "Visual spending breakdown" },
   compare: { title: "Compare", sub: "Month-over-month analysis" },
   goals: { title: "Savings Goals", sub: "Track your targets" },
@@ -384,6 +457,7 @@ let S = {
   lastAnalysisMonthKey: null,
   theme: "dark",
   pinEnabled: false,
+  currency: "USD",
 };
 let activeMonth = mkNow();
 let activeYear = new Date().getFullYear();
@@ -444,8 +518,9 @@ function monthPayout(mk2) {
   return S.payouts.find((p) => p.year == y && p.month == m);
 }
 function fmt(n) {
+  const curr = CURRENCIES[S.currency] || CURRENCIES.USD;
   return (
-    "$" +
+    curr.symbol +
     Number(n).toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -453,7 +528,8 @@ function fmt(n) {
   );
 }
 function fmtShort(n) {
-  return n >= 1000 ? "$" + (n / 1000).toFixed(1) + "k" : fmt(n);
+  const curr = CURRENCIES[S.currency] || CURRENCIES.USD;
+  return n >= 1000 ? curr.symbol + (n / 1000).toFixed(1) + "k" : fmt(n);
 }
 
 // ═══════════════════════════════════════════
@@ -515,6 +591,7 @@ function renderAll() {
 }
 function renderPage(page) {
   if (page === "dashboard") renderDashboard();
+  else if (page === "summary") renderMonthlySummary();
   else if (page === "charts") renderCharts();
   else if (page === "compare") renderCompare();
   else if (page === "goals") renderGoals();
@@ -1369,7 +1446,16 @@ async function runAnalysis() {
   const prevSpent = monthExpenses(prevMK).reduce((s, e) => s + e.amount, 0);
   const prevPayout = monthPayout(prevMK)?.amount || 0;
 
-  const prompt = `You are a brutally honest financial advisor for a freelancer. No fluff. Be direct, specific, actionable.
+  // Get economic context for selected currency
+  const currencyInfo = CURRENCIES[S.currency] || CURRENCIES.USD;
+  const currencyContext = CURRENCY_CONTEXT[S.currency] || CURRENCY_CONTEXT.USD;
+
+  const prompt = `You are a brutally honest financial advisor for a freelancer in ${currencyContext.region}. No fluff. Be direct, specific, actionable.
+
+CURRENT LOCATION & ECONOMIC CONTEXT:
+Region: ${currencyContext.region}
+Currency: ${currencyInfo.name}
+${currencyContext.economicContext}
 
 CURRENT MONTH: ${monthLabel(activeMonth)}
 Payout: ${fmt(payout)} | Spent: ${fmt(spent)} | Saved: ${fmt(saved)} (${savePct}%)
@@ -1389,8 +1475,14 @@ ${exps
 
 RECURRING SUBSCRIPTIONS: ${S.recurring.length ? S.recurring.map((r) => `${r.name} ${fmt(r.amount)}/${r.freq}`).join(", ") : "None set"}
 
-Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark humor — like a sarcastic accountant who's seen too much. Roast their spending habits where deserved, but keep it useful:
-{"verdict":"one brutal sentence on their financial health","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month"}`;
+ANALYSIS INSTRUCTIONS:
+- Consider the economic conditions of ${currencyContext.region} when making recommendations
+- Account for regional cost of living, inflation, and market dynamics
+- Make spending advice realistic for their location's economy
+- Reference specific economic challenges or opportunities relevant to their region
+
+Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark humor — like a sarcastic accountant who's seen too much. Roast their spending habits where deserved, but keep it useful and region-aware:
+{"verdict":"one brutal sentence on their financial health in context of their regional economy","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month, considering economic factors"}`;
 
   try {
     const json = await fetchAPI(
@@ -1844,22 +1936,26 @@ function initSelects() {
 // ═══════════════════════════════════════════
 function renderSettings() {
   updatePinToggleButton();
+  updateCurrencySelector();
 }
 
-function updatePinToggleButton() {
-  const btn = document.getElementById("pin-toggle-btn");
-  const changePinSection = document.getElementById("change-pin-section");
+function updateCurrencySelector() {
+  const selector = document.getElementById("currency-selector");
+  if (!selector) return;
+  selector.value = S.currency;
+}
 
-  if (S.pinEnabled) {
-    btn.textContent = "Disable";
-    btn.classList.remove("btn-ghost");
-    btn.classList.add("btn-danger");
-    changePinSection.style.display = "block";
-  } else {
-    btn.textContent = "Enable";
-    btn.classList.remove("btn-danger");
-    btn.classList.add("btn-ghost");
-    changePinSection.style.display = "none";
+function changeCurrency() {
+  const newCurrency = document.getElementById("currency-selector").value;
+  if (newCurrency && CURRENCIES[newCurrency]) {
+    S.currency = newCurrency;
+    save();
+    toast(`Currency changed to ${CURRENCIES[newCurrency].name} ✓`);
+    // Redraw all pages that display currency
+    setTimeout(() => {
+      renderAll();
+      renderMonthPills();
+    }, 100);
   }
 }
 
@@ -2449,40 +2545,179 @@ function detectDuplicates() {
   const banner = document.getElementById("duplicate-banner");
   if (!banner) return;
   const exps = monthExpenses(activeMonth);
+
+  // Enhanced duplicate detection - finds expenses within same day/time range with similar amounts
   const seen = {};
   const dupes = [];
+
   exps.forEach((e) => {
-    const key = `${e.date}__${e.amount}__${e.category}`;
-    seen[key] = (seen[key] || 0) + 1;
+    const key = `${e.date}__${Math.round(e.amount)}__${e.category}`;
+    seen[key] = seen[key] || [];
+    seen[key].push(e);
   });
-  Object.entries(seen).forEach(([key, count]) => {
-    if (count > 1) {
+
+  Object.entries(seen).forEach(([key, items]) => {
+    if (items.length > 1) {
       const [date, amount, category] = key.split("__");
-      dupes.push({ date, amount: +amount, category, count });
+      dupes.push({
+        date,
+        amount: +amount,
+        category,
+        count: items.length,
+        items: items,
+      });
     }
   });
+
   if (!dupes.length) {
     banner.style.display = "none";
     return;
   }
   banner.style.display = "block";
   banner.innerHTML = `<div style="background:#ffc94715;border:1px solid var(--yellow);border-radius:10px;padding:12px 16px;">
-    <div style="font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">⚠ Possible Duplicates Detected</div>
+    <div style="font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">⚠ Possible Duplicates Detected (${dupes.length})</div>
     ${dupes
       .map(
         (
           d,
-        ) => `<div style="font-size:11px;color:var(--text2);padding:3px 0;display:flex;gap:8px;">
+        ) => `<div style="font-size:11px;color:var(--text2);padding:6px 0;display:flex;gap:8px;">
       <span style="color:var(--yellow)">!</span>
-      <span>${fmt(d.amount)} on <strong>${d.category}</strong> — ${d.date} appears <strong>${d.count}×</strong> — delete extras below</span>
+      <span>${fmt(d.amount)} on <strong>${d.category}</strong> — ${d.date} appears <strong>${d.count}×</strong> — check & delete extras</span>
     </div>`,
       )
       .join("")}
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;">💡 Tip: Review in History page to delete duplicate transactions.</div>
   </div>`;
 }
 
 // ═══════════════════════════════════════════
-//  BACKUP & RESTORE JSON
+//  MONTHLY SPENDING SUMMARY
+// ═══════════════════════════════════════════
+function generateMonthlySummary(monthKey) {
+  const exps = monthExpenses(monthKey);
+  const po = monthPayout(monthKey);
+  const payout = po?.amount || 0;
+  const spent = exps.reduce((s, e) => s + e.amount, 0);
+  const saved = payout - spent;
+  const savePct = payout > 0 ? ((saved / payout) * 100).toFixed(1) : 0;
+  const spentPct = payout > 0 ? ((spent / payout) * 100).toFixed(0) : 0;
+
+  const byCat = CATS.map((c) => ({
+    ...c,
+    total: exps
+      .filter((e) => e.category === c.name)
+      .reduce((s, e) => s + e.amount, 0),
+    count: exps.filter((e) => e.category === c.name).length,
+  }))
+    .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const avgPerTx = exps.length > 0 ? spent / exps.length : 0;
+  const topCategory = byCat.length > 0 ? byCat[0] : null;
+
+  return {
+    monthKey,
+    monthLabel: monthLabel(monthKey),
+    payout,
+    spent,
+    saved,
+    savePct,
+    spentPct,
+    transactionCount: exps.length,
+    avgPerTransaction: avgPerTx,
+    byCat,
+    topCategory,
+    dayCount: exps.length > 0 ? new Set(exps.map((e) => e.date)).size : 0,
+  };
+}
+
+function renderMonthlySummary() {
+  const summary = generateMonthlySummary(activeMonth);
+  const el = document.getElementById("summary-content");
+  if (!el) return;
+
+  const summaryHTML = `
+    <div class="summary-header">
+      <h2>${summary.monthLabel}</h2>
+      <p class="summary-period">Monthly Overview & Analytics</p>
+    </div>
+    
+    <div class="summary-stats-grid">
+      <div class="summary-stat">
+        <div class="summary-stat-label">Monthly Income</div>
+        <div class="summary-stat-value" style="color: var(--accent2)">${summary.payout > 0 ? fmt(summary.payout) : "—"}</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Total Spent</div>
+        <div class="summary-stat-value" style="color: var(--red)">${fmt(summary.spent)}</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Saved</div>
+        <div class="summary-stat-value" style="color: ${summary.saved >= 0 ? "var(--green)" : "var(--red)"}">${summary.payout > 0 ? fmt(summary.saved) : "—"}</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Savings Rate</div>
+        <div class="summary-stat-value">${summary.payout > 0 ? summary.savePct + "%" : "—"}</div>
+      </div>
+    </div>
+
+    <div class="summary-details">
+      <div class="summary-detail-row">
+        <span class="detail-label">Total Transactions</span>
+        <span class="detail-value">${summary.transactionCount}</span>
+      </div>
+      <div class="summary-detail-row">
+        <span class="detail-label">Active Days</span>
+        <span class="detail-value">${summary.dayCount}</span>
+      </div>
+      <div class="summary-detail-row">
+        <span class="detail-label">Average per Transaction</span>
+        <span class="detail-value">${fmt(summary.avgPerTransaction)}</span>
+      </div>
+      ${
+        summary.topCategory
+          ? `<div class="summary-detail-row">
+        <span class="detail-label">Top Category</span>
+        <span class="detail-value">${summary.topCategory.icon} ${summary.topCategory.name}</span>
+      </div>`
+          : ""
+      }
+      <div class="summary-detail-row">
+        <span class="detail-label">Spending Percentage</span>
+        <span class="detail-value">${summary.payout > 0 ? summary.spentPct + "%" : "—"}</span>
+      </div>
+    </div>
+
+    <div class="summary-breakdown">
+      <h3 style="margin-bottom: 12px; font-size: 13px; text-transform: uppercase; color: var(--text3); letter-spacing: 1px;">Spending Breakdown</h3>
+      ${
+        summary.byCat.length > 0
+          ? summary.byCat
+              .map((c) => {
+                const pct =
+                  summary.payout > 0
+                    ? ((c.total / summary.payout) * 100).toFixed(1)
+                    : 0;
+                return `<div class="cat-row">
+        <div class="cat-header">
+          <div class="cat-name">${c.icon} <span style="color:${c.color}">${c.name}</span></div>
+          <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
+        </div>
+        <div class="prog-wrap" style="height:6px;"><div class="prog-fill" style="width:${Math.min(100, pct)}%;background:${c.color}"></div></div>
+        <div style="font-size:9px;color:var(--text3);margin-top:3px">${pct}% of income · ${c.count} transaction${c.count !== 1 ? "s" : ""}</div>
+      </div>`;
+              })
+              .join("")
+          : '<div class="empty"><div class="empty-icon">📊</div>No expenses this month</div>'
+      }
+    </div>
+  `;
+
+  el.innerHTML = summaryHTML;
+}
+
+// ═══════════════════════════════════════════
+//  IMPROVED DUPLICATE DETECTION
 // ═══════════════════════════════════════════
 
 // Schema definition for validation

@@ -20,12 +20,14 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 ### Phase 2: Enhanced Analytics (Q2 2026)
 
-- [ ] Monthly spending summary
-- [ ] Category breakdown charts (pie charts, bar graphs)
-- [ ] Spending trend analysis (linear trend, growth rate)
+- [x] Monthly spending summary
+- [x] Category breakdown charts (pie charts, bar graphs)
+- [x] Spending trend analysis (linear trend, growth rate)
+- [x] Duplicate transaction detection
 - [ ] Budget setting and tracking
 - [ ] Spending goals and alerts
 - [ ] Year-over-year comparison
+- [x] Currency changing support
 
 ### Phase 3: Smart Features (Q3 2026)
 
