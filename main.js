@@ -3485,3 +3485,179 @@ checkAllNotifications();
     }
   }
 })();
+
+// ═══════════════════════════════════════════
+//  MOBILE OPTIMIZATION & TOUCH HANDLING
+// ═══════════════════════════════════════════
+(function initMobileUI() {
+  // Detect if device is mobile
+  const isMobile = /iPhone|iPad|iPod|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isTouchDevice = () => {
+    return (
+      (navigator.maxTouchPoints !== undefined && navigator.maxTouchPoints > 0) ||
+      (navigator.msMaxTouchPoints !== undefined && navigator.msMaxTouchPoints > 0)
+    );
+  };
+
+  // Lock body scroll when modal is open
+  const lockScroll = (shouldLock) => {
+    if (shouldLock) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = (window.innerWidth - document.documentElement.clientWidth) + "px";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    }
+  };
+
+  // Monitor modal open/close states
+  const quickModal = document.getElementById("quick-modal");
+  const csvModal = document.getElementById("csv-export-modal");
+  const pinOverlay = document.querySelector(".pin-overlay");
+
+  const updateScrollLock = () => {
+    const isModalOpen =
+      (quickModal && quickModal.classList.contains("open")) ||
+      (csvModal && csvModal.classList.contains("open")) ||
+      (pinOverlay && pinOverlay.classList.contains("active"));
+    lockScroll(isModalOpen);
+  };
+
+  if (quickModal) {
+    const observer = new MutationObserver(updateScrollLock);
+    observer.observe(quickModal, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  if (csvModal) {
+    const observer = new MutationObserver(updateScrollLock);
+    observer.observe(csvModal, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  if (pinOverlay) {
+    const observer = new MutationObserver(updateScrollLock);
+    observer.observe(pinOverlay, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  // Sidebar drawer behavior for mobile
+  const sidebar = document.getElementById("sidebar");
+  const hamburger = document.getElementById("hamburger");
+
+  if (hamburger && isMobile) {
+    // Close sidebar when nav item is clicked on mobile
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        if (window.innerWidth <= 480 && sidebar.classList.contains("expanded")) {
+          sidebar.classList.remove("expanded");
+        }
+      });
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        window.innerWidth <= 480 &&
+        sidebar.classList.contains("expanded") &&
+        !sidebar.contains(e.target) &&
+        !hamburger.contains(e.target)
+      ) {
+        sidebar.classList.remove("expanded");
+      }
+    });
+  }
+
+  // Prevent double-tap zoom on buttons
+  if (isTouchDevice()) {
+    document.addEventListener("touchend", (e) => {
+      if (
+        e.target.closest("button") ||
+        e.target.closest("input") ||
+        e.target.closest('[role="button"]')
+      ) {
+        e.preventDefault();
+      }
+    }, false);
+  }
+
+  // Optimize viewport for notches and safe areas
+  const setupSafeAreas = () => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: max(12px, env(safe-area-inset-left));
+          padding-right: max(12px, env(safe-area-inset-right));
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
+        #topbar {
+          padding-left: max(12px, env(safe-area-inset-left));
+          padding-right: max(12px, env(safe-area-inset-right));
+        }
+      }
+    `;
+    if (window.innerWidth <= 480) {
+      document.head.appendChild(style);
+    }
+  };
+
+  setupSafeAreas();
+
+  // Handle viewport orientation changes
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      // Recalculate layouts on orientation change
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
+  });
+
+  // Optimize input fields on mobile
+  document.addEventListener("focus", (e) => {
+    if (
+      e.target.tagName === "INPUT" ||
+      e.target.tagName === "TEXTAREA" ||
+      e.target.tagName === "SELECT"
+    ) {
+      if (window.innerWidth <= 480) {
+        // Scroll input into view on mobile to avoid virtual keyboard overlap
+        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, true);
+
+  // Reduce motion for users who prefer it
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.documentElement.style.setProperty("--transition-duration", "0.01s");
+    // Apply reduced motion styles
+    const style = document.createElement("style");
+    style.textContent = `
+      * {
+        animation-duration: 0.01s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01s !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Performance: Lazy load non-critical resources
+  if ("IntersectionObserver" in window) {
+    // Can be used for charts and heavy components
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // Trigger rendering for intersecting elements
+        }
+      });
+    });
+  }
+
+  // Store mobile device info for debugging
+  window.deviceInfo = {
+    isMobile,
+    isTouchDevice: isTouchDevice(),
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+    userAgent: navigator.userAgent,
+  };
+})();
+

@@ -1567,6 +1567,372 @@ nav {
   }
 }
 
+/* ── Mobile (≤480px) — PHONE OPTIMIZATION ── */
+@media (max-width: 480px) {
+  /* ═══ VIEWPORT & LAYOUT ═══ */
+  html,
+  body {
+    font-size: 16px; /* Prevent zoom on input focus */
+  }
+  #app {
+    flex-direction: column;
+  }
+  /* ═══ SIDEBAR — FULL SCREEN MODAL ON MOBILE ═══ */
+  #sidebar {
+    width: 100%;
+    max-height: 50vh;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 25;
+    overflow-y: auto;
+  }
+  #sidebar.expanded {
+    width: 100%;
+    transform: translateY(0);
+  }
+  /* ═══ TOPBAR ═══ */
+  #topbar {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .page-title {
+    font-size: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+  .page-sub {
+    display: none !important;
+  }
+  /* ═══ MAIN CONTENT ═══ */
+  #main {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .page {
+    padding: 12px;
+  }
+  /* ═══ BUTTONS & TOUCH TARGETS ═══ */
+  .btn,
+  .quick-add-btn,
+  #hamburger,
+  .theme-toggle,
+  .month-pill,
+  .btn-primary,
+  .btn-ghost,
+  .btn-danger,
+  .btn-green,
+  .notif-bell,
+  .del-btn {
+    min-height: 44px; /* iOS touch target minimum */
+    min-width: 44px;
+    padding: 10px 16px;
+  }
+  .quick-add-btn {
+    width: auto;
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  /* ═══ STAT CARDS ═══ */
+  .stat-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 12px 14px;
+  }
+  .stat-val {
+    font-size: 18px;
+  }
+  .stat-label {
+    font-size: 8px;
+  }
+  .stat-sub {
+    font-size: 9px;
+  }
+  /* ═══ GRIDS ═══ */
+  .g2,
+  .g3,
+  .g21,
+  .g12,
+  .summary-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  /* ═══ CARDS ═══ */
+  .card {
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+  .card-sm {
+    padding: 12px 14px;
+  }
+  .sec-label {
+    font-size: 8px;
+    margin-bottom: 10px;
+  }
+  /* ═══ FORMS ═══ */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    padding: 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: 44px;
+  }
+  .field input.big {
+    font-size: 24px;
+    padding: 12px;
+  }
+  .field label {
+    font-size: 8px;
+    margin-bottom: 6px;
+  }
+  /* ═══ MODALS ═══ */
+  #quick-modal {
+    align-items: flex-end;
+  }
+  #quick-modal.open,
+  #csv-export-modal.open {
+    display: flex !important;
+  }
+  .modal-box {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 18px 14px 24px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .modal-close {
+    padding: 6px;
+    font-size: 20px;
+  }
+  /* ═══ PIN MODAL ═══ */
+  .pin-modal {
+    padding: 32px 16px;
+    border-radius: 16px;
+  }
+  .pin-header {
+    margin-bottom: 24px;
+  }
+  .pin-title {
+    font-size: 24px;
+  }
+  .pin-input {
+    padding: 14px;
+    font-size: 26px;
+    letter-spacing: 6px;
+  }
+  .pin-submit-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  /* ═══ TRANSACTIONS ═══ */
+  .tx-row {
+    padding: 12px 0;
+    gap: 10px;
+  }
+  .tx-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  .tx-name {
+    font-size: 12px;
+  }
+  .tx-meta {
+    font-size: 9px;
+  }
+  .tx-amount {
+    font-size: 13px;
+  }
+  /* ═══ CATEGORIES ═══ */
+  .cat-row {
+    padding: 10px 0;
+  }
+  .cat-name {
+    font-size: 12px;
+  }
+  /* ═══ NOTIFICATIONS ═══ */
+  #notif-panel {
+    width: 100%;
+    max-width: 100%;
+    z-index: 100;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+  }
+  #notif-panel.open {
+    transform: translateY(0);
+  }
+  .notif-header {
+    padding: 16px;
+  }
+  .notif-bell {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .notif-perm-btn {
+    padding: 12px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+  /* ═══ CHARTS ═══ */
+  .chart-wrap {
+    height: 240px !important;
+  }
+  .heatmap-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .heatmap-day {
+    border-radius: 2px;
+  }
+  /* ═══ TABLES ═══ */
+  .mom-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mom-table {
+    min-width: 100%;
+    font-size: 10px;
+    border-collapse: collapse;
+  }
+  .mom-table th,
+  .mom-table td {
+    padding: 8px;
+    font-size: 10px;
+  }
+  /* ═══ SCROLLABLE LISTS ═══ */
+  .scroll-list {
+    max-height: 300px;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* ═══ ANALYSIS BOXES ═══ */
+  .verdict-box,
+  .danger-box,
+  .goal-box,
+  .warn-box,
+  .dup-banner {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .verdict-text {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  /* ═══ GOALS & RECURRING ═══ */
+  .goal-track-item {
+    padding: 12px 0;
+  }
+  .goal-name {
+    font-size: 12px;
+  }
+  .goal-pct {
+    font-size: 11px;
+  }
+  .recur-item {
+    padding: 10px 0;
+    gap: 10px;
+  }
+  .recur-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  /* ═══ TOASTS ═══ */
+  #toast-container {
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+  }
+  .toast {
+    padding: 12px 14px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+  /* ═══ PROJECTION ═══ */
+  .projection-box {
+    padding: 12px 14px;
+  }
+  .proj-row {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+  /* ═══ SPACING & MARGINS ═══ */
+  h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 10px;
+  }
+  .sec-head {
+    margin-bottom: 10px;
+  }
+  /* ═══ EMPTY STATE ═══ */
+  .empty {
+    padding: 30px 14px;
+  }
+  .empty-icon {
+    font-size: 32px;
+  }
+  /* ═══ SETTINGS ═══ */
+  .setting-item {
+    padding: 14px 0;
+  }
+  .setting-header {
+    gap: 12px;
+  }
+  .setting-title {
+    font-size: 13px;
+  }
+  .setting-desc {
+    font-size: 10px;
+  }
+  /* ═══ CHECKIN ═══ */
+  .checkin-banner {
+    padding: 12px 14px;
+    gap: 12px;
+    flex-direction: column;
+  }
+  .checkin-icon {
+    font-size: 20px;
+  }
+  .checkin-title {
+    font-size: 12px;
+  }
+  .checkin-sub {
+    font-size: 10px;
+  }
+  /* ═══ HIGHLIGHT CARD ═══ */
+  .highlight-card {
+    padding: 12px 14px;
+  }
+  .highlight-val {
+    font-size: 18px;
+  }
+  .highlight-label {
+    font-size: 8px;
+  }
+}
+
 /* ═══ PRINT / PDF STYLES ═══ */
 @media print {
   body {
