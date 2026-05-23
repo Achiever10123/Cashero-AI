@@ -1,4 +1,4 @@
-# SEO Optimization - robots.txt for Cashflow AI
+# SEO Optimization - robots.txt for Cashero AI
 # This file tells search engines which pages to crawl and index
 
 # Allow all search engines to crawl the site

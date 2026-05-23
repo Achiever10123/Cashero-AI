@@ -1,4 +1,4 @@
-# Cashflow AI Project
+# Cashero AI Project
 
 A modern web application for tracking and managing personal finances with intelligent expense categorization and analysis.
 

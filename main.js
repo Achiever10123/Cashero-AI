@@ -98,7 +98,7 @@ const CURRENCY_CONTEXT = {
       "Emerging African market, high inflation (25-30%), currency volatility, oil-dependent economy, rising cost of living in urban areas. Significant growth potential.",
   },
 };
-const SK = "cashflow_v2";
+const SK = "cashero_v2";
 
 // ═══════════════════════════════════════════
 //  SECURITY UTILITIES
@@ -479,7 +479,7 @@ function load() {
     if (r) S = JSON.parse(r);
 
     // Restore cooldown timestamp from localStorage
-    const lastAnalysisTime = localStorage.getItem("cashflow_last_analysis");
+    const lastAnalysisTime = localStorage.getItem("cashero_last_analysis");
     if (lastAnalysisTime) {
       analysisLastRun = parseInt(lastAnalysisTime);
     }
@@ -1512,7 +1512,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 
     // ═══ SET COOLDOWN TIMESTAMP ═══
     analysisLastRun = Date.now();
-    localStorage.setItem("cashflow_last_analysis", analysisLastRun.toString());
+    localStorage.setItem("cashero_last_analysis", analysisLastRun.toString());
     startCooldownTimer(btn, 60);
   } catch (e) {
     console.error("[ANALYSIS ERROR]", e);
@@ -1853,7 +1853,7 @@ function exportCSV() {
   // Create filename with date range
   const startStr = startDateInput || "start";
   const endStr = endDateInput || "end";
-  a.download = `cashflow-export-${startStr}-to-${endStr}.csv`;
+  a.download = `cashero-export-${startStr}-to-${endStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   toast(`CSV exported (${filteredExpenses.length} records) ✓`);
@@ -1896,7 +1896,7 @@ function toast(msg, type = "ok") {
 // ═══════════════════════════════════════════
 if ("serviceWorker" in navigator) {
   const swCode = `
-    const CACHE='cashflow-v2';
+    const CACHE='cashero-v2';
     const ASSETS=['.'];
     self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
     self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
@@ -1970,7 +1970,7 @@ async function togglePinLock() {
         clearTimeout(inactivityTimer);
         inactivityTimer = null;
       }
-      localStorage.removeItem("cashflow_pin_hash");
+      localStorage.removeItem("cashero_pin_hash");
       S.pinEnabled = false;
       save();
       updatePinToggleButton();
@@ -2011,7 +2011,7 @@ async function hashPin(pin) {
 
 // Check if PIN is set in localStorage
 function isPinSet() {
-  return !!localStorage.getItem("cashflow_pin_hash");
+  return !!localStorage.getItem("cashero_pin_hash");
 }
 
 // ═══════════════════════════════════════════
@@ -2172,11 +2172,11 @@ async function submitPin() {
 
   try {
     const pinHash = await hashPin(pin);
-    const storedHash = localStorage.getItem("cashflow_pin_hash");
+    const storedHash = localStorage.getItem("cashero_pin_hash");
 
     if (pinMode === "setup") {
       // Set new PIN
-      localStorage.setItem("cashflow_pin_hash", pinHash);
+      localStorage.setItem("cashero_pin_hash", pinHash);
       S.pinEnabled = true;
       save();
       msg.textContent = "PIN set successfully ✓";
@@ -2242,7 +2242,7 @@ async function submitPin() {
       // Confirm new PIN matches
       if (pin === tempNewPin) {
         const newHash = await hashPin(pin);
-        localStorage.setItem("cashflow_pin_hash", newHash);
+        localStorage.setItem("cashero_pin_hash", newHash);
         save();
         msg.textContent = "PIN changed ✓";
         msg.classList.add("success");
@@ -2298,7 +2298,7 @@ async function submitPin() {
     } else if (pinMode === "recoverNewPin") {
       // Set new PIN after recovery
       const newPinHash = await hashPin(pin);
-      localStorage.setItem("cashflow_pin_hash", newPinHash);
+      localStorage.setItem("cashero_pin_hash", newPinHash);
       save();
       msg.textContent = "PIN reset successfully ✓";
       msg.classList.add("success");
@@ -2427,8 +2427,8 @@ async function finishRecoveryPhrase() {
   const { salt, hash } = await hashRecoveryPhrase(wordsText);
 
   // Store in localStorage
-  localStorage.setItem("cashflow_recovery_salt", salt);
-  localStorage.setItem("cashflow_recovery_hash", hash);
+  localStorage.setItem("cashero_recovery_salt", salt);
+  localStorage.setItem("cashero_recovery_hash", hash);
 
   hideRecoveryPhrase();
   navigate("dashboard");
@@ -2465,8 +2465,8 @@ function startForgotPinFlow() {
 
 // Verify recovery phrase for PIN reset
 async function verifyRecoveryPhrase(phrase) {
-  const storedSalt = localStorage.getItem("cashflow_recovery_salt");
-  const storedHash = localStorage.getItem("cashflow_recovery_hash");
+  const storedSalt = localStorage.getItem("cashero_recovery_salt");
+  const storedHash = localStorage.getItem("cashero_recovery_hash");
 
   if (!storedSalt || !storedHash) {
     return false;
@@ -2498,7 +2498,7 @@ async function initPin() {
 async function resetPinToDefault() {
   const defaultPin = "0000";
   const hash = await hashPin(defaultPin);
-  localStorage.setItem("cashflow_pin_hash", hash);
+  localStorage.setItem("cashero_pin_hash", hash);
   S.pinEnabled = true;
   save();
   console.log("✓ PIN reset to: " + defaultPin);
@@ -2922,7 +2922,7 @@ function backupJSON() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `cashflow-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `cashero-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
   toast("Backup downloaded ✓");
@@ -3235,14 +3235,14 @@ initYearPills();
 
 function loadNotifications() {
   try {
-    notifications = JSON.parse(localStorage.getItem("cashflow_notifs") || "[]");
+    notifications = JSON.parse(localStorage.getItem("cashero_notifs") || "[]");
   } catch {
     notifications = [];
   }
 }
 function saveNotifications() {
   localStorage.setItem(
-    "cashflow_notifs",
+    "cashero_notifs",
     JSON.stringify(notifications.slice(0, 50)),
   );
 }
@@ -3371,12 +3371,12 @@ function sendPushNotification(type, body) {
     budget: "💸 Budget Alert",
     recurring: "↺ Recurring Reminder",
     goal: "◎ Goal Update",
-    system: "✦ Cashflow",
+    system: "✦ Cashero",
   };
   try {
-    new Notification(titles[type] || "Cashflow", {
+    new Notification(titles[type] || "Cashero", {
       body,
-      tag: `cashflow-${type}`,
+      tag: `cashero-${type}`,
     });
   } catch (e) {}
 }
@@ -3413,7 +3413,7 @@ function checkBudgetAlert() {
   const spent = monthExpenses(activeMonth).reduce((s, e) => s + e.amount, 0);
   const pct = spent / payout.amount;
   const daysLeft = daysRemainingInMonth();
-  const alertKey = `cashflow_budget_alerted_${activeMonth}`;
+  const alertKey = `cashero_budget_alerted_${activeMonth}`;
   const alerted80 = localStorage.getItem(alertKey + "_80");
   const alerted100 = localStorage.getItem(alertKey + "_100");
   if (pct >= 1.0 && !alerted100) {
@@ -3435,7 +3435,7 @@ function checkRecurringReminders() {
   if (!S.recurring.length) return;
   const today = new Date();
   const tomorrow = today.getDate() + 1;
-  const alertKey = `cashflow_recur_alerted_${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const alertKey = `cashero_recur_alerted_${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
   const alerted = new Set(JSON.parse(localStorage.getItem(alertKey) || "[]"));
   const newAlerts = [];
   S.recurring.forEach((r) => {
@@ -3472,7 +3472,7 @@ checkAllNotifications();
 //  RESTORE COOLDOWN ON PAGE LOAD
 // ═══════════════════════════════════════════
 (function () {
-  const lastAnalysisTime = localStorage.getItem("cashflow_last_analysis");
+  const lastAnalysisTime = localStorage.getItem("cashero_last_analysis");
   if (lastAnalysisTime) {
     analysisLastRun = parseInt(lastAnalysisTime);
     const now = Date.now();
@@ -3491,11 +3491,16 @@ checkAllNotifications();
 // ═══════════════════════════════════════════
 (function initMobileUI() {
   // Detect if device is mobile
-  const isMobile = /iPhone|iPad|iPod|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isMobile =
+    /iPhone|iPad|iPod|Android|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
   const isTouchDevice = () => {
     return (
-      (navigator.maxTouchPoints !== undefined && navigator.maxTouchPoints > 0) ||
-      (navigator.msMaxTouchPoints !== undefined && navigator.msMaxTouchPoints > 0)
+      (navigator.maxTouchPoints !== undefined &&
+        navigator.maxTouchPoints > 0) ||
+      (navigator.msMaxTouchPoints !== undefined &&
+        navigator.msMaxTouchPoints > 0)
     );
   };
 
@@ -3503,7 +3508,8 @@ checkAllNotifications();
   const lockScroll = (shouldLock) => {
     if (shouldLock) {
       document.body.style.overflow = "hidden";
-      document.body.style.paddingRight = (window.innerWidth - document.documentElement.clientWidth) + "px";
+      document.body.style.paddingRight =
+        window.innerWidth - document.documentElement.clientWidth + "px";
     } else {
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
@@ -3525,17 +3531,26 @@ checkAllNotifications();
 
   if (quickModal) {
     const observer = new MutationObserver(updateScrollLock);
-    observer.observe(quickModal, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(quickModal, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
   }
 
   if (csvModal) {
     const observer = new MutationObserver(updateScrollLock);
-    observer.observe(csvModal, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(csvModal, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
   }
 
   if (pinOverlay) {
     const observer = new MutationObserver(updateScrollLock);
-    observer.observe(pinOverlay, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(pinOverlay, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
   }
 
   // Sidebar drawer behavior for mobile
@@ -3546,7 +3561,10 @@ checkAllNotifications();
     // Close sidebar when nav item is clicked on mobile
     document.querySelectorAll(".nav-item").forEach((item) => {
       item.addEventListener("click", () => {
-        if (window.innerWidth <= 480 && sidebar.classList.contains("expanded")) {
+        if (
+          window.innerWidth <= 480 &&
+          sidebar.classList.contains("expanded")
+        ) {
           sidebar.classList.remove("expanded");
         }
       });
@@ -3567,15 +3585,19 @@ checkAllNotifications();
 
   // Prevent double-tap zoom on buttons
   if (isTouchDevice()) {
-    document.addEventListener("touchend", (e) => {
-      if (
-        e.target.closest("button") ||
-        e.target.closest("input") ||
-        e.target.closest('[role="button"]')
-      ) {
-        e.preventDefault();
-      }
-    }, false);
+    document.addEventListener(
+      "touchend",
+      (e) => {
+        if (
+          e.target.closest("button") ||
+          e.target.closest("input") ||
+          e.target.closest('[role="button"]')
+        ) {
+          e.preventDefault();
+        }
+      },
+      false,
+    );
   }
 
   // Optimize viewport for notches and safe areas
@@ -3611,22 +3633,29 @@ checkAllNotifications();
   });
 
   // Optimize input fields on mobile
-  document.addEventListener("focus", (e) => {
-    if (
-      e.target.tagName === "INPUT" ||
-      e.target.tagName === "TEXTAREA" ||
-      e.target.tagName === "SELECT"
-    ) {
-      if (window.innerWidth <= 480) {
-        // Scroll input into view on mobile to avoid virtual keyboard overlap
-        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  document.addEventListener(
+    "focus",
+    (e) => {
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.tagName === "SELECT"
+      ) {
+        if (window.innerWidth <= 480) {
+          // Scroll input into view on mobile to avoid virtual keyboard overlap
+          e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       }
-    }
-  }, true);
+    },
+    true,
+  );
 
   // Reduce motion for users who prefer it
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.documentElement.style.setProperty("--transition-duration", "0.01s");
+    document.documentElement.style.setProperty(
+      "--transition-duration",
+      "0.01s",
+    );
     // Apply reduced motion styles
     const style = document.createElement("style");
     style.textContent = `
@@ -3660,4 +3689,3 @@ checkAllNotifications();
     userAgent: navigator.userAgent,
   };
 })();
-

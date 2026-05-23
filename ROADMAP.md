@@ -1,6 +1,6 @@
-# Cashflow AI Project - Roadmap
+# Cashero AI Project - Roadmap
 
-This document outlines planned features, improvements, and enhancements for the Cashflow AI Project.
+This document outlines planned features, improvements, and enhancements for the Cashero AI Project.
 
 ## Vision
 
