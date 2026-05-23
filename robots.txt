@@ -25,7 +25,7 @@ Crawl-delay: 1
 Request-rate: 1/1s
 
 # Sitemaps
-Sitemap: https://cash-flow-ai.netlify.app/sitemap.xml
+Sitemap: https://cashero-ai.netlify.app/sitemap.xml
 
 # Cache settings
 # These are instructions for how long pages should be cached
