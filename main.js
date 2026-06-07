@@ -16,15 +16,15 @@ const MONTHS = [
   "Dec",
 ];
 const CATS = [
-  { name: "Food & Dining", icon: "🍜", color: "#ff6b6b" },
-  { name: "Transport", icon: "🚗", color: "#00d4c8" },
-  { name: "Software & Tools", icon: "💻", color: "#60a5fa" },
-  { name: "Entertainment", icon: "🎮", color: "#a78bfa" },
-  { name: "Health", icon: "💊", color: "#fbbf24" },
-  { name: "Housing", icon: "🏠", color: "#f472b6" },
-  { name: "Shopping", icon: "🛍️", color: "#f97316" },
-  { name: "Education", icon: "📚", color: "#34d399" },
-  { name: "Other", icon: "📦", color: "#94a3b8" },
+  { name: "Food & Dining", icon: "UtensilsCrossed", color: "#ff6b6b" },
+  { name: "Transport", icon: "Car", color: "#00d4c8" },
+  { name: "Software & Tools", icon: "Laptop", color: "#60a5fa" },
+  { name: "Entertainment", icon: "Gamepad2", color: "#a78bfa" },
+  { name: "Health", icon: "Pill", color: "#fbbf24" },
+  { name: "Housing", icon: "Home", color: "#f472b6" },
+  { name: "Shopping", icon: "ShoppingBag", color: "#f97316" },
+  { name: "Education", icon: "BookOpen", color: "#34d399" },
+  { name: "Other", icon: "Package", color: "#94a3b8" },
 ];
 const CURRENCIES = {
   USD: { symbol: "$", name: "US Dollar" },
@@ -39,6 +39,44 @@ const CURRENCIES = {
   AED: { symbol: "د.إ", name: "UAE Dirham" },
   NGN: { symbol: "₦", name: "Nigerian Naira" },
 };
+
+// ═══════════════════════════════════════════
+//  LUCIDE ICON HELPER
+// ═══════════════════════════════════════════
+function getLucideIcon(name, size = 24) {
+  const icons = {
+    UtensilsCrossed: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h-2.5A2.5 2.5 0 0 0 11 5.5v13a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V5.5a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v13a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V5.5A2.5 2.5 0 0 0 16 3"></path><path d="M2 12.5a6.5 6.5 0 0 1 13 0"></path></svg>`,
+    Car: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.5 0 1-.5 1-1v-3c0-.9-.7-1.7-1.5-1.8C18.4 10.5 16.9 10 15.5 10c-.6 0-1.2-.1-1.7-.3l-1.2-5.2c-.1-.4-.5-.7-1-. 7-2h-3c-.5 0-1 .5-1 1v.5"></path><circle cx="6" cy="17" r="2"></circle><circle cx="18" cy="17" r="2"></circle></svg>`,
+    Laptop: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"></path><path d="M6 17v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2"></path></svg>`,
+    Gamepad2: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4m-2-2v4"></path><circle cx="13" cy="11" r="1"></circle><circle cx="13" cy="15" r="1"></circle><circle cx="16" cy="13" r="1"></circle><path d="M5 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"></path></svg>`,
+    Pill: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6m-11 1 17-17m-2.5 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"></path></svg>`,
+    Home: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
+    ShoppingBag: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>`,
+    BookOpen: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+    Package: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`,
+    X: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-12 12M6 6l12 12"></path></svg>`,
+    Bell: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`,
+    Copy: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`,
+    Download: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+    AlertTriangle: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+    Save: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`,
+    BarChart3: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="16" width="4" height="4"></rect><rect x="15" y="10" width="4" height="10"></rect><rect x="11" y="13" width="4" height="7"></rect></svg>`,
+    TrendingUp: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 17"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`,
+    Palette: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="13" r="8"></circle><path d="M5.5 11.5a7.5 7.5 0 1 0 10.5 10.5"></path><circle cx="5.5" cy="5.5" r="1"></circle><circle cx="18" cy="5" r="1"></circle><circle cx="20" cy="11" r="1"></circle><circle cx="15" cy="20" r="1"></circle></svg>`,
+    Lightbulb: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.83-1.48 1.5-2.75 1.5-4.5A6 6 0 0 0 6 9.5c0 1.75.67 3 1.5 4.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>`,
+    ArrowLeftRight: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline><polyline points="5 12 12 5 19 12"></polyline></svg>`,
+    Target: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="9"></circle></svg>`,
+    RotateCw: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2-8.83"></path></svg>`,
+    Sparkles: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6"></path><path d="M15.5 3.5l4.5 4.5"></path><path d="M15 9h6"></path><path d="M3 15h6"></path><path d="M3.5 15.5l4.5 4.5"></path><path d="M3 21h6"></path></svg>`,
+    Plus: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    Menu: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></svg>`,
+    Grid: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
+    Check: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    Clipboard: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`,
+    Wallet: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 24H5a2 2 0 0 1-2-2V8c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v14c0 1.1-.9 2-2 2z"></path><path d="M16.5 11.5v3"></path></svg>`,
+  };
+  return icons[name] || "";
+}
 
 // Currency to Regional/Economic Context Mapping
 const CURRENCY_CONTEXT = {
@@ -691,7 +729,7 @@ function renderDashboard() {
         const warn = pct > 30 ? '<span class="cat-badge">HIGH</span>' : "";
         return `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name">${c.icon} <span style="color:${c.color}">${c.name}</span>${warn}</div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:5px;"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
@@ -1121,7 +1159,7 @@ function renderGoals() {
         <div class="goal-deadline" style="color:${deadlineColor}">${deadlineStr}${daysLeft !== null ? ` (${daysLeft}d left)` : ""}</div>
         <div style="display:flex;gap:6px;">
           <button class="btn btn-ghost" onclick="addToGoal(${i})" style="font-size:9px;padding:4px 10px;">+ Add</button>
-          <button class="del-btn" onclick="deleteGoal(${i})">✕</button>
+          <button class="del-btn" onclick="deleteGoal(${i})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
         </div>
       </div>
     </div>`;
@@ -1198,13 +1236,13 @@ function renderRecurring() {
     .map((r, i) => {
       const c = cat(r.cat);
       return `<div class="recur-item">
-      <div class="recur-icon" style="background:${c.color}22">${c.icon}</div>
+      <div class="recur-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
       <div class="recur-info">
         <div class="recur-name">${escapeHtml(r.name)}</div>
         <div class="recur-meta">${r.freq} · ${r.cat}${r.day ? ` · day ${r.day}` : ""}</div>
       </div>
       <div class="recur-amount">${fmt(r.amount)}</div>
-      <button class="del-btn" onclick="deleteRecurring(${i})">✕</button>
+      <button class="del-btn" onclick="deleteRecurring(${i})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
     </div>`;
     })
     .join("");
@@ -1411,15 +1449,15 @@ function renderTxList(id, list, showDel) {
         const row = document.createElement("div");
         row.className = "tx-row";
         row.innerHTML = `
-          <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
+          <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
           <div class="tx-info">
             <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
             <div class="tx-meta">${e.date} · ${e.category}</div>
           </div>
           <div class="tx-right">
-            ${e.recurringId ? `<span class="tx-recur">↺</span>` : ""}
+            ${e.recurringId ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getLucideIcon("RotateCw", 12)}</span>` : ""}
             <div class="tx-amount" style="color:${c.color}">${fmt(e.amount)}</div>
-            ${showDel ? `<button class="del-btn" onclick="deleteExpense(${e.id})">✕</button>` : ""}
+            ${showDel ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>` : ""}
           </div>`;
         frag.appendChild(row);
       }
@@ -1465,11 +1503,13 @@ function renderTxList(id, list, showDel) {
       const c =
         CATS.find((x) => x.name === e.category) || CATS[CATS.length - 1];
       const del = showDel
-        ? `<button class="del-btn" onclick="deleteExpense(${e.id})">✕</button>`
+        ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>`
         : "";
-      const recur = e.recurringId ? `<span class="tx-recur">↺</span>` : "";
+      const recur = e.recurringId
+        ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getLucideIcon("RotateCw", 12)}</span>`
+        : "";
       return `<div class="tx-row">
-      <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
+      <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
       <div class="tx-info">
         <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
         <div class="tx-meta">${e.date} · ${e.category}</div>
@@ -1512,7 +1552,7 @@ function renderCatDeep() {
       const warn = pct > 30 ? `<span class="cat-badge">HIGH</span>` : "";
       return `<div class="cat-row">
       <div class="cat-header">
-        <div class="cat-name">${c.icon} <span style="color:${c.color}">${c.name}</span>${warn}</div>
+        <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
         <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div><div style="font-size:9px;color:var(--text3)">${c.count} txn${c.count !== 1 ? "s" : ""}</div></div>
       </div>
       <div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
@@ -2022,7 +2062,7 @@ function toast(msg, type = "ok") {
   close.className = "toast-close";
   close.type = "button";
   close.title = "Dismiss";
-  close.innerHTML = "✕";
+  close.innerHTML = getLucideIcon("X", 16);
   close.addEventListener("click", (e) => {
     e.stopPropagation();
     if (el._timeout) clearTimeout(el._timeout);
@@ -2092,7 +2132,7 @@ function ensureOfflineBanner() {
   close.type = "button";
   close.className = "offline-close";
   close.title = "Dismiss";
-  close.innerHTML = "✕";
+  close.innerHTML = getLucideIcon("X", 16);
   close.addEventListener("click", (e) => {
     e.stopPropagation();
     window._offlineBannerManuallyClosed = true;
@@ -2185,7 +2225,7 @@ function notifySWUpdate(reg) {
 // ═══════════════════════════════════════════
 function initSelects() {
   const catOpts = CATS.map(
-    (c) => `<option value="${c.name}">${c.icon} ${c.name}</option>`,
+    (c) => `<option value="${c.name}">${c.name}</option>`,
   ).join("");
   ["f-cat", "qa-cat", "r-cat"].forEach((id) => {
     const el = document.getElementById(id);
@@ -2952,7 +2992,7 @@ function renderMonthlySummary() {
         summary.topCategory
           ? `<div class="summary-detail-row">
         <span class="detail-label">Top Category</span>
-        <span class="detail-value">${summary.topCategory.icon} ${summary.topCategory.name}</span>
+        <span class="detail-value"><span style="display:inline-block;width:16px;height:16px;margin-right:4px">${getLucideIcon(summary.topCategory.icon, 16)}</span>${summary.topCategory.name}</span>
       </div>`
           : ""
       }
@@ -2974,7 +3014,7 @@ function renderMonthlySummary() {
                     : 0;
                 return `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name">${c.icon} <span style="color:${c.color}">${c.name}</span></div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:6px;"><div class="prog-fill" style="width:${Math.min(100, pct)}%;background:${c.color}"></div></div>
@@ -3384,7 +3424,7 @@ function renderYearly() {
         .map(
           (c) => `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name">${c.icon} <span style="color:${c.color}">${c.name}</span></div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:5px;"><div class="prog-fill" style="width:${((c.total / catMax) * 100).toFixed(0)}%;background:${c.color}"></div></div>
@@ -3963,3 +4003,4 @@ checkAllNotifications();
     userAgent: navigator.userAgent,
   };
 })();
+
