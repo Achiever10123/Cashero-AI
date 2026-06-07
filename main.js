@@ -616,6 +616,14 @@ function renderDashboard() {
   const saved = payout - spent;
   const savePct = payout > 0 ? ((saved / payout) * 100).toFixed(1) : 0;
   const spentPct = payout > 0 ? ((spent / payout) * 100).toFixed(0) : 0;
+  // Compute financial health
+  const healthScore = computeFinancialHealth(exps, payout);
+  const healthColor =
+    healthScore > 75
+      ? "var(--green)"
+      : healthScore > 50
+        ? "var(--yellow)"
+        : "var(--red)";
 
   // Stats
   document.getElementById("stat-grid").innerHTML = `
@@ -638,6 +646,11 @@ function renderDashboard() {
       <div class="stat-label">Transactions</div>
       <div class="stat-val" style="color:var(--teal)">${exps.length}</div>
       <div class="stat-sub">this month</div>
+    </div>
+    <div class="stat-card c-olive">
+      <div class="stat-label">Health Score</div>
+      <div class="stat-val" style="color:${healthColor}">${healthScore}</div>
+      <div class="stat-sub">0-100 (higher is better)</div>
     </div>`;
 
   // Budget bar
@@ -727,6 +740,38 @@ function renderProjection(exps, payout) {
       ${safeDaily ? `<div class="proj-row"><span class="proj-key">Safe to spend/day</span><span class="proj-val" style="color:var(--green)">${fmt(safeDaily)}</span></div>` : ""}
       <div class="proj-row"><span class="proj-key">Days remaining</span><span class="proj-val">${daysLeft}</span></div>
     </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  FINANCIAL HEALTH SCORE
+// ═══════════════════════════════════════════
+function computeFinancialHealth(exps, payout) {
+  if (!payout) return 40; // unknown baseline
+  const spent = exps.reduce((s, e) => s + e.amount, 0);
+  const saved = Math.max(0, payout - spent);
+  const savePct = Math.max(0, Math.min(100, (saved / payout) * 100));
+
+  const avg = exps.length ? spent / exps.length : 0;
+  const sd = exps.length
+    ? Math.sqrt(
+        exps.reduce((s, e) => s + Math.pow(e.amount - avg, 2), 0) / exps.length,
+      )
+    : 0;
+  const volatility = avg ? Math.min(100, (sd / avg) * 100) : 0; // %
+
+  const discCats = ["Shopping", "Entertainment", "Software & Tools"];
+  const disc = exps
+    .filter((e) => discCats.includes(e.category))
+    .reduce((s, e) => s + e.amount, 0);
+  const discPct = Math.min(100, (disc / payout) * 100);
+
+  // Weighted components: savings (50%), volatility (25%), discretionary (25%)
+  const s1 = savePct; // higher is better
+  const s2 = 100 - volatility; // higher is better
+  const s3 = 100 - discPct; // higher is better
+
+  const score = Math.round(s1 * 0.5 + s2 * 0.25 + s3 * 0.25);
+  return Math.max(0, Math.min(100, score));
 }
 
 // ═══════════════════════════════════════════
@@ -1336,6 +1381,85 @@ function renderTxList(id, list, showDel) {
       '<div class="empty"><div class="empty-icon">💸</div>Nothing here yet</div>';
     return;
   }
+  // For very large lists, render in chunks to avoid blocking the main thread.
+  const LARGE_THRESHOLD = 2000;
+  const CHUNK_SIZE = 200;
+
+  // Clean up any previous observers/props
+  if (el._observer) {
+    try {
+      el._observer.disconnect();
+    } catch (e) {}
+    el._observer = null;
+  }
+  el._sentinel = null;
+
+  if (list.length > LARGE_THRESHOLD) {
+    el.innerHTML = "";
+    let rendered = 0;
+
+    function renderChunk() {
+      const frag = document.createDocumentFragment();
+      for (
+        let i = rendered;
+        i < Math.min(list.length, rendered + CHUNK_SIZE);
+        i++
+      ) {
+        const e = list[i];
+        const c =
+          CATS.find((x) => x.name === e.category) || CATS[CATS.length - 1];
+        const row = document.createElement("div");
+        row.className = "tx-row";
+        row.innerHTML = `
+          <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
+          <div class="tx-info">
+            <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
+            <div class="tx-meta">${e.date} · ${e.category}</div>
+          </div>
+          <div class="tx-right">
+            ${e.recurringId ? `<span class="tx-recur">↺</span>` : ""}
+            <div class="tx-amount" style="color:${c.color}">${fmt(e.amount)}</div>
+            ${showDel ? `<button class="del-btn" onclick="deleteExpense(${e.id})">✕</button>` : ""}
+          </div>`;
+        frag.appendChild(row);
+      }
+      el.appendChild(frag);
+      rendered += CHUNK_SIZE;
+
+      if (rendered >= list.length) {
+        // all done
+        if (el._sentinel) {
+          el._observer.disconnect();
+          el._sentinel.remove();
+          el._sentinel = null;
+          el._observer = null;
+        }
+        return;
+      }
+
+      if (!el._sentinel) {
+        const s = document.createElement("div");
+        s.className = "load-sentinel";
+        s.style.padding = "10px";
+        s.style.textAlign = "center";
+        s.textContent = "Loading more…";
+        el.appendChild(s);
+        el._sentinel = s;
+        el._observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting) renderChunk();
+          },
+          { root: el, threshold: 1 },
+        );
+        el._observer.observe(el._sentinel);
+      }
+    }
+
+    renderChunk();
+    return;
+  }
+
+  // Small/medium lists: render directly
   el.innerHTML = list
     .map((e) => {
       const c =
@@ -1884,26 +2008,176 @@ document.addEventListener("keydown", (e) => {
 //  TOAST
 // ═══════════════════════════════════════════
 function toast(msg, type = "ok") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
   const el = document.createElement("div");
   el.className = `toast ${type}`;
-  el.textContent = msg;
-  document.getElementById("toast-container").appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+
+  const txt = document.createElement("span");
+  txt.className = "toast-msg";
+  txt.textContent = msg;
+  el.appendChild(txt);
+
+  const close = document.createElement("button");
+  close.className = "toast-close";
+  close.type = "button";
+  close.title = "Dismiss";
+  close.innerHTML = "✕";
+  close.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (el._timeout) clearTimeout(el._timeout);
+    el.remove();
+  });
+  el.appendChild(close);
+
+  container.appendChild(el);
+
+  // Auto-remove after 3s unless dismissed
+  el._timeout = setTimeout(() => el.remove(), 3000);
 }
 
 // ═══════════════════════════════════════════
 //  PWA SERVICE WORKER
 // ═══════════════════════════════════════════
 if ("serviceWorker" in navigator) {
-  const swCode = `
-    const CACHE='cashero-v2';
-    const ASSETS=['.'];
-    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
-    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
-  `;
-  const blob = new Blob([swCode], { type: "application/javascript" });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
+  // Register the dedicated service worker file at the app root
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then((reg) => {
+      console.log("ServiceWorker registered:", reg.scope);
+
+      // Listen for updates to the service worker and notify user
+      if (reg.waiting) {
+        notifySWUpdate(reg);
+      }
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (
+            newWorker.state === "installed" &&
+            navigator.serviceWorker.controller
+          ) {
+            notifySWUpdate(reg);
+          }
+        });
+      });
+    })
+    .catch((err) => {
+      console.warn("ServiceWorker registration failed:", err);
+    });
+}
+
+// Offline banner & online/offline toasts
+function ensureOfflineBanner() {
+  if (document.getElementById("offline-banner")) return;
+  const b = document.createElement("div");
+  b.id = "offline-banner";
+  b.style.position = "fixed";
+  b.style.left = "0";
+  b.style.right = "0";
+  b.style.top = "0";
+  b.style.padding = "8px 12px";
+  b.style.background = "var(--red)";
+  b.style.color = "white";
+  b.style.textAlign = "center";
+  b.style.zIndex = 9999;
+  b.style.display = "none";
+  const span = document.createElement("span");
+  span.className = "offline-msg";
+  span.textContent = "You are offline — some features may be limited.";
+  b.appendChild(span);
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "offline-close";
+  close.title = "Dismiss";
+  close.innerHTML = "✕";
+  close.addEventListener("click", (e) => {
+    e.stopPropagation();
+    window._offlineBannerManuallyClosed = true;
+    hideOfflineBanner();
+  });
+  b.appendChild(close);
+
+  document.body.appendChild(b);
+}
+
+function showOfflineBanner() {
+  ensureOfflineBanner();
+  const b = document.getElementById("offline-banner");
+  // Respect manual dismissal until connection returns
+  if (window._offlineBannerManuallyClosed) return;
+  b.style.display = "block";
+}
+
+function hideOfflineBanner() {
+  const b = document.getElementById("offline-banner");
+  if (b) b.style.display = "none";
+}
+
+window.addEventListener("online", () => {
+  // Throttle connectivity toasts to avoid spam
+  // Clear manual-close guard so future offline events can show banner
+  window._offlineBannerManuallyClosed = false;
+  hideOfflineBanner();
+  if (
+    !window._lastConnectivityToast ||
+    Date.now() - window._lastConnectivityToast > 3000
+  ) {
+    toast("Back online", "ok");
+    window._lastConnectivityToast = Date.now();
+  }
+});
+window.addEventListener("offline", () => {
+  showOfflineBanner();
+  if (
+    !window._lastConnectivityToast ||
+    Date.now() - window._lastConnectivityToast > 3000
+  ) {
+    toast("You are offline", "err");
+    window._lastConnectivityToast = Date.now();
+  }
+});
+
+// Show initial state
+if (!navigator.onLine) {
+  showOfflineBanner();
+  if (!window._lastConnectivityToast) {
+    toast("You are offline", "err");
+    window._lastConnectivityToast = Date.now();
+  }
+}
+
+// Notify user there's an update available and offer to reload
+function notifySWUpdate(reg) {
+  const updateId = "sw-update-available";
+  if (document.getElementById(updateId)) return;
+  const el = document.createElement("div");
+  el.id = updateId;
+  el.style.position = "fixed";
+  el.style.right = "12px";
+  el.style.bottom = "12px";
+  el.style.background = "var(--accent2)";
+  el.style.color = "#fff";
+  el.style.padding = "10px 12px";
+  el.style.borderRadius = "8px";
+  el.style.zIndex = 9999;
+  el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)";
+  el.innerHTML =
+    'Update available — <button id="reload-sw-btn" style="margin-left:8px;padding:6px 8px;border:none;border-radius:6px;cursor:pointer">Reload</button>';
+  document.body.appendChild(el);
+
+  document
+    .getElementById("reload-sw-btn")
+    .addEventListener("click", async () => {
+      // Tell the waiting worker to skipWaiting, then reload
+      if (!reg || !reg.waiting) return window.location.reload();
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      reg.waiting.addEventListener("statechange", (e) => {
+        if (reg.waiting.state === "activated") window.location.reload();
+      });
+    });
 }
 
 // ═══════════════════════════════════════════

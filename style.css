@@ -30,7 +30,7 @@
 }
 [data-theme="light"] {
   --bg: #f4f3ff;
-  --bg2: #ffffff;
+  --bg2: #fafaf8;
   --bg3: #ede9ff;
   --bg4: #e0d8ff;
   --border: #d4ccff;
@@ -1344,6 +1344,68 @@ nav {
   }
 }
 
+.toast .toast-msg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.toast .toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.toast .toast-close:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Offline banner close button */
+#offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+#offline-banner .offline-msg {
+  flex: 1;
+}
+#offline-banner .offline-close {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  line-height: 1;
+}
+#offline-banner .offline-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+#offline-banner .offline-close:active {
+  transform: scale(0.96);
+}
+
 /* ═══ SCROLLABLE LIST ═══ */
 .scroll-list {
   max-height: 300px;
@@ -1936,6 +1998,54 @@ nav {
   .highlight-label {
     font-size: 8px;
   }
+}
+
+/* ===== TOAST STYLE OVERRIDE - enforce consistent look ===== */
+#toast-container {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  letter-spacing: 0.2px;
+  box-shadow: 0 8px 24px rgba(16, 16, 32, 0.12);
+  background: var(--bg3);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--text);
+  animation: toastIn 180ms ease;
+}
+.toast.ok {
+  border-color: var(--green);
+  color: var(--green);
+}
+.toast.err {
+  border-color: var(--red);
+  color: var(--red);
+}
+.toast.inf {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+
+/* small icon slot if present */
+.toast svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 
 /* ═══ PRINT / PDF STYLES ═══ */
