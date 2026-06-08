@@ -1,3 +1,8 @@
+// Load environment variables
+require('dotenv').config();
+
+const OPENAI_KEY = process.env.OPENAI_KEY;
+
 // ═══════════════════════════════════════════
 //  CONSTANTS & STATE
 // ═══════════════════════════════════════════
@@ -465,8 +470,7 @@ const EFF_WORDLIST = [
 // ═══════════════════════════════════════════
 //  ⚠ PASTE YOUR OPENAI API KEY HERE
 // ═══════════════════════════════════════════
-const OPENAI_KEY =
-  "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";
+
 const OPENAI_MODEL = "gpt-4o-mini"; // or 'gpt-4o' for smarter analysis
 const PAGE_META = {
   dashboard: { title: "Dashboard", sub: "Your financial overview" },
