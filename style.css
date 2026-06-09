@@ -2680,3 +2680,12 @@ nav {
   background: #ff4d6d18;
   border-color: var(--red);
 }
+
+/* ═══ ONLINE STATUS INDICATOR ═══ */
+#online-status { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+#online-status.is-online  { color: #22c55e; animation: blink-status 1.4s ease-in-out infinite; }
+#online-status.is-offline { color: #ef4444; animation: blink-status 1.4s ease-in-out infinite; }
+@keyframes blink-status {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}

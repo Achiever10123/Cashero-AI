@@ -1,4 +1,4 @@
-BACKEND_URL = "https://vercel-deploy-xptk.vercel.app/"
+const BACKEND_URL = "https://vercel-deploy-xptk.vercel.app/"
 
 
 // ═══════════════════════════════════════════
@@ -2019,14 +2019,24 @@ function exportCSV() {
 //  KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+  const quickModal = document.getElementById("quick-modal");
+  const csvModal = document.getElementById("csv-export-modal");
+  const recoveryOverlay = document.getElementById("recovery-overlay");
+
+  if (quickModal && quickModal.classList.contains("open")) { closeQuickAdd(); return; }
+  if (csvModal && csvModal.classList.contains("open")) { closeCSVExportModal(); return; }
+  if (recoveryOverlay && recoveryOverlay.classList.contains("active")) { hideRecoveryPhrase(); return; }
+}
+
   if (
     e.target.tagName === "INPUT" ||
     e.target.tagName === "TEXTAREA" ||
     e.target.tagName === "SELECT"
   )
     return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
   if (e.key === "q" || e.key === "Q") openQuickAdd();
-  if (e.key === "Escape") closeQuickAdd();
   if (e.key === "1") navigate("dashboard");
   if (e.key === "2") navigate("charts");
   if (e.key === "3") navigate("compare");
@@ -3778,16 +3788,17 @@ checkAllNotifications();
 // ═══════════════════════════════════════════
 (function () {
   const lastAnalysisTime = localStorage.getItem("cashero_last_analysis");
-  if (lastAnalysisTime) {
-    analysisLastRun = parseInt(lastAnalysisTime);
-    const now = Date.now();
-    const elapsed = now - analysisLastRun;
-    const remaining = Math.max(0, 60 - Math.floor(elapsed / 1000));
+  if (!lastAnalysisTime) return;
 
-    if (remaining > 0) {
+  analysisLastRun = parseInt(lastAnalysisTime);
+  const elapsed = Date.now() - analysisLastRun;
+  const remaining = Math.max(0, 60 - Math.floor(elapsed / 1000));
+
+  if (remaining > 0) {
+    document.addEventListener("DOMContentLoaded", function () {
       const btn = document.getElementById("analysis-btn");
       if (btn) startCooldownTimer(btn, remaining);
-    }
+    });
   }
 })();
 
@@ -3995,3 +4006,20 @@ checkAllNotifications();
   };
 })();
 
+// ═══════════════════════════════════════════
+//  ONLINE STATUS INDICATOR
+// ═══════════════════════════════════════════
+function updateOnlineStatus() {
+  const el = document.getElementById("online-status");
+  if (!el) return;
+  if (navigator.onLine) {
+    el.textContent = "Online";
+    el.className = "is-online";
+  } else {
+    el.textContent = "Offline";
+    el.className = "is-offline";
+  }
+}
+window.addEventListener("online", updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
+updateOnlineStatus();
