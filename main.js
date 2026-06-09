@@ -1652,7 +1652,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 {"verdict":"one brutal sentence on their financial health in context of their regional economy","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month, considering economic factors"}`;
 
   try {
-    const json = await fetchAPI(${BACKEND_URL}api/chat, {
+    const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({
@@ -1783,7 +1783,7 @@ Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
     const json = await fetchAPI(
-      "https://openrouter.ai/api/v1/chat/completions",
+      `${BACKEND_URL}api/chat`,
       {
         method: "POST",
         headers: {
@@ -1794,7 +1794,7 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
           max_tokens: 300,
           messages: [{ role: "user", content: prompt }],
         }),
-      },
+      }
     );
 
     const text = json.choices?.[0]?.message?.content || "";

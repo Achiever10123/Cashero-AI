@@ -366,7 +366,7 @@
           <button class="btn btn-primary" style="flex: 1" onclick="exportCSV()">
             Export CSV
           </button>
-          <button class="btn" style="flex: 1" onclick="closeCSVExportModal()">
+          <button class="btn btn-ghost" style="flex: 1" onclick="closeCSVExportModal()">
             Cancel
           </button>
         </div>
@@ -587,82 +587,82 @@
         </div>
         <nav class="nav-container">
           <div class="nav-group">
-            <button class="nav-item active" data-page="dashboard">
+            <button class="nav-item active" data-page="dashboard" title="Dashboard">
               <i class="nav-icon fa-solid fa-home"></i>
               <span class="nav-label">Dashboard</span>
             </button>
 
-            <button class="nav-item" data-page="charts">
+            <button class="nav-item" data-page="charts" title="Charts">
               <i class="nav-icon fa-solid fa-chart-pie"></i>
               <span class="nav-label">Charts</span>
             </button>
 
-            <button class="nav-item" data-page="compare">
+            <button class="nav-item" data-page="compare" title="Compare">
               <i class="nav-icon fa-solid fa-code-compare"></i>
               <span class="nav-label">Compare</span>
             </button>
 
-            <button class="nav-item" data-page="summary">
+            <button class="nav-item" data-page="summary" title="Summary">
               <i class="nav-icon fa-solid fa-chart-line"></i>
               <span class="nav-label">Summary</span>
             </button>
 
-            <button class="nav-item" data-page="goals">
+            <button class="nav-item" data-page="goals" title="Goals">
               <i class="nav-icon fa-solid fa-bullseye"></i>
               <span class="nav-label">Goals</span>
             </button>
 
-            <button class="nav-item" data-page="recurring">
+            <button class="nav-item" data-page="recurring" title="Recurring">
               <i class="nav-icon fa-solid fa-sync-alt"></i>
               <span class="nav-label">Recurring</span>
             </button>
 
-            <button class="nav-item" data-page="analysis">
+            <button class="nav-item" data-page="analysis" title="AI Analysis">
               <i class="nav-icon fas fa-brain"></i>
               <span class="nav-label">AI Analysis</span>
             </button>
 
-            <button class="nav-item" data-page="add">
+            <button class="nav-item" data-page="add" title="Add Expense">
               <i class="nav-icon fa-sharp fa-solid fa-plus"></i>
               <span class="nav-label">Add Expense</span>
             </button>
 
-            <button class="nav-item" data-page="payouts">
+            <button class="nav-item" data-page="payouts" title="Payouts">
               <i class="nav-icon fa-solid fa-money-bill"></i>
               <span class="nav-label">Payouts</span>
             </button>
 
-            <button class="nav-item" data-page="history">
+            <button class="nav-item" data-page="history" title="History">
               <i class="nav-icon fa-solid fa-clock"></i>
               <span class="nav-label">History</span>
             </button>
 
-            <button class="nav-item" data-page="yearly">
+            <button class="nav-item" data-page="yearly" title="Yearly Report">
               <i class="nav-icon fa-solid fa-chart-area"></i>
               <span class="nav-label">Yearly Report</span>
             </button>
 
-            <button class="nav-item" data-page="settings">
+            <button class="nav-item" data-page="settings" title="Settings">
               <i class="nav-icon fa-solid fa-gear"></i>
               <span class="nav-label">Settings</span>
             </button>
-            <button class="nav-item" data-page="help">
+            <button class="nav-item" data-page="help" title="Help">
               <i class="nav-icon fa-solid fa-info-circle"></i>
               <span class="nav-label">Help</span>
             </button>
           </div>
         </nav>
         <div class="sidebar-bottom">
-          <button class="theme-toggle" onclick="openCSVExportModal()">
+          <button class="theme-toggle" onclick="openCSVExportModal()" title="Export CSV">
             <i class="nav-icon fa-solid fa-file-export"></i>
             <span class="toggle-label">Export CSV</span>
           </button>
 
-          <button class="theme-toggle" onclick="backupJSON()">
+          <button class="theme-toggle" onclick="backupJSON()" title="Backup JSON">
             <i class="nav-icon fa-solid fa-file-medical"></i>
             <span class="toggle-label">Backup JSON</span>
           </button>
-          <label class="theme-toggle" style="cursor: pointer">
+          <label class="theme-toggle" style="cursor: pointer" title="Restore JSON">
             <i class="nav-icon fa-solid fa-file-import"></i>
             <span class="toggle-label">Restore JSON</span>
             <input

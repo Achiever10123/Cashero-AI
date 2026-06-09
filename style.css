@@ -112,7 +112,7 @@ body::before {
   height: 100vh;
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 #sidebar {
   width: 64px;
@@ -124,7 +124,7 @@ body::before {
   transition:
     width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.3s;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   z-index: 20;
 }
@@ -291,11 +291,11 @@ nav {
   background: transparent;
   width: calc(100% - 2px);
   text-align: left;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
   font-family: var(--mono);
   position: relative;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 .nav-item:hover {
   background: var(--bg3);
@@ -315,20 +315,62 @@ nav {
   background: var(--accent);
   border-radius: 0 3px 3px 0;
 }
+#sidebar .nav-item[data-tip],
+#sidebar .theme-toggle[data-tip] {
+  overflow: visible;
+}
+
+.nav-item[data-tip]::after,
+.theme-toggle[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg3);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  z-index: 999;
+}
+
+.nav-item[data-tip]:hover::after,
+.theme-toggle[data-tip]:hover::after {
+  opacity: 1;
+}
+
+/* Hide tooltip when sidebar is expanded (label is already visible) */
+#sidebar.expanded .nav-item[data-tip]:hover::after,
+#sidebar.expanded .theme-toggle[data-tip]:hover::after {
+  opacity: 0;
+}
+
 /* Label — hidden when collapsed */
 .nav-label {
   opacity: 0;
-  transition: opacity 0.15s ease;
+  max-width: 0;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
   pointer-events: none;
   flex-shrink: 0;
+  overflow: hidden;
 }
 #sidebar.expanded .nav-label {
   opacity: 1;
+  max-width: 200px;
   transition-delay: 0.08s;
 }
 .nav-icon {
-  width: 22px;
-  height: 22px;
+  width: 35px;
+  height: 35px;
+  font-size: medium;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -369,9 +411,10 @@ nav {
   letter-spacing: 0.5px;
   width: 100%;
   text-align: left;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 .theme-toggle:hover {
   background: var(--bg3);
@@ -379,11 +422,14 @@ nav {
 }
 .toggle-label {
   opacity: 0;
-  transition: opacity 0.15s ease;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.15s ease;
   pointer-events: none;
 }
 #sidebar.expanded .toggle-label {
   opacity: 1;
+  max-width: 200px;
   transition-delay: 0.08s;
 }
 .sidebar-version {
