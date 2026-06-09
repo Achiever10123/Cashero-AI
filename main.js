@@ -2293,10 +2293,19 @@ async function togglePinLock() {
     }
   } else {
     // Enable PIN lock - show setup
-    S.pinEnabled = true;
-    save();
     pinMode = "setup";
     showPinOverlay("setup");
+  }
+}
+
+function updatePinToggleButton() {
+  const btn = document.getElementById("pin-toggle-btn");
+  const changePinSection = document.getElementById("change-pin-section");
+  if (!btn) return;
+  const active = S.pinEnabled && isPinSet();
+  btn.textContent = active ? "Disable" : "Enable";
+  if (changePinSection) {
+    changePinSection.style.display = active ? "block" : "none";
   }
 }
 
