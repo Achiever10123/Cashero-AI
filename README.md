@@ -20,24 +20,6 @@ A modern web application for tracking and managing personal finances with intell
 - **Deployment**: Netlify
 - **Icons**: Unicode emoji with color-coded categories
 
-## Project Structure
-
-```
-├── index.html              # Main HTML document
-├── main.js                 # Core application logic
-├── style.css               # Styling and layout
-├── netlify.toml            # Netlify configuration
-├── README.md               # This file
-├── SETUP.md                # Setup and installation guide
-├── ROADMAP.md              # Future features and improvements
-├── robots.txt              # SEO configuration
-├── sitemap.xml             # Site structure for search engines
-├── 404.html                # Custom error page
-└── assets/
-    └── favicon/
-        └── site.webmanifest  # PWA manifest
-```
-
 ## Quick Start
 
 See [SETUP.md](SETUP.md) for detailed installation and development instructions.
