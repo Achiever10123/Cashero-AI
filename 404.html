@@ -1,126 +1,293 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
     <title>404 - Page Not Found | Cashero AI</title>
-    <meta name="robots" content="noindex, follow" />
-    <meta
-      name="description"
-      content="This page was not found. Return to Cashero AI - your intelligent expense tracking platform for freelancers and small business owners."
-    />
-    <link rel="canonical" href="https://cashero-ai.vercel.app/" />
-    <link rel="icon" type="image/x-icon" href="./assets/favicon/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon/favicon-32x32.png" />
+    <script src="https://kit.fontawesome.com/aea47affd4.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="./assets/favicon/favicon-32x32.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="./assets/favicon/favicon-16x16.png"
-    />
-    <link rel="apple-touch-icon" href="./assets/favicon/apple-touch-icon.png" />
-    <link rel="manifest" href="./assets/favicon/site.webmanifest" />
-    <link
-      href="https://fonts.googleapis.com/css?family=VT323"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script
+      src="https://kit.fontawesome.com/aea47affd4.js"
+      crossorigin="anonymous"
+    ></script>
     <style>
-      body,
-      h1,
-      h2,
-      h3,
-      h4,
-      p,
-      a {
-        color: #e0e2f4;
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+      :root {
+        --bg:          #080810;
+        --bg2:         #0d0d1a;
+        --card:        #13131f;
+        --card-border: rgba(255,255,255,0.06);
+        --accent:      #00d4c8;
+        --accent-dim:  rgba(0,212,200,0.1);
+        --accent-glow: rgba(0,212,200,0.22);
+        --text:        #e2e8f0;
+        --text2:       #94a3b8;
+        --text3:       #64748b;
       }
 
-      body,
-      p {
-        font:
-          normal 20px/1.25rem "VT323",
-          monospace;
-      }
-
-      h1 {
-        font: normal 2.75rem/1.05em monospace;
-      }
-      h2 {
-        font: normal 2.25rem/1.25em monospace;
-      }
-      h3 {
-        font: lighter 1.5rem/1.25em monospace;
-      }
-      h4 {
-        font: lighter 1.125rem/1.2222222em monospace;
+      html, body {
+        height: 100%;
+        overflow: hidden;
       }
 
       body {
-        background: #0414a7;
+        font-family: 'Syne', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .container {
-        width: 90%;
-        margin: auto;
-        max-width: 640px;
+      /* ── Blobs ── */
+      .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.15;
+        pointer-events: none;
+        z-index: 0;
+        animation: drift 14s ease-in-out infinite alternate;
+      }
+      #blob1 {
+        width: 500px; height: 500px;
+        background: radial-gradient(circle, #00d4c8, #0070f3);
+        top: -160px; right: -120px;
+      }
+      #blob2 {
+        width: 380px; height: 380px;
+        background: radial-gradient(circle, #6366f1, #00d4c8);
+        bottom: -120px; left: -80px;
+        animation-delay: -7s;
+      }
+      @keyframes drift {
+        from { transform: translate(0,0) scale(1); }
+        to   { transform: translate(28px,18px) scale(1.07); }
       }
 
-      .bsod {
-        padding-top: 10%;
-      }
-
-      .bsod .neg {
+      /* ── Layout ── */
+      .page {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
-        color: #0414a7;
+        gap: 0;
+        padding: 24px 20px;
+        width: 100%;
+        max-width: 480px;
       }
 
-      .bsod .neg .bg {
-        background: #aaaaaa;
-        padding: 0 15px 2px 13px;
+      /* ── Brand ── */
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 32px;
+      }
+      .brand-icon {
+        width: 34px; height: 34px;
+        background: var(--accent-dim);
+        border: 1px solid rgba(0,212,200,0.25);
+        border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--accent);
+        font-size: 15px;
+      }
+      .brand-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: 0.2px;
       }
 
-      .bsod .title {
-        margin-bottom: 50px;
+      /* ── 404 ── */
+      .error-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: clamp(88px, 18vw, 128px);
+        font-weight: 700;
+        line-height: 1;
+        background: linear-gradient(135deg, #00d4c8 0%, #6366f1 55%, #00d4c8 100%);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradShift 5s ease infinite;
+        margin-bottom: 4px;
+        position: relative;
+      }
+      @keyframes gradShift {
+        0%,100% { background-position: 0% 50%; }
+        50%      { background-position: 100% 50%; }
+      }
+      .error-code::after {
+        content: '404';
+        position: absolute; inset: 0;
+        background: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: glitch 7s ease-in-out infinite;
+        opacity: 0;
+      }
+      @keyframes glitch {
+        0%,88%,100% { opacity:0; transform:translate(0); }
+        90%          { opacity:.6; transform:translate(-3px,1px); }
+        92%          { opacity:.6; transform:translate(3px,-1px); }
+        94%          { opacity:0; }
       }
 
-      .bsod .nav {
-        margin-top: 35px;
-        text-align: center;
+      /* ── Card ── */
+      .card {
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 28px 24px;
+        margin: 20px 0 24px;
       }
 
-      .bsod .nav .link {
+      .error-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 2.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .error-tag::before, .error-tag::after {
+        content: '';
+        width: 24px; height: 1px;
+        background: var(--accent);
+        opacity: 0.35;
+      }
+
+      .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(20px, 4.5vw, 26px);
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+      }
+
+      .sep {
+        width: 40px; height: 2px;
+        background: linear-gradient(90deg, var(--accent), transparent);
+        border-radius: 2px;
+        margin: 12px auto 14px;
+      }
+
+      .page-sub {
+        font-family: 'Syne', sans-serif;
+        font-size: 13px;
+        color: var(--text2);
+        line-height: 1.7;
+      }
+
+      /* ── Buttons ── */
+      .btn-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 20px;
+        border-radius: 10px;
+        font-family: 'Syne', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
         text-decoration: none;
-        padding: 0 9px 2px 8px;
+        transition: all 0.18s ease;
+        border: none;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #080810;
+      }
+      .btn-primary:hover {
+        background: #00efe1;
+        box-shadow: 0 0 18px var(--accent-glow);
+        transform: translateY(-1px);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text2);
+        border: 1px solid var(--card-border);
+      }
+      .btn-ghost:hover {
+        border-color: rgba(0,212,200,0.3);
+        color: var(--accent);
+        transform: translateY(-1px);
       }
 
-      .bsod .nav .link:hover,
-      .bsod .nav .link:focus {
-        background: #aaaaaa;
-        color: #0414a7;
+      /* ── Footer note ── */
+      .footer-note {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 18px;
+        opacity: 0.55;
       }
+      .footer-note span { color: var(--accent); opacity: 1; }
     </style>
   </head>
   <body>
-    <main class="bsod container">
-      <h1 class="neg title"><span class="bg">Error - 404</span></h1>
-      <p>An error has occured, to continue:</p>
-      <p>
-        * Return to our homepage.<br />
-        * Send us an e-mail about this error and try later.
-      </p>
-      <nav class="nav">
-        <a href="./index.html" class="link">index</a>&nbsp;|&nbsp;<a
-          href="./index.html"
-          class="link"
-          >Cashero.AI</a
-        >
-      </nav>
-    </main>
+    <div id="blob1" class="blob"></div>
+    <div id="blob2" class="blob"></div>
+
+    <div class="page">
+
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <span class="brand-name">Cashero AI</span>
+      </div>
+
+      <div class="error-code">404</div>
+
+      <div class="card">
+        <div class="error-tag">Page not found</div>
+        <div class="page-title">This page went missing</div>
+        <div class="sep"></div>
+        <div class="page-sub">
+          The page you're looking for doesn't exist or may have been moved.
+          Head back to the dashboard to keep tracking your expenses.
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <a href="/" class="btn btn-primary">
+          <i class="fa-solid fa-house"></i>
+          Go to Dashboard
+        </a>
+        <button class="btn btn-ghost" onclick="history.back()">
+          <i class="fa-solid fa-arrow-left"></i>
+          Go Back
+        </button>
+      </div>
+
+      <div class="footer-note">Error <span>404</span> &mdash; cashero-ai.vercel.app</div>
+
+    </div>
   </body>
 </html>

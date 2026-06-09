@@ -17,7 +17,7 @@ A modern web application for tracking and managing personal finances with intell
 
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Storage**: Browser LocalStorage with JSON serialization
-- **Deployment**: Netlify
+- **Deployment**: Vercel
 - **Icons**: Unicode emoji with color-coded categories
 
 ## Quick Start

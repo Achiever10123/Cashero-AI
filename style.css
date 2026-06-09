@@ -2272,21 +2272,7 @@ nav {
   color: var(--text3);
   margin-top: 5px;
 }
-.notif-bell {
-  background: transparent;
-  border: none;
-  color: var(--text2);
-  cursor: pointer;
-  font-size: 18px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: all 0.15s;
-  position: relative;
-}
-.notif-bell:hover {
-  color: var(--accent2);
-  background: var(--bg3);
-}
+/* NOTIFICATION COUNT */
 .notif-count {
   position: absolute;
   top: 2px;

@@ -605,7 +605,7 @@ function renderMonthPills() {
   document.getElementById("month-pills").innerHTML = sorted
     .map(
       (k) =>
-        `<button class="month-pill${k === activeMonth ? " active" : ""}" onclick="setMonth('${k}')">${monthLabel(k)}</button>`,
+        `<button class="month-pill${k === activeMonth ? " active" : ""}" onclick="setMonth('${k}')"><i class="fa-solid fa-calendar"></i> ${monthLabel(k)}</button>`,
     )
     .join("");
 }
@@ -1568,6 +1568,7 @@ function renderCatDeep() {
 //  AI ANALYSIS
 // ═══════════════════════════════════════════
 async function runAnalysis() {
+
   const btn = document.getElementById("analysis-btn");
   const out = document.getElementById("analysis-output");
 
@@ -1651,7 +1652,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 {"verdict":"one brutal sentence on their financial health in context of their regional economy","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month, considering economic factors"}`;
 
   try {
-    const json = await fetchAPI($,{BACKEND_URL}/api/chat, {
+    const json = await fetchAPI(${BACKEND_URL}api/chat, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({
@@ -1786,8 +1787,7 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_KEY}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: OPENAI_MODEL,
@@ -1844,13 +1844,11 @@ Categories available: ${CATS.map((c) => c.name).join(", ")}
 JSON format: {"amount":number,"category":"exact category name from list","note":"brief description","date":"YYYY-MM-DD"}
 If amount not found, use 0. Pick the closest matching category.`;
   try {
-    const json = await fetchAPI(
-      "https://openrouter.ai/api/v1/chat/completions",
+    const json = await fetchAPI(`${BACKEND_URL}api/chat`,
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_KEY}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: OPENAI_MODEL,
@@ -1940,18 +1938,14 @@ function applyTheme() {
   document.documentElement.setAttribute("data-theme", S.theme);
 
   // Update theme icon SVG
-  const themeIcon = document.getElementById("theme-icon");
-  if (themeIcon) {
-    if (S.theme === "dark") {
-      // Moon icon for dark mode
-      themeIcon.innerHTML =
-        '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-    } else {
-      // Sun icon for light mode
-      themeIcon.innerHTML =
-        '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-    }
+  const themeIcon = document.querySelector(".topbar-theme-toggle .nav-icon");
+if (themeIcon) {
+  if (S.theme === "dark") {
+    themeIcon.className = "nav-icon fa-solid fa-moon";
+  } else {
+    themeIcon.className = "nav-icon fa-solid fa-sun";
   }
+}
 
   document.getElementById("theme-label").textContent =
     S.theme === "dark" ? "Light Mode" : "Dark Mode";
