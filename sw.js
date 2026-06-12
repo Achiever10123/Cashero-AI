@@ -1,9 +1,10 @@
 const CACHE_NAME = "cashero-static-v1";
 const RUNTIME_CACHE = "cashero-runtime-v1";
 // External origin lists for runtime caching
+// NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
+// Caching AI responses could serve stale financial advice silently.
 const EXTERNAL_RUNTIME_ORIGINS = new Set([
-  "https://openrouter.ai",
-  "https://api.openai.com",
+  // Add non-AI real-time origins here if needed
 ]);
 const EXTERNAL_CACHE_FIRST_ORIGINS = new Set([
   "https://cdn.jsdelivr.net",
@@ -107,20 +108,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Default: cache-first then network and update runtime cache
+  // Default: network-first for same-origin assets (js, css, etc.)
+  // Cache only serves as offline fallback
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-    }),
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req)),
   );
 });
 

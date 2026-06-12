@@ -201,8 +201,10 @@ const APILogger = {
   },
 };
 
-// Expose for debugging
-window.APILogger = APILogger;
+// Expose for debugging (localhost only — not in production)
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  window.APILogger = APILogger;
+}
 
 // ═══════════════════════════════════════════
 //  API CALL WRAPPER WITH ERROR HANDLING
@@ -1160,8 +1162,8 @@ function renderGoals() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
         <div class="goal-deadline" style="color:${deadlineColor}">${deadlineStr}${daysLeft !== null ? ` (${daysLeft}d left)` : ""}</div>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost" onclick="addToGoal(${i})" style="font-size:9px;padding:4px 10px;">+ Add</button>
-          <button class="del-btn" onclick="deleteGoal(${i})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
+          <button class="btn btn-ghost" onclick="addToGoal('${g.id}')" style="font-size:9px;padding:4px 10px;">+ Add</button>
+          <button class="del-btn" onclick="deleteGoal('${g.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
         </div>
       </div>
     </div>`;
@@ -1193,17 +1195,19 @@ function addGoal() {
   renderGoals();
   toast("Goal added ✓");
 }
-function addToGoal(i) {
+function addToGoal(id) {
+  const goal = S.goals.find(g => g.id == id);
+  if (!goal) return;
   const amt = parseFloat(prompt("How much to add to this goal?"));
   if (isNaN(amt) || amt <= 0) return;
-  S.goals[i].saved = Math.min(S.goals[i].target, S.goals[i].saved + amt);
+  goal.saved = Math.min(goal.target, goal.saved + amt);
   save();
   renderGoals();
   toast(`+${fmt(amt)} added ✓`);
 }
-function deleteGoal(i) {
+function deleteGoal(id) {
   if (!confirm("Delete this goal?")) return;
-  S.goals.splice(i, 1);
+  S.goals = S.goals.filter(g => g.id != id);
   save();
   renderGoals();
   toast("Goal removed");
@@ -1244,7 +1248,7 @@ function renderRecurring() {
         <div class="recur-meta">${r.freq} · ${r.cat}${r.day ? ` · day ${r.day}` : ""}</div>
       </div>
       <div class="recur-amount">${fmt(r.amount)}</div>
-      <button class="del-btn" onclick="deleteRecurring(${i})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
+      <button class="del-btn" onclick="deleteRecurring('${r.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
     </div>`;
     })
     .join("");
@@ -1268,8 +1272,8 @@ function addRecurring() {
   renderRecurring();
   toast("Recurring expense saved ✓");
 }
-function deleteRecurring(i) {
-  S.recurring.splice(i, 1);
+function deleteRecurring(id) {
+  S.recurring = S.recurring.filter(r => r.id != id);
   save();
   renderRecurring();
   toast("Removed");
@@ -1454,7 +1458,7 @@ function renderTxList(id, list, showDel) {
           <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
           <div class="tx-info">
             <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
-            <div class="tx-meta">${e.date} · ${e.category}</div>
+            <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
           </div>
           <div class="tx-right">
             ${e.recurringId ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getLucideIcon("RotateCw", 12)}</span>` : ""}
@@ -1514,7 +1518,7 @@ function renderTxList(id, list, showDel) {
       <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
       <div class="tx-info">
         <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
-        <div class="tx-meta">${e.date} · ${e.category}</div>
+        <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
       </div>
       <div class="tx-right">
         ${recur}
@@ -1691,6 +1695,7 @@ messages: [{ role: "user", content: prompt }],
   }
 }
 function buildAnalysisHTML(a) {
+  const esc = escapeHtml;
   return `
     <div class="verdict-box"><div class="verdict-label">VERDICT</div><div class="verdict-text">"${a.verdict}"</div></div>
     ${a.danger ? `<div class="danger-box"><div class="danger-label">⚠ DANGER ZONE</div><div style="font-size:12px;color:#ffa0b4;line-height:1.5">${a.danger}</div></div>` : ""}
@@ -1801,7 +1806,19 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
     S.lastCheckin = text;
     S.lastCheckinDate = new Date().toISOString();
     save();
-    out.innerHTML = `<div class="checkin-output">${text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</div>`;
+    // Sanitize the text to prevent any potential HTML injection, then replace markdown-style bold with actual bold tags and newlines with <br> for display.
+function sanitizeForDisplay(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Then at line 1804, replace the innerHTML assignment with:
+const safeText = sanitizeForDisplay(text)
+  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+  .replace(/\n/g, "<br>");
+out.innerHTML = `<div class="checkin-output">${safeText}</div>`;
+
     renderCheckinBanner();
     toast("Check-in complete ✓");
   } catch (e) {
@@ -2035,7 +2052,6 @@ document.addEventListener("keydown", (e) => {
     e.target.tagName === "SELECT"
   )
     return;
-  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
   if (e.key === "q" || e.key === "Q") openQuickAdd();
   if (e.key === "1") navigate("dashboard");
   if (e.key === "2") navigate("charts");
@@ -2286,6 +2302,9 @@ async function togglePinLock() {
         inactivityTimer = null;
       }
       localStorage.removeItem("cashero_pin_hash");
+      localStorage.removeItem("cashero_pin_salt");
+      localStorage.removeItem("cashero_recovery_hash");
+      localStorage.removeItem("cashero_recovery_salt");
       S.pinEnabled = false;
       save();
       updatePinToggleButton();
@@ -2321,16 +2340,23 @@ let pinMode = "verify"; // verify, setup, changeVerify, changeNew
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 
+// Brute-force lockout state
+let pinFailCount = 0;
+const PIN_MAX_ATTEMPTS = 5;
+let pinLockoutUntil = 0;
+
 // Hash PIN using SubtleCrypto (Web Crypto API)
-async function hashPin(pin) {
+async function hashPin(pin, salt = null) {
+  if (!salt) {
+    salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, "0")).join("");
+  }
   const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
+  const data = encoder.encode(pin + salt);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return hashHex;
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+  return { hash: hashHex, salt };
 }
 
 // Check if PIN is set in localStorage
@@ -2494,13 +2520,25 @@ async function submitPin() {
   msg.textContent = "Processing...";
   msg.classList.remove("error", "success");
 
+  // Brute-force lockout check (applies to verify and changeVerify modes only)
+  if (pinMode === "verify" || pinMode === "changeVerify") {
+    if (Date.now() < pinLockoutUntil) {
+      const secsLeft = Math.ceil((pinLockoutUntil - Date.now()) / 1000);
+      msg.textContent = `Too many attempts. Try again in ${secsLeft}s`;
+      msg.classList.add("error");
+      btn.disabled = false;
+      return;
+    }
+  }
+
   try {
-    const pinHash = await hashPin(pin);
     const storedHash = localStorage.getItem("cashero_pin_hash");
 
     if (pinMode === "setup") {
-      // Set new PIN
-      localStorage.setItem("cashero_pin_hash", pinHash);
+      // Set new PIN — generate fresh hash+salt and store both
+      const { hash, salt } = await hashPin(pin);
+      localStorage.setItem("cashero_pin_hash", hash);
+      localStorage.setItem("cashero_pin_salt", salt);
       S.pinEnabled = true;
       save();
       msg.textContent = "PIN set successfully ✓";
@@ -2514,8 +2552,11 @@ async function submitPin() {
         showRecoveryPhrase(recoveryPhrase);
       }, 500);
     } else if (pinMode === "verify") {
-      // Verify PIN for app access
-      if (pinHash === storedHash) {
+      // Verify PIN for app access — re-hash using stored salt
+      const storedSalt = localStorage.getItem("cashero_pin_salt");
+      const { hash: verifyHash } = await hashPin(pin, storedSalt);
+      if (verifyHash === storedHash) {
+        pinFailCount = 0; // reset on success
         msg.textContent = "Access granted ✓";
         msg.classList.add("success");
         setTimeout(() => {
@@ -2525,7 +2566,14 @@ async function submitPin() {
           resetInactivityTimer();
         }, 500);
       } else {
-        msg.textContent = "Incorrect PIN";
+        pinFailCount++;
+        if (pinFailCount >= PIN_MAX_ATTEMPTS) {
+          pinLockoutUntil = Date.now() + 30000; // 30s lockout
+          pinFailCount = 0;
+          msg.textContent = "Too many attempts. Locked for 30s.";
+        } else {
+          msg.textContent = `Incorrect PIN (${pinFailCount}/${PIN_MAX_ATTEMPTS})`;
+        }
         msg.classList.add("error");
         input.classList.add("error");
         input.value = "";
@@ -2535,8 +2583,11 @@ async function submitPin() {
         }, 500);
       }
     } else if (pinMode === "changeVerify") {
-      // Verify old PIN before allowing change
-      if (pinHash === storedHash) {
+      // Verify old PIN before allowing change — re-hash using stored salt
+      const storedSalt = localStorage.getItem("cashero_pin_salt");
+      const { hash: verifyHash } = await hashPin(pin, storedSalt);
+      if (verifyHash === storedHash) {
+        pinFailCount = 0;
         msg.textContent = "✓ Verified";
         msg.classList.add("success");
         setTimeout(() => {
@@ -2544,7 +2595,14 @@ async function submitPin() {
           showPinOverlay("changeNew");
         }, 500);
       } else {
-        msg.textContent = "Incorrect PIN";
+        pinFailCount++;
+        if (pinFailCount >= PIN_MAX_ATTEMPTS) {
+          pinLockoutUntil = Date.now() + 30000;
+          pinFailCount = 0;
+          msg.textContent = "Too many attempts. Locked for 30s.";
+        } else {
+          msg.textContent = `Incorrect PIN (${pinFailCount}/${PIN_MAX_ATTEMPTS})`;
+        }
         msg.classList.add("error");
         input.classList.add("error");
         input.value = "";
@@ -2565,8 +2623,9 @@ async function submitPin() {
     } else if (pinMode === "changeConfirm") {
       // Confirm new PIN matches
       if (pin === tempNewPin) {
-        const newHash = await hashPin(pin);
+        const { hash: newHash, salt: newSalt } = await hashPin(pin);
         localStorage.setItem("cashero_pin_hash", newHash);
+        localStorage.setItem("cashero_pin_salt", newSalt);
         save();
         msg.textContent = "PIN changed ✓";
         msg.classList.add("success");
@@ -2620,9 +2679,10 @@ async function submitPin() {
         }, 500);
       }
     } else if (pinMode === "recoverNewPin") {
-      // Set new PIN after recovery
-      const newPinHash = await hashPin(pin);
+      // Set new PIN after recovery — store hash+salt
+      const { hash: newPinHash, salt: newPinSalt } = await hashPin(pin);
       localStorage.setItem("cashero_pin_hash", newPinHash);
+      localStorage.setItem("cashero_pin_salt", newPinSalt);
       save();
       msg.textContent = "PIN reset successfully ✓";
       msg.classList.add("success");
@@ -2655,14 +2715,18 @@ function getRandomBytes(count) {
   return array;
 }
 
-// Generate recovery phrase (8 words from EFF wordlist)
+// Generate recovery phrase (8 words from EFF wordlist) — rejection sampling to avoid modulo bias
 function generateRecoveryPhrase() {
   const words = [];
-  const randomBytes = getRandomBytes(8); // 8 words
+  const wordCount = EFF_WORDLIST.length;
+  // Rejection threshold: largest multiple of wordCount that fits in a byte (0-255)
+  const limit = 256 - (256 % wordCount);
 
-  for (let i = 0; i < 8; i++) {
-    const index = randomBytes[i] % EFF_WORDLIST.length;
-    words.push(EFF_WORDLIST[index]);
+  while (words.length < 8) {
+    const [byte] = crypto.getRandomValues(new Uint8Array(1));
+    if (byte < limit) {
+      words.push(EFF_WORDLIST[byte % wordCount]);
+    }
   }
 
   return words.join(" ");
@@ -2818,16 +2882,7 @@ async function initPin() {
 //  BOOT
 // ═══════════════════════════════════════════
 
-// DEBUG: Reset PIN to default (use in console if stuck)
-async function resetPinToDefault() {
-  const defaultPin = "0000";
-  const hash = await hashPin(defaultPin);
-  localStorage.setItem("cashero_pin_hash", hash);
-  S.pinEnabled = true;
-  save();
-  console.log("✓ PIN reset to: " + defaultPin);
-  location.reload();
-}
+// (debug reset function removed for production security)
 
 load();
 applyTheme();
@@ -3098,7 +3153,7 @@ const BACKUP_SCHEMA = {
   lastCheckinDate: { type: "string", required: false },
   lastAnalysisMonthKey: { type: "string", required: false },
   theme: { type: "string", required: false },
-  pinEnabled: { type: "boolean", required: false },
+  // pinEnabled intentionally excluded — PIN state must never be restored from backup
 };
 
 function validateBackupSchema(data) {
@@ -3291,8 +3346,13 @@ function restoreJSON(event) {
         lastCheckinDate: parsed.lastCheckinDate || null,
         lastAnalysisMonthKey: parsed.lastAnalysisMonthKey || null,
         theme: parsed.theme || "dark",
-        pinEnabled: parsed.pinEnabled || false,
+        pinEnabled: false, // never restore PIN state from backup — security risk
       };
+      // Clear any PIN keys that might have been imported
+      localStorage.removeItem("cashero_pin_hash");
+      localStorage.removeItem("cashero_pin_salt");
+      localStorage.removeItem("cashero_recovery_hash");
+      localStorage.removeItem("cashero_recovery_salt");
       save();
       applyTheme();
       renderMonthPills();
@@ -4005,14 +4065,7 @@ checkAllNotifications();
     });
   }
 
-  // Store mobile device info for debugging
-  window.deviceInfo = {
-    isMobile,
-    isTouchDevice: isTouchDevice(),
-    screenWidth: window.innerWidth,
-    screenHeight: window.innerHeight,
-    userAgent: navigator.userAgent,
-  };
+  // (device info intentionally not exposed globally in production)
 })();
 
 // ═══════════════════════════════════════════
