@@ -500,6 +500,7 @@ let S = {
   theme: "dark",
   pinEnabled: false,
   currency: "USD",
+  autoLockTimeout: 15,
 };
 let activeMonth = mkNow();
 let activeYear = new Date().getFullYear();
@@ -1934,8 +1935,22 @@ function confirmQuickAdd() {
 // ═══════════════════════════════════════════
 //  SIDEBAR TOGGLE
 // ═══════════════════════════════════════════
+function setSidebarExpanded(expand) {
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+  const backdrop = document.getElementById("sidebar-backdrop");
+  const toggleBtn = document.getElementById("mobile-nav-toggle");
+  sidebar.classList.toggle("expanded", expand);
+  if (backdrop) backdrop.classList.toggle("active", expand);
+  if (toggleBtn) toggleBtn.classList.toggle("active", expand);
+  if (window.innerWidth <= 480) {
+    document.body.style.overflow = expand ? "hidden" : "";
+  }
+}
 function toggleSidebar() {
-  document.getElementById("sidebar").classList.toggle("expanded");
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+  setSidebarExpanded(!sidebar.classList.contains("expanded"));
 }
 
 // ═══════════════════════════════════════════
@@ -2268,6 +2283,64 @@ function initSelects() {
 function renderSettings() {
   updatePinToggleButton();
   updateCurrencySelector();
+  updateAutoLockSelector();
+}
+
+function updateAutoLockSelector() {
+  const sel = document.getElementById("auto-lock-selector");
+  if (!sel) return;
+  sel.value = S.autoLockTimeout ?? 15;
+}
+
+function changeAutoLockTimeout() {
+  const sel = document.getElementById("auto-lock-selector");
+  if (!sel) return;
+  const val = parseInt(sel.value);
+  S.autoLockTimeout = val;
+  save();
+  // Restart the inactivity timer with the new value
+  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+  if (val === 0) {
+    toast("Auto-lock disabled", "ok");
+  } else {
+    resetInactivityTimer();
+    toast(`Auto-lock set to ${val} minutes`, "ok");
+  }
+}
+
+function clearAllData() {
+  const confirmed = confirm(
+    "⚠️ Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?"
+  );
+  if (!confirmed) return;
+  const doubleConfirm = confirm("Last chance - all your Cashero data will be gone. Proceed?");
+  if (!doubleConfirm) return;
+
+  // Clear localStorage completely
+  localStorage.removeItem("cashero_pin_hash");
+  localStorage.removeItem("cashero_pin_salt");
+  localStorage.removeItem("cashero_recovery_hash");
+  localStorage.removeItem("cashero_recovery_salt");
+  localStorage.removeItem("cashero_last_analysis");
+  // Reset S to defaults and save
+  S = {
+    expenses: [],
+    payouts: [],
+    goals: [],
+    recurring: [],
+    lastAnalysis: null,
+    lastAnalysisDate: null,
+    lastCheckin: null,
+    lastCheckinDate: null,
+    lastAnalysisMonthKey: null,
+    theme: "dark",
+    pinEnabled: false,
+    currency: "USD",
+    autoLockTimeout: 15,
+  };
+  save();
+  toast("All data cleared", "ok");
+  setTimeout(() => { renderAll(); renderSettings(); }, 100);
 }
 
 function updateCurrencySelector() {
@@ -2338,7 +2411,7 @@ function startChangePinFlow() {
 // ═══════════════════════════════════════════
 let pinMode = "verify"; // verify, setup, changeVerify, changeNew
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+// INACTIVITY_TIMEOUT is dynamic — read from S.autoLockTimeout (minutes). 0 = disabled.
 
 // Brute-force lockout state
 let pinFailCount = 0;
@@ -2371,6 +2444,10 @@ function resetInactivityTimer() {
   // Only track inactivity if PIN is enabled
   if (!S.pinEnabled || !isPinSet()) return;
 
+  // 0 means disabled
+  const timeoutMinutes = S.autoLockTimeout ?? 15;
+  if (timeoutMinutes === 0) return;
+
   // Clear existing timer
   if (inactivityTimer) {
     clearTimeout(inactivityTimer);
@@ -2379,7 +2456,7 @@ function resetInactivityTimer() {
   // Set new timer
   inactivityTimer = setTimeout(() => {
     triggerAutoLock();
-  }, INACTIVITY_TIMEOUT);
+  }, timeoutMinutes * 60 * 1000);
 }
 
 function triggerAutoLock() {
@@ -3727,7 +3804,7 @@ async function requestNotifPermission() {
   }
   if (location.protocol === "file:") {
     toast(
-      "Push alerts require the app to be hosted — in-app alerts still work",
+      "Push alerts require the app to be hosted - in-app alerts still work",
       "err",
     );
     const btn = document.getElementById("notif-perm-btn");
@@ -3875,20 +3952,6 @@ checkAllNotifications();
 //  MOBILE OPTIMIZATION & TOUCH HANDLING
 // ═══════════════════════════════════════════
 (function initMobileUI() {
-  // Detect if device is mobile
-  const isMobile =
-    /iPhone|iPad|iPod|Android|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent,
-    );
-  const isTouchDevice = () => {
-    return (
-      (navigator.maxTouchPoints !== undefined &&
-        navigator.maxTouchPoints > 0) ||
-      (navigator.msMaxTouchPoints !== undefined &&
-        navigator.msMaxTouchPoints > 0)
-    );
-  };
-
   // Lock body scroll when modal is open
   const lockScroll = (shouldLock) => {
     if (shouldLock) {
@@ -3942,7 +4005,7 @@ checkAllNotifications();
   const sidebar = document.getElementById("sidebar");
   const hamburger = document.getElementById("hamburger");
 
-  if (hamburger && isMobile) {
+  if (sidebar) {
     // Close sidebar when nav item is clicked on mobile
     document.querySelectorAll(".nav-item").forEach((item) => {
       item.addEventListener("click", () => {
@@ -3950,40 +4013,33 @@ checkAllNotifications();
           window.innerWidth <= 480 &&
           sidebar.classList.contains("expanded")
         ) {
-          sidebar.classList.remove("expanded");
+          setSidebarExpanded(false);
         }
       });
     });
 
-    // Close sidebar when clicking outside
+    // Close sidebar when clicking outside (backdrop, or anywhere off the drawer/trigger)
     document.addEventListener("click", (e) => {
+      const mobileToggle = document.getElementById("mobile-nav-toggle");
       if (
         window.innerWidth <= 480 &&
         sidebar.classList.contains("expanded") &&
         !sidebar.contains(e.target) &&
-        !hamburger.contains(e.target)
+        !(hamburger && hamburger.contains(e.target)) &&
+        !(mobileToggle && mobileToggle.contains(e.target))
       ) {
-        sidebar.classList.remove("expanded");
+        setSidebarExpanded(false);
       }
     });
   }
 
-  // Prevent double-tap zoom on buttons
-  if (isTouchDevice()) {
-    document.addEventListener(
-      "touchend",
-      (e) => {
-        if (
-          e.target.closest("button") ||
-          e.target.closest("input") ||
-          e.target.closest('[role="button"]')
-        ) {
-          e.preventDefault();
-        }
-      },
-      false,
-    );
-  }
+  // NOTE: we intentionally do NOT call preventDefault() on touchend for
+  // buttons/inputs here. Doing so suppresses the synthetic "click" event
+  // on real touch devices in most mobile browsers, which is why buttons
+  // would visually respond to a tap but every onclick/addEventListener("click")
+  // handler in the app would silently fail to fire. Double-tap-zoom and the
+  // 300ms tap delay are handled the correct, non-destructive way via the
+  // `touch-action: manipulation` CSS rule applied to interactive elements.
 
   // Optimize viewport for notches and safe areas
   const setupSafeAreas = () => {
