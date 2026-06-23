@@ -1,5 +1,5 @@
-const CACHE_NAME = "cashero-static-v1";
-const RUNTIME_CACHE = "cashero-runtime-v1";
+const CACHE_NAME = "cashero-static-v2";
+const RUNTIME_CACHE = "cashero-runtime-v2";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
 // Caching AI responses could serve stale financial advice silently.
@@ -55,7 +55,7 @@ self.addEventListener("fetch", (event) => {
     req.headers.get("accept")?.includes("text/html")
   ) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-store" })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
@@ -111,7 +111,7 @@ self.addEventListener("fetch", (event) => {
   // Default: network-first for same-origin assets (js, css, etc.)
   // Cache only serves as offline fallback
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: "no-store" })
       .then((res) => {
         if (res && res.status === 200) {
           const copy = res.clone();

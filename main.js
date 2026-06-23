@@ -2114,7 +2114,7 @@ function toast(msg, type = "ok") {
 if ("serviceWorker" in navigator) {
   // Register the dedicated service worker file at the app root
   navigator.serviceWorker
-    .register("/sw.js")
+    .register("/sw.js", { updateViaCache: "none" })
     .then((reg) => {
       console.log("ServiceWorker registered:", reg.scope);
 
