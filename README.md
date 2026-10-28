@@ -16,6 +16,9 @@ A modern web application for tracking and managing personal finances with intell
 ## Technology Stack
 
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Frontend modules**: API handling, persistence, daily quotes, and global
+  error reporting live in `modules/`; `main.js` retains the classic-script UI
+  bridge for existing inline handlers
 - **Storage**: Browser LocalStorage with JSON serialization
 - **Deployment**: Vercel
 - **Icons**: Unicode emoji with color-coded categories
@@ -26,7 +29,7 @@ See [SETUP.md](SETUP.md) for detailed installation and development instructions.
 
 ## API Error Logging
 
-The application includes a robust error logging system (`APILogger`) that:
+The API module includes an error logging system (`APILogger`) that:
 
 - Tracks all API calls with timing information
 - Captures HTTP errors and network failures
@@ -41,6 +44,10 @@ console.log(window.APILogger.getLogs());
 console.log(window.APILogger.getLastError());
 console.log(window.APILogger.exportLogs());
 ```
+
+Unexpected runtime errors and unhandled promise rejections are logged and shown
+in a dismissible on-page alert. Storage restore failures are reported without
+discarding the rest of the application defaults.
 
 ## Usage
 

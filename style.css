@@ -27,6 +27,14 @@
   --sans: "Syne", sans-serif;
   --radius: 14px;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --glass-bg: rgba(13, 13, 26, 0.7);
+  --glass-bg-strong: rgba(13, 13, 26, 0.84);
+  --glass-border: rgba(157, 125, 255, 0.18);
+  --glass-sheen: linear-gradient(
+    135deg,
+    rgba(108, 71, 255, 0.07),
+    rgba(0, 229, 160, 0.025)
+  );
 }
 [data-theme="light"] {
   --bg: #f4f3ff;
@@ -50,6 +58,14 @@
   --orange: #d45a20;
   --pink: #cc3380;
   --shadow: 0 4px 24px rgba(108, 71, 255, 0.1);
+  --glass-bg: rgba(250, 250, 248, 0.78);
+  --glass-bg-strong: rgba(250, 250, 248, 0.9);
+  --glass-border: rgba(108, 71, 255, 0.18);
+  --glass-sheen: linear-gradient(
+    135deg,
+    rgba(108, 71, 255, 0.045),
+    rgba(0, 160, 112, 0.018)
+  );
 }
 * {
   box-sizing: border-box;
@@ -183,8 +199,10 @@ body::before {
 #sidebar {
   width: 64px;
   flex-shrink: 0;
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
+  background: var(--glass-sheen), var(--glass-bg-strong);
+  border-right: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   display: flex;
   flex-direction: column;
   transition:
@@ -516,11 +534,13 @@ nav {
 #topbar {
   height: 64px;
   padding: 0 32px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg2);
+  background: var(--glass-sheen), var(--glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -634,10 +654,13 @@ nav {
 
 /* ═══ CARDS ═══ */
 .card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--glass-sheen), var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 20px 22px;
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: blur(14px) saturate(135%);
   transition:
     background 0.3s,
     border-color 0.3s;
@@ -667,13 +690,18 @@ nav {
   margin-bottom: 20px;
 }
 .stat-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--glass-sheen), var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 18px 20px;
   position: relative;
   overflow: hidden;
-  transition: background 0.3s;
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: blur(14px) saturate(135%);
+  transition:
+    background 0.3s,
+    border-color 0.3s;
 }
 .stat-card::after {
   content: "";
@@ -2037,7 +2065,7 @@ nav {
     max-width: 100%;
     z-index: 100;
     border-left: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--glass-border);
     transform: translateY(100%);
   }
   #notif-panel.open {
@@ -2381,21 +2409,23 @@ nav {
   bottom: 0;
   width: 340px;
   max-width: 95vw;
-  background: var(--bg2);
-  border-left: 1px solid var(--border2);
+  background: var(--glass-sheen), var(--glass-bg-strong);
+  border-left: 1px solid var(--glass-border);
   z-index: 100;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
 }
 #notif-panel.open {
   transform: translateX(0);
 }
 .notif-header {
   padding: 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2432,12 +2462,14 @@ nav {
   background: var(--border2);
 }
 .notif-item {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--glass-sheen), var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
   padding: 13px 14px;
   position: relative;
   animation: fadeUp 0.2s ease;
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  backdrop-filter: blur(10px) saturate(130%);
 }
 .notif-item.unread {
   border-color: var(--accent);
@@ -2488,7 +2520,7 @@ nav {
 }
 .notif-footer {
   padding: 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   flex-shrink: 0;
   display: flex;
   gap: 8px;
@@ -2516,6 +2548,9 @@ nav {
   inset: 0;
   z-index: 99;
   display: none;
+  background: rgba(7, 7, 15, 0.28);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 .notif-backdrop.show {
   display: block;

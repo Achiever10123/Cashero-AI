@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.1";
+const CACHE_NAME = "cashero-static-v1.1.3";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -16,6 +16,11 @@ const CORE_ASSETS = [
   "/index.html",
   "/style.css",
   "/main.js",
+  "/modules/api.js",
+  "/modules/bootstrap.js",
+  "/modules/daily-quote.js",
+  "/modules/errors.js",
+  "/modules/storage.js",
   "/favicon.ico",
   "/assets/favicon/site.webmanifest",
 ];

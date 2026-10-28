@@ -151,108 +151,6 @@ function escapeHtml(text) {
 }
 
 // ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-const APILogger = {
-  logs: [],
-  maxLogs: 50,
-
-  log(endpoint, status, duration, error = null, details = {}) {
-    const entry = {
-      timestamp: new Date().toISOString(),
-      endpoint,
-      status,
-      duration: `${duration}ms`,
-      error: error ? error.message : null,
-      stack: error ? error.stack : null,
-      ...details,
-    };
-
-    this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) this.logs.shift();
-
-    // Always log errors to console
-    if (error || status >= 400) {
-      console.error(`[API ERROR] ${endpoint}`, {
-        status,
-        duration: `${duration}ms`,
-        error: error?.message,
-        details,
-      });
-    }
-
-    return entry;
-  },
-
-  getLogs() {
-    return this.logs;
-  },
-
-  getLastError() {
-    return this.logs.reverse().find((log) => log.error || log.status >= 400);
-  },
-
-  exportLogs() {
-    return JSON.stringify(this.logs, null, 2);
-  },
-
-  clear() {
-    this.logs = [];
-  },
-};
-
-// Expose for debugging (localhost only — not in production)
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-  window.APILogger = APILogger;
-}
-
-// ═══════════════════════════════════════════
-//  API CALL WRAPPER WITH ERROR HANDLING
-// ═══════════════════════════════════════════
-async function fetchAPI(endpoint, options = {}) {
-  const startTime = performance.now();
-
-  try {
-    const response = await fetch(endpoint, options);
-    const duration = Math.round(performance.now() - startTime);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const error = new Error(
-        errorData.error?.message || `HTTP ${response.status}`,
-      );
-      error.status = response.status;
-      error.data = errorData;
-
-      APILogger.log(endpoint, response.status, duration, error, {
-        method: options.method || "GET",
-        errorDetails: errorData,
-      });
-
-      throw error;
-    }
-
-    const data = await response.json();
-    APILogger.log(endpoint, response.status, duration, null, {
-      method: options.method || "GET",
-    });
-
-    return data;
-  } catch (error) {
-    const duration = Math.round(performance.now() - startTime);
-
-    // Only log if we haven't already logged this error
-    if (!error.status) {
-      APILogger.log(endpoint, 0, duration, error, {
-        method: options.method || "GET",
-        isNetworkError: true,
-      });
-    }
-
-    throw error;
-  }
-}
-
-// ═══════════════════════════════════════════
 //  EFF WORDLIST (for recovery phrases)
 // ═══════════════════════════════════════════
 const EFF_WORDLIST = [
@@ -517,217 +415,39 @@ let notifications = [];
 // ═══════════════════════════════════════════
 function load() {
   try {
-    const r = localStorage.getItem(SK);
-    if (r) S = JSON.parse(r);
+    const storedState = CasheroStorage.readJSON(SK);
+    if (storedState !== null) {
+      if (
+        !storedState ||
+        typeof storedState !== "object" ||
+        Array.isArray(storedState)
+      ) {
+        throw new Error("Saved application data has an invalid format.");
+      }
+      for (const key of ["expenses", "payouts", "goals", "recurring"]) {
+        if (
+          storedState[key] !== undefined &&
+          !Array.isArray(storedState[key])
+        ) {
+          throw new Error(`Saved application data has an invalid "${key}" list.`);
+        }
+      }
+      S = { ...S, ...storedState };
+    }
 
     // Restore cooldown timestamp from localStorage
-    const lastAnalysisTime = localStorage.getItem("cashero_last_analysis");
+    const lastAnalysisTime = CasheroStorage.getItem("cashero_last_analysis");
     if (lastAnalysisTime) {
-      analysisLastRun = parseInt(lastAnalysisTime);
+      const parsedTime = Number.parseInt(lastAnalysisTime, 10);
+      if (Number.isFinite(parsedTime)) analysisLastRun = parsedTime;
     }
-  } catch {}
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not restore saved application data");
+  }
 }
 function save() {
-  localStorage.setItem(SK, JSON.stringify(S));
+  CasheroStorage.writeJSON(SK, S);
 }
-
-// ═══════════════════════════════════════════
-//  DAILY MOTIVATIONAL QUOTE
-// ═══════════════════════════════════════════
-const DAILY_QUOTE_STORAGE_KEY = "cashero_daily_quote";
-const DAILY_QUOTE_FALLBACKS = [
-  "Well done is better than well said.",
-  "Energy and persistence conquer all things.",
-  "Diligence is the mother of good luck.",
-  "Never leave that till tomorrow which you can do today.",
-  "Lost time is never found again.",
-];
-let dailyQuoteRequestDate = null;
-let dailyQuoteAttemptDate = null;
-let dailyQuoteRefreshTimer = null;
-let dailyQuoteToastTimer = null;
-let dailyQuoteToastShown = false;
-
-function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getDailyQuoteFallback(date = new Date()) {
-  const dateKey = localDateKey(date);
-  const dayNumber = Math.floor(
-    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
-      Date.UTC(date.getFullYear(), 0, 0)) /
-      86_400_000,
-  );
-  return {
-    quote: DAILY_QUOTE_FALLBACKS[dayNumber % DAILY_QUOTE_FALLBACKS.length],
-    author: "Benjamin Franklin",
-    date: dateKey,
-  };
-}
-
-function readCachedDailyQuote() {
-  try {
-    const cached = JSON.parse(
-      localStorage.getItem(DAILY_QUOTE_STORAGE_KEY) || "null",
-    );
-    if (
-      cached &&
-      typeof cached.quote === "string" &&
-      cached.quote.trim() &&
-      typeof cached.author === "string" &&
-      cached.author.trim() &&
-      typeof cached.date === "string"
-    ) {
-      return cached;
-    }
-    return null;
-  } catch (error) {
-    console.warn("Could not read the cached daily quote.", error);
-    return null;
-  }
-}
-
-function renderDailyQuote(quote) {
-  const area = document.getElementById("daily-quote-toast");
-  if (!area) return;
-  if (area.hidden && dailyQuoteToastShown) return;
-
-  const banner = document.createElement("aside");
-  banner.className = "daily-quote-banner";
-  banner.setAttribute("aria-label", "Daily motivational quote");
-  banner.setAttribute("role", "status");
-
-  const mark = document.createElement("span");
-  mark.className = "daily-quote-mark";
-  mark.setAttribute("aria-hidden", "true");
-  mark.textContent = "“";
-
-  const content = document.createElement("div");
-  content.className = "daily-quote-content";
-
-  const label = document.createElement("div");
-  label.className = "daily-quote-label";
-  label.textContent = "Daily inspiration";
-
-  const text = document.createElement("blockquote");
-  text.className = "daily-quote-text";
-  text.textContent = quote.quote;
-
-  if (quote.author) {
-    const attribution = document.createElement("div");
-    attribution.className = "daily-quote-attribution";
-
-    const author = document.createElement("cite");
-    author.textContent = quote.author;
-    attribution.append(author);
-    content.append(attribution);
-  }
-
-  const closeButton = document.createElement("button");
-  closeButton.className = "daily-quote-close";
-  closeButton.type = "button";
-  closeButton.setAttribute("aria-label", "Dismiss daily quote");
-  closeButton.textContent = "×";
-  closeButton.addEventListener("click", () => {
-    clearTimeout(dailyQuoteToastTimer);
-    area.hidden = true;
-    area.replaceChildren();
-  });
-
-  content.prepend(label, text);
-  banner.append(mark, content, closeButton);
-  area.replaceChildren(banner);
-  area.hidden = false;
-  if (!dailyQuoteToastShown) {
-    dailyQuoteToastShown = true;
-    dailyQuoteToastTimer = setTimeout(() => {
-      area.hidden = true;
-      area.replaceChildren();
-    }, 60_000);
-  }
-}
-
-async function loadDailyQuote() {
-  const today = localDateKey();
-  const cached = readCachedDailyQuote();
-
-  if (cached?.date === today) {
-    renderDailyQuote(cached);
-  } else {
-    renderDailyQuote(getDailyQuoteFallback());
-  }
-  if (
-    cached?.date === today ||
-    dailyQuoteRequestDate === today ||
-    dailyQuoteAttemptDate === today
-  ) {
-    return;
-  }
-
-  dailyQuoteRequestDate = today;
-  dailyQuoteAttemptDate = today;
-  try {
-    const response = await fetch("https://zenquotes.io/api/today", {
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      throw new Error(`Quote API returned HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const result = Array.isArray(data) ? data[0] : null;
-    if (
-      !result ||
-      typeof result.q !== "string" ||
-      !result.q.trim() ||
-      typeof result.a !== "string"
-    ) {
-      throw new Error("Quote API returned an invalid response");
-    }
-
-    if (today !== localDateKey()) return;
-    const quote = {
-      quote: result.q.trim(),
-      author: result.a.trim() || "Unknown",
-      date: today,
-    };
-    renderDailyQuote(quote);
-    try {
-      localStorage.setItem(DAILY_QUOTE_STORAGE_KEY, JSON.stringify(quote));
-    } catch (error) {
-      console.warn("Could not cache the daily quote.", error);
-    }
-  } catch (error) {
-    console.error("Could not load the daily motivational quote.", error);
-  } finally {
-    if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
-  }
-}
-
-function scheduleDailyQuoteRefresh() {
-  clearTimeout(dailyQuoteRefreshTimer);
-  const nextMidnight = new Date();
-  nextMidnight.setHours(24, 0, 0, 0);
-  dailyQuoteRefreshTimer = setTimeout(
-    () => {
-      loadDailyQuote();
-      scheduleDailyQuoteRefresh();
-    },
-    Math.max(1000, nextMidnight.getTime() - Date.now()),
-  );
-}
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") loadDailyQuote();
-});
-window.addEventListener("online", () => {
-  if (!dailyQuoteRequestDate) dailyQuoteAttemptDate = null;
-  loadDailyQuote();
-});
 
 // ═══════════════════════════════════════════
 //  MONTH HELPERS
@@ -1631,7 +1351,11 @@ function renderTxList(id, list, showDel) {
   if (el._observer) {
     try {
       el._observer.disconnect();
-    } catch (e) {}
+    } catch (error) {
+      CasheroErrors.reportError(error, "Could not release transaction list resources", {
+        notify: false,
+      });
+    }
     el._observer = null;
   }
   el._sentinel = null;
@@ -1874,7 +1598,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 
     // ═══ SET COOLDOWN TIMESTAMP ═══
     analysisLastRun = Date.now();
-    localStorage.setItem("cashero_last_analysis", analysisLastRun.toString());
+    CasheroStorage.setItem("cashero_last_analysis", analysisLastRun.toString());
     startCooldownTimer(btn, 60);
   } catch (e) {
     console.error("[ANALYSIS ERROR]", e);
@@ -2468,11 +2192,11 @@ function clearAllData() {
   if (!doubleConfirm) return;
 
   // Clear localStorage completely
-  localStorage.removeItem("cashero_pin_hash");
-  localStorage.removeItem("cashero_pin_salt");
-  localStorage.removeItem("cashero_recovery_hash");
-  localStorage.removeItem("cashero_recovery_salt");
-  localStorage.removeItem("cashero_last_analysis");
+  CasheroStorage.removeItem("cashero_pin_hash");
+  CasheroStorage.removeItem("cashero_pin_salt");
+  CasheroStorage.removeItem("cashero_recovery_hash");
+  CasheroStorage.removeItem("cashero_recovery_salt");
+  CasheroStorage.removeItem("cashero_last_analysis");
   // Reset S to defaults and save
   S = {
     expenses: [],
@@ -2528,10 +2252,10 @@ async function togglePinLock() {
         clearTimeout(inactivityTimer);
         inactivityTimer = null;
       }
-      localStorage.removeItem("cashero_pin_hash");
-      localStorage.removeItem("cashero_pin_salt");
-      localStorage.removeItem("cashero_recovery_hash");
-      localStorage.removeItem("cashero_recovery_salt");
+      CasheroStorage.removeItem("cashero_pin_hash");
+      CasheroStorage.removeItem("cashero_pin_salt");
+      CasheroStorage.removeItem("cashero_recovery_hash");
+      CasheroStorage.removeItem("cashero_recovery_salt");
       S.pinEnabled = false;
       save();
       updatePinToggleButton();
@@ -2590,7 +2314,7 @@ async function hashPin(pin, salt = null) {
 
 // Check if PIN is set in localStorage
 function isPinSet() {
-  return !!localStorage.getItem("cashero_pin_hash");
+  return !!CasheroStorage.getItem("cashero_pin_hash");
 }
 
 // ═══════════════════════════════════════════
@@ -2768,13 +2492,13 @@ async function submitPin() {
   }
 
   try {
-    const storedHash = localStorage.getItem("cashero_pin_hash");
+    const storedHash = CasheroStorage.getItem("cashero_pin_hash");
 
     if (pinMode === "setup") {
       // Set new PIN — generate fresh hash+salt and store both
       const { hash, salt } = await hashPin(pin);
-      localStorage.setItem("cashero_pin_hash", hash);
-      localStorage.setItem("cashero_pin_salt", salt);
+      CasheroStorage.setItem("cashero_pin_hash", hash);
+      CasheroStorage.setItem("cashero_pin_salt", salt);
       S.pinEnabled = true;
       save();
       msg.textContent = "PIN set successfully ✓";
@@ -2789,7 +2513,7 @@ async function submitPin() {
       }, 500);
     } else if (pinMode === "verify") {
       // Verify PIN for app access — re-hash using stored salt
-      const storedSalt = localStorage.getItem("cashero_pin_salt");
+      const storedSalt = CasheroStorage.getItem("cashero_pin_salt");
       const { hash: verifyHash } = await hashPin(pin, storedSalt);
       if (verifyHash === storedHash) {
         pinFailCount = 0; // reset on success
@@ -2820,7 +2544,7 @@ async function submitPin() {
       }
     } else if (pinMode === "changeVerify") {
       // Verify old PIN before allowing change — re-hash using stored salt
-      const storedSalt = localStorage.getItem("cashero_pin_salt");
+      const storedSalt = CasheroStorage.getItem("cashero_pin_salt");
       const { hash: verifyHash } = await hashPin(pin, storedSalt);
       if (verifyHash === storedHash) {
         pinFailCount = 0;
@@ -2860,8 +2584,8 @@ async function submitPin() {
       // Confirm new PIN matches
       if (pin === tempNewPin) {
         const { hash: newHash, salt: newSalt } = await hashPin(pin);
-        localStorage.setItem("cashero_pin_hash", newHash);
-        localStorage.setItem("cashero_pin_salt", newSalt);
+        CasheroStorage.setItem("cashero_pin_hash", newHash);
+        CasheroStorage.setItem("cashero_pin_salt", newSalt);
         save();
         msg.textContent = "PIN changed ✓";
         msg.classList.add("success");
@@ -2917,8 +2641,8 @@ async function submitPin() {
     } else if (pinMode === "recoverNewPin") {
       // Set new PIN after recovery — store hash+salt
       const { hash: newPinHash, salt: newPinSalt } = await hashPin(pin);
-      localStorage.setItem("cashero_pin_hash", newPinHash);
-      localStorage.setItem("cashero_pin_salt", newPinSalt);
+      CasheroStorage.setItem("cashero_pin_hash", newPinHash);
+      CasheroStorage.setItem("cashero_pin_salt", newPinSalt);
       save();
       msg.textContent = "PIN reset successfully ✓";
       msg.classList.add("success");
@@ -3034,7 +2758,10 @@ async function copyRecoveryPhrase() {
   try {
     await navigator.clipboard.writeText(wordsText);
     toast("Recovery phrase copied to clipboard", "ok");
-  } catch (e) {
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not copy the recovery phrase", {
+      notify: false,
+    });
     toast("Failed to copy recovery phrase", "err");
   }
 }
@@ -3051,8 +2778,8 @@ async function finishRecoveryPhrase() {
   const { salt, hash } = await hashRecoveryPhrase(wordsText);
 
   // Store in localStorage
-  localStorage.setItem("cashero_recovery_salt", salt);
-  localStorage.setItem("cashero_recovery_hash", hash);
+  CasheroStorage.setItem("cashero_recovery_salt", salt);
+  CasheroStorage.setItem("cashero_recovery_hash", hash);
 
   hideRecoveryPhrase();
   navigate("dashboard");
@@ -3089,8 +2816,8 @@ function startForgotPinFlow() {
 
 // Verify recovery phrase for PIN reset
 async function verifyRecoveryPhrase(phrase) {
-  const storedSalt = localStorage.getItem("cashero_recovery_salt");
-  const storedHash = localStorage.getItem("cashero_recovery_hash");
+  const storedSalt = CasheroStorage.getItem("cashero_recovery_salt");
+  const storedHash = CasheroStorage.getItem("cashero_recovery_hash");
 
   if (!storedSalt || !storedHash) {
     return false;
@@ -3151,6 +2878,8 @@ initPin().then(() => {
       2000,
     );
   }
+}).catch((error) => {
+  CasheroErrors.reportError(error, "Could not initialize app security");
 });
 
 // ═══════════════════════════════════════════
@@ -3585,10 +3314,10 @@ function restoreJSON(event) {
         pinEnabled: false, // never restore PIN state from backup — security risk
       };
       // Clear any PIN keys that might have been imported
-      localStorage.removeItem("cashero_pin_hash");
-      localStorage.removeItem("cashero_pin_salt");
-      localStorage.removeItem("cashero_recovery_hash");
-      localStorage.removeItem("cashero_recovery_salt");
+      CasheroStorage.removeItem("cashero_pin_hash");
+      CasheroStorage.removeItem("cashero_pin_salt");
+      CasheroStorage.removeItem("cashero_recovery_hash");
+      CasheroStorage.removeItem("cashero_recovery_salt");
       save();
       applyTheme();
       renderMonthPills();
@@ -3855,16 +3584,19 @@ initYearPills();
 
 function loadNotifications() {
   try {
-    notifications = JSON.parse(localStorage.getItem("cashero_notifs") || "[]");
-  } catch {
+    const storedNotifications =
+      CasheroStorage.readJSON("cashero_notifs") || [];
+    if (!Array.isArray(storedNotifications)) {
+      throw new Error("Saved notifications have an invalid format.");
+    }
+    notifications = storedNotifications;
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not load saved notifications");
     notifications = [];
   }
 }
 function saveNotifications() {
-  localStorage.setItem(
-    "cashero_notifs",
-    JSON.stringify(notifications.slice(0, 50)),
-  );
+  CasheroStorage.writeJSON("cashero_notifs", notifications.slice(0, 50));
 }
 loadNotifications();
 
@@ -3970,22 +3702,28 @@ async function requestNotifPermission() {
     if (btn) btn.textContent = "⚠ Host app to enable push";
     return;
   }
-  const perm = await Notification.requestPermission();
-  const btn = document.getElementById("notif-perm-btn");
-  if (perm === "granted") {
-    if (btn) {
-      btn.textContent = "✓ Push Alerts Enabled";
-      btn.classList.add("granted");
+  try {
+    const perm = await Notification.requestPermission();
+    const btn = document.getElementById("notif-perm-btn");
+    if (perm === "granted") {
+      if (btn) {
+        btn.textContent = "✓ Push Alerts Enabled";
+        btn.classList.add("granted");
+      }
+      toast("Push alerts enabled ✓");
+    } else {
+      if (btn) btn.textContent = "Permission Denied";
+      toast("Permission denied — in-app alerts still work", "err");
     }
-    toast("Push alerts enabled ✓");
-  } else {
-    if (btn) btn.textContent = "Permission Denied";
-    toast("Permission denied — in-app alerts still work", "err");
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not request notification permission");
+    toast("Could not enable push alerts — in-app alerts still work", "err");
   }
 }
 
 function sendPushNotification(type, body) {
   if (location.protocol === "file:") return;
+  if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   const titles = {
     budget: "💸 Budget Alert",
@@ -3998,12 +3736,20 @@ function sendPushNotification(type, body) {
       body,
       tag: `cashero-${type}`,
     });
-  } catch (e) {}
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not display a push notification", {
+      notify: false,
+    });
+  }
 }
 
 (function syncNotifBtn() {
   const btn = document.getElementById("notif-perm-btn");
   if (!btn) return;
+  if (!("Notification" in window)) {
+    btn.textContent = "Push alerts unavailable";
+    return;
+  }
   if (location.protocol === "file:") {
     btn.textContent = "⚠ Host app to enable push";
     return;
@@ -4034,20 +3780,20 @@ function checkBudgetAlert() {
   const pct = spent / payout.amount;
   const daysLeft = daysRemainingInMonth();
   const alertKey = `cashero_budget_alerted_${activeMonth}`;
-  const alerted80 = localStorage.getItem(alertKey + "_80");
-  const alerted100 = localStorage.getItem(alertKey + "_100");
+  const alerted80 = CasheroStorage.getItem(alertKey + "_80");
+  const alerted100 = CasheroStorage.getItem(alertKey + "_100");
   if (pct >= 1.0 && !alerted100) {
     addNotification(
       "budget",
       `You've spent 100% of your ${monthLabel(activeMonth)} income (${fmt(spent)} / ${fmt(payout.amount)}) — you're in the red.`,
     );
-    localStorage.setItem(alertKey + "_100", "1");
+    CasheroStorage.setItem(alertKey + "_100", "1");
   } else if (pct >= 0.8 && !alerted80) {
     addNotification(
       "budget",
       `You've spent 80% of your ${monthLabel(activeMonth)} income with ${daysLeft} day${daysLeft !== 1 ? "s" : ""} left — ${fmt(payout.amount - spent)} remaining.`,
     );
-    localStorage.setItem(alertKey + "_80", "1");
+    CasheroStorage.setItem(alertKey + "_80", "1");
   }
 }
 
@@ -4056,7 +3802,7 @@ function checkRecurringReminders() {
   const today = new Date();
   const tomorrow = today.getDate() + 1;
   const alertKey = `cashero_recur_alerted_${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-  const alerted = new Set(JSON.parse(localStorage.getItem(alertKey) || "[]"));
+  const alerted = new Set(JSON.parse(CasheroStorage.getItem(alertKey) || "[]"));
   const newAlerts = [];
   S.recurring.forEach((r) => {
     if (
@@ -4072,7 +3818,7 @@ function checkRecurringReminders() {
     }
   });
   if (newAlerts.length)
-    localStorage.setItem(alertKey, JSON.stringify([...alerted, ...newAlerts]));
+    CasheroStorage.setItem(alertKey, JSON.stringify([...alerted, ...newAlerts]));
 }
 
 function daysRemainingInMonth() {
@@ -4092,7 +3838,7 @@ checkAllNotifications();
 //  RESTORE COOLDOWN ON PAGE LOAD
 // ═══════════════════════════════════════════
 (function () {
-  const lastAnalysisTime = localStorage.getItem("cashero_last_analysis");
+  const lastAnalysisTime = CasheroStorage.getItem("cashero_last_analysis");
   if (!lastAnalysisTime) return;
 
   analysisLastRun = parseInt(lastAnalysisTime);
