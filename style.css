@@ -1122,6 +1122,12 @@ nav {
 /* ═══ CHART CONTAINERS ═══ */
 .chart-wrap {
   position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 260px;
+}
+.chart-wrap--short {
+  height: 200px;
 }
 .chart-wrap canvas {
   display: block;
@@ -1388,6 +1394,102 @@ nav {
   color: var(--accent2);
 }
 
+/* ═══ DAILY QUOTE ═══ */
+#daily-quote-toast:not([hidden]) {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 10000;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  animation: dailyQuoteIn 0.25s ease-out;
+}
+.daily-quote-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6c47ff12, #00e5a008);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+.daily-quote-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin: -7px -9px 0 auto;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text2);
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.daily-quote-close:hover,
+.daily-quote-close:focus-visible {
+  background: var(--bg3);
+  color: var(--text);
+  outline: none;
+}
+@keyframes dailyQuoteIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.daily-quote-mark {
+  flex-shrink: 0;
+  color: var(--accent2);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+.daily-quote-content {
+  min-width: 0;
+}
+.daily-quote-label {
+  margin-bottom: 6px;
+  color: var(--accent2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.daily-quote-text {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.daily-quote-attribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+  color: var(--text2);
+  font-size: 10px;
+  font-style: normal;
+}
+.daily-quote-attribution cite {
+  font-style: normal;
+}
+.daily-quote-attribution cite::before {
+  content: "— ";
+}
+
 /* ═══ PROJECTION ═══ */
 .projection-box {
   background: var(--bg3);
@@ -1478,44 +1580,6 @@ nav {
 
 .toast .toast-close:hover {
   background: rgba(0, 0, 0, 0.04);
-}
-
-/* Offline banner close button */
-#offline-banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-#offline-banner .offline-msg {
-  flex: 1;
-}
-#offline-banner .offline-close {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: inherit;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  line-height: 1;
-}
-#offline-banner .offline-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: scale(1.08);
-}
-#offline-banner .offline-close:active {
-  transform: scale(0.96);
 }
 
 /* ═══ SCROLLABLE LIST ═══ */

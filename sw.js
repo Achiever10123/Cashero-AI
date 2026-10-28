@@ -1,5 +1,5 @@
-const CACHE_NAME = "cashero-static-v2";
-const RUNTIME_CACHE = "cashero-runtime-v2";
+const CACHE_NAME = "cashero-static-v1.1.1";
+const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
 // Caching AI responses could serve stale financial advice silently.

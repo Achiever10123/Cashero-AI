@@ -1,5 +1,4 @@
-const BACKEND_URL = "https://vercel-deploy-xptk.vercel.app/"
-
+const BACKEND_URL = "https://vercel-deploy-xptk.vercel.app/";
 
 // ═══════════════════════════════════════════
 //  CONSTANTS & STATE
@@ -533,6 +532,204 @@ function save() {
 }
 
 // ═══════════════════════════════════════════
+//  DAILY MOTIVATIONAL QUOTE
+// ═══════════════════════════════════════════
+const DAILY_QUOTE_STORAGE_KEY = "cashero_daily_quote";
+const DAILY_QUOTE_FALLBACKS = [
+  "Well done is better than well said.",
+  "Energy and persistence conquer all things.",
+  "Diligence is the mother of good luck.",
+  "Never leave that till tomorrow which you can do today.",
+  "Lost time is never found again.",
+];
+let dailyQuoteRequestDate = null;
+let dailyQuoteAttemptDate = null;
+let dailyQuoteRefreshTimer = null;
+let dailyQuoteToastTimer = null;
+let dailyQuoteToastShown = false;
+
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDailyQuoteFallback(date = new Date()) {
+  const dateKey = localDateKey(date);
+  const dayNumber = Math.floor(
+    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+      Date.UTC(date.getFullYear(), 0, 0)) /
+      86_400_000,
+  );
+  return {
+    quote: DAILY_QUOTE_FALLBACKS[dayNumber % DAILY_QUOTE_FALLBACKS.length],
+    author: "Benjamin Franklin",
+    date: dateKey,
+  };
+}
+
+function readCachedDailyQuote() {
+  try {
+    const cached = JSON.parse(
+      localStorage.getItem(DAILY_QUOTE_STORAGE_KEY) || "null",
+    );
+    if (
+      cached &&
+      typeof cached.quote === "string" &&
+      cached.quote.trim() &&
+      typeof cached.author === "string" &&
+      cached.author.trim() &&
+      typeof cached.date === "string"
+    ) {
+      return cached;
+    }
+    return null;
+  } catch (error) {
+    console.warn("Could not read the cached daily quote.", error);
+    return null;
+  }
+}
+
+function renderDailyQuote(quote) {
+  const area = document.getElementById("daily-quote-toast");
+  if (!area) return;
+  if (area.hidden && dailyQuoteToastShown) return;
+
+  const banner = document.createElement("aside");
+  banner.className = "daily-quote-banner";
+  banner.setAttribute("aria-label", "Daily motivational quote");
+  banner.setAttribute("role", "status");
+
+  const mark = document.createElement("span");
+  mark.className = "daily-quote-mark";
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = "“";
+
+  const content = document.createElement("div");
+  content.className = "daily-quote-content";
+
+  const label = document.createElement("div");
+  label.className = "daily-quote-label";
+  label.textContent = "Daily inspiration";
+
+  const text = document.createElement("blockquote");
+  text.className = "daily-quote-text";
+  text.textContent = quote.quote;
+
+  if (quote.author) {
+    const attribution = document.createElement("div");
+    attribution.className = "daily-quote-attribution";
+
+    const author = document.createElement("cite");
+    author.textContent = quote.author;
+    attribution.append(author);
+    content.append(attribution);
+  }
+
+  const closeButton = document.createElement("button");
+  closeButton.className = "daily-quote-close";
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", "Dismiss daily quote");
+  closeButton.textContent = "×";
+  closeButton.addEventListener("click", () => {
+    clearTimeout(dailyQuoteToastTimer);
+    area.hidden = true;
+    area.replaceChildren();
+  });
+
+  content.prepend(label, text);
+  banner.append(mark, content, closeButton);
+  area.replaceChildren(banner);
+  area.hidden = false;
+  if (!dailyQuoteToastShown) {
+    dailyQuoteToastShown = true;
+    dailyQuoteToastTimer = setTimeout(() => {
+      area.hidden = true;
+      area.replaceChildren();
+    }, 60_000);
+  }
+}
+
+async function loadDailyQuote() {
+  const today = localDateKey();
+  const cached = readCachedDailyQuote();
+
+  if (cached?.date === today) {
+    renderDailyQuote(cached);
+  } else {
+    renderDailyQuote(getDailyQuoteFallback());
+  }
+  if (
+    cached?.date === today ||
+    dailyQuoteRequestDate === today ||
+    dailyQuoteAttemptDate === today
+  ) {
+    return;
+  }
+
+  dailyQuoteRequestDate = today;
+  dailyQuoteAttemptDate = today;
+  try {
+    const response = await fetch("https://zenquotes.io/api/today", {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new Error(`Quote API returned HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const result = Array.isArray(data) ? data[0] : null;
+    if (
+      !result ||
+      typeof result.q !== "string" ||
+      !result.q.trim() ||
+      typeof result.a !== "string"
+    ) {
+      throw new Error("Quote API returned an invalid response");
+    }
+
+    if (today !== localDateKey()) return;
+    const quote = {
+      quote: result.q.trim(),
+      author: result.a.trim() || "Unknown",
+      date: today,
+    };
+    renderDailyQuote(quote);
+    try {
+      localStorage.setItem(DAILY_QUOTE_STORAGE_KEY, JSON.stringify(quote));
+    } catch (error) {
+      console.warn("Could not cache the daily quote.", error);
+    }
+  } catch (error) {
+    console.error("Could not load the daily motivational quote.", error);
+  } finally {
+    if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
+  }
+}
+
+function scheduleDailyQuoteRefresh() {
+  clearTimeout(dailyQuoteRefreshTimer);
+  const nextMidnight = new Date();
+  nextMidnight.setHours(24, 0, 0, 0);
+  dailyQuoteRefreshTimer = setTimeout(
+    () => {
+      loadDailyQuote();
+      scheduleDailyQuoteRefresh();
+    },
+    Math.max(1000, nextMidnight.getTime() - Date.now()),
+  );
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") loadDailyQuote();
+});
+window.addEventListener("online", () => {
+  if (!dailyQuoteRequestDate) dailyQuoteAttemptDate = null;
+  loadDailyQuote();
+});
+
+// ═══════════════════════════════════════════
 //  MONTH HELPERS
 // ═══════════════════════════════════════════
 function mkNow() {
@@ -627,7 +824,7 @@ function renderAll() {
   renderRecurring();
   renderPayoutHistory();
   renderHistory();
-  renderCharts();
+  if (document.querySelector("#page-charts.active")) renderCharts();
   renderCompare();
   renderCatDeep();
   detectDuplicates();
@@ -1197,7 +1394,7 @@ function addGoal() {
   toast("Goal added ✓");
 }
 function addToGoal(id) {
-  const goal = S.goals.find(g => g.id == id);
+  const goal = S.goals.find((g) => g.id == id);
   if (!goal) return;
   const amt = parseFloat(prompt("How much to add to this goal?"));
   if (isNaN(amt) || amt <= 0) return;
@@ -1208,7 +1405,7 @@ function addToGoal(id) {
 }
 function deleteGoal(id) {
   if (!confirm("Delete this goal?")) return;
-  S.goals = S.goals.filter(g => g.id != id);
+  S.goals = S.goals.filter((g) => g.id != id);
   save();
   renderGoals();
   toast("Goal removed");
@@ -1274,7 +1471,7 @@ function addRecurring() {
   toast("Recurring expense saved ✓");
 }
 function deleteRecurring(id) {
-  S.recurring = S.recurring.filter(r => r.id != id);
+  S.recurring = S.recurring.filter((r) => r.id != id);
   save();
   renderRecurring();
   toast("Removed");
@@ -1573,7 +1770,6 @@ function renderCatDeep() {
 //  AI ANALYSIS
 // ═══════════════════════════════════════════
 async function runAnalysis() {
-
   const btn = document.getElementById("analysis-btn");
   const out = document.getElementById("analysis-output");
 
@@ -1658,15 +1854,14 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 
   try {
     const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-model: OPENAI_MODEL,
-max_tokens: 1000,
-messages: [{ role: "user", content: prompt }],
-}),
-});
-
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
     const text = json.choices?.[0]?.message?.content || "";
     const a = JSON.parse(text.replace(/```json|```/g, "").trim());
@@ -1788,37 +1983,34 @@ async function runCheckin() {
 Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn} | Daily rate: ${fmt(dailyRate)}
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
-    const json = await fetchAPI(
-      `${BACKEND_URL}api/chat`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          max_tokens: 300,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      }
-    );
+    const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        max_tokens: 300,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
     const text = json.choices?.[0]?.message?.content || "";
     S.lastCheckin = text;
     S.lastCheckinDate = new Date().toISOString();
     save();
     // Sanitize the text to prevent any potential HTML injection, then replace markdown-style bold with actual bold tags and newlines with <br> for display.
-function sanitizeForDisplay(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
+    function sanitizeForDisplay(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
 
-// Then at line 1804, replace the innerHTML assignment with:
-const safeText = sanitizeForDisplay(text)
-  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-  .replace(/\n/g, "<br>");
-out.innerHTML = `<div class="checkin-output">${safeText}</div>`;
+    // Then at line 1804, replace the innerHTML assignment with:
+    const safeText = sanitizeForDisplay(text)
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
+    out.innerHTML = `<div class="checkin-output">${safeText}</div>`;
 
     renderCheckinBanner();
     toast("Check-in complete ✓");
@@ -1862,19 +2054,17 @@ Categories available: ${CATS.map((c) => c.name).join(", ")}
 JSON format: {"amount":number,"category":"exact category name from list","note":"brief description","date":"YYYY-MM-DD"}
 If amount not found, use 0. Pick the closest matching category.`;
   try {
-    const json = await fetchAPI(`${BACKEND_URL}api/chat`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          max_tokens: 200,
-          messages: [{ role: "user", content: prompt }],
-        }),
+    const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
     const text = json.choices?.[0]?.message?.content || "";
     nlpParsed = JSON.parse(text.replace(/```json|```/g, "").trim());
@@ -1971,13 +2161,13 @@ function applyTheme() {
 
   // Update theme icon SVG
   const themeIcon = document.querySelector(".topbar-theme-toggle .nav-icon");
-if (themeIcon) {
-  if (S.theme === "dark") {
-    themeIcon.className = "nav-icon fa-solid fa-moon";
-  } else {
-    themeIcon.className = "nav-icon fa-solid fa-sun";
+  if (themeIcon) {
+    if (S.theme === "dark") {
+      themeIcon.className = "nav-icon fa-solid fa-moon";
+    } else {
+      themeIcon.className = "nav-icon fa-solid fa-sun";
+    }
   }
-}
 
   document.getElementById("theme-label").textContent =
     S.theme === "dark" ? "Light Mode" : "Dark Mode";
@@ -2052,14 +2242,23 @@ function exportCSV() {
 // ═══════════════════════════════════════════
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-  const quickModal = document.getElementById("quick-modal");
-  const csvModal = document.getElementById("csv-export-modal");
-  const recoveryOverlay = document.getElementById("recovery-overlay");
+    const quickModal = document.getElementById("quick-modal");
+    const csvModal = document.getElementById("csv-export-modal");
+    const recoveryOverlay = document.getElementById("recovery-overlay");
 
-  if (quickModal && quickModal.classList.contains("open")) { closeQuickAdd(); return; }
-  if (csvModal && csvModal.classList.contains("open")) { closeCSVExportModal(); return; }
-  if (recoveryOverlay && recoveryOverlay.classList.contains("active")) { hideRecoveryPhrase(); return; }
-}
+    if (quickModal && quickModal.classList.contains("open")) {
+      closeQuickAdd();
+      return;
+    }
+    if (csvModal && csvModal.classList.contains("open")) {
+      closeCSVExportModal();
+      return;
+    }
+    if (recoveryOverlay && recoveryOverlay.classList.contains("active")) {
+      hideRecoveryPhrase();
+      return;
+    }
+  }
 
   if (
     e.target.tagName === "INPUT" ||
@@ -2140,59 +2339,9 @@ if ("serviceWorker" in navigator) {
     });
 }
 
-// Offline banner & online/offline toasts
-function ensureOfflineBanner() {
-  if (document.getElementById("offline-banner")) return;
-  const b = document.createElement("div");
-  b.id = "offline-banner";
-  b.style.position = "fixed";
-  b.style.left = "0";
-  b.style.right = "0";
-  b.style.top = "0";
-  b.style.padding = "8px 12px";
-  b.style.background = "var(--red)";
-  b.style.color = "white";
-  b.style.textAlign = "center";
-  b.style.zIndex = 9999;
-  b.style.display = "none";
-  const span = document.createElement("span");
-  span.className = "offline-msg";
-  span.textContent = "You are offline — some features may be limited.";
-  b.appendChild(span);
-
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "offline-close";
-  close.title = "Dismiss";
-  close.innerHTML = getLucideIcon("X", 16);
-  close.addEventListener("click", (e) => {
-    e.stopPropagation();
-    window._offlineBannerManuallyClosed = true;
-    hideOfflineBanner();
-  });
-  b.appendChild(close);
-
-  document.body.appendChild(b);
-}
-
-function showOfflineBanner() {
-  ensureOfflineBanner();
-  const b = document.getElementById("offline-banner");
-  // Respect manual dismissal until connection returns
-  if (window._offlineBannerManuallyClosed) return;
-  b.style.display = "block";
-}
-
-function hideOfflineBanner() {
-  const b = document.getElementById("offline-banner");
-  if (b) b.style.display = "none";
-}
-
+// Online/offline toasts
 window.addEventListener("online", () => {
   // Throttle connectivity toasts to avoid spam
-  // Clear manual-close guard so future offline events can show banner
-  window._offlineBannerManuallyClosed = false;
-  hideOfflineBanner();
   if (
     !window._lastConnectivityToast ||
     Date.now() - window._lastConnectivityToast > 3000
@@ -2202,7 +2351,6 @@ window.addEventListener("online", () => {
   }
 });
 window.addEventListener("offline", () => {
-  showOfflineBanner();
   if (
     !window._lastConnectivityToast ||
     Date.now() - window._lastConnectivityToast > 3000
@@ -2211,10 +2359,8 @@ window.addEventListener("offline", () => {
     window._lastConnectivityToast = Date.now();
   }
 });
-
 // Show initial state
 if (!navigator.onLine) {
-  showOfflineBanner();
   if (!window._lastConnectivityToast) {
     toast("You are offline", "err");
     window._lastConnectivityToast = Date.now();
@@ -2299,7 +2445,10 @@ function changeAutoLockTimeout() {
   S.autoLockTimeout = val;
   save();
   // Restart the inactivity timer with the new value
-  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = null;
+  }
   if (val === 0) {
     toast("Auto-lock disabled", "ok");
   } else {
@@ -2310,10 +2459,12 @@ function changeAutoLockTimeout() {
 
 function clearAllData() {
   const confirmed = confirm(
-    "⚠️ Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?"
+    "⚠️ Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?",
   );
   if (!confirmed) return;
-  const doubleConfirm = confirm("Last chance - all your Cashero data will be gone. Proceed?");
+  const doubleConfirm = confirm(
+    "Last chance - all your Cashero data will be gone. Proceed?",
+  );
   if (!doubleConfirm) return;
 
   // Clear localStorage completely
@@ -2340,7 +2491,10 @@ function clearAllData() {
   };
   save();
   toast("All data cleared", "ok");
-  setTimeout(() => { renderAll(); renderSettings(); }, 100);
+  setTimeout(() => {
+    renderAll();
+    renderSettings();
+  }, 100);
 }
 
 function updateCurrencySelector() {
@@ -2422,13 +2576,15 @@ let pinLockoutUntil = 0;
 async function hashPin(pin, salt = null) {
   if (!salt) {
     salt = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map(b => b.toString(16).padStart(2, "0")).join("");
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
   }
   const encoder = new TextEncoder();
   const data = encoder.encode(pin + salt);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashHex = Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, "0")).join("");
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
   return { hash: hashHex, salt };
 }
 
@@ -2454,9 +2610,12 @@ function resetInactivityTimer() {
   }
 
   // Set new timer
-  inactivityTimer = setTimeout(() => {
-    triggerAutoLock();
-  }, timeoutMinutes * 60 * 1000);
+  inactivityTimer = setTimeout(
+    () => {
+      triggerAutoLock();
+    },
+    timeoutMinutes * 60 * 1000,
+  );
 }
 
 function triggerAutoLock() {
@@ -4141,3 +4300,5 @@ function updateOnlineStatus() {
 window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
 updateOnlineStatus();
+loadDailyQuote();
+scheduleDailyQuoteRefresh();
