@@ -33,9 +33,9 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 - [ ] AI-powered expense categorization
 - [ ] Duplicate transaction detection
-- [ ] Recurring expense recognition
-- [ ] Smart spending recommendations
-- [ ] Expense pattern anomaly detection
+- [x] Recurring expense recognition
+- [x] Smart spending recommendations
+- [x] Expense pattern anomaly detection
 - [ ] Natural language search
 
 ### Phase 4: Data & Export (Q4 2026)
@@ -100,10 +100,10 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 #### Anomaly Detection
 
-- Detect unusual spending patterns
-- Alert on suspicious transactions
-- Identify one-time vs. recurring
-- Period-appropriate spending suggestions
+- [x] Detect unusual spending patterns
+- [x] Alert on suspicious transactions
+- [x] Identify one-time vs. recurring
+- [x] Period-appropriate spending suggestions
 
 ### Phase 4: Data Management
 

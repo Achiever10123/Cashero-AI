@@ -470,8 +470,8 @@ function monthLabel(s) {
 }
 function monthExpenses(mk2) {
   return S.expenses.filter((e) => {
-    const d = new Date(e.date);
-    return mk(d) === mk2;
+    const d = expenseDate(e.date);
+    return d && mk(d) === mk2;
   });
 }
 function monthPayout(mk2) {
@@ -731,44 +731,191 @@ function computeFinancialHealth(exps, payout) {
 // ═══════════════════════════════════════════
 //  ANOMALY DETECTION
 // ═══════════════════════════════════════════
-function detectAnomalies() {
-  const area = document.getElementById("anomaly-area");
-  const exps = monthExpenses(activeMonth);
-  if (!exps.length) {
-    area.innerHTML = "";
-    return;
-  }
+function expenseDate(dateValue) {
+  const dateText = String(dateValue);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateText)
+    ? new Date(`${dateText}T12:00:00`)
+    : new Date(dateValue);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-  // Compare each category vs previous month
-  const { y, m } = parseMK(activeMonth);
-  const prevMK = m === 0 ? `${y - 1}-11` : `${y}-${m - 1}`;
-  const prevExps = monthExpenses(prevMK);
+function median(values) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return 0;
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle - 1] + sorted[middle]) / 2;
+}
 
-  const anomalies = [];
-  CATS.forEach((c) => {
-    const curr = exps
-      .filter((e) => e.category === c.name)
-      .reduce((s, e) => s + e.amount, 0);
-    const prev = prevExps
-      .filter((e) => e.category === c.name)
-      .reduce((s, e) => s + e.amount, 0);
-    if (prev > 0 && curr > 0) {
-      const delta = ((curr - prev) / prev) * 100;
-      if (delta > 50 && curr > 50)
-        anomalies.push({ cat: c, curr, prev, delta: delta.toFixed(0) });
-    }
+function getUnusualTransaction(expense) {
+  const date = expenseDate(expense.date);
+  if (!date) return null;
+
+  const baseline = S.expenses
+    .filter((candidate) => {
+      if (candidate === expense || candidate.category !== expense.category)
+        return false;
+      const candidateDate = expenseDate(candidate.date);
+      const daysBefore = candidateDate
+        ? (date - candidateDate) / 86400000
+        : -1;
+      return daysBefore > 0 && daysBefore <= 90;
+    })
+    .map((candidate) => candidate.amount);
+
+  if (baseline.length < 3) return null;
+  const typicalAmount = median(baseline);
+  if (typicalAmount <= 0 || expense.amount < typicalAmount * 3) return null;
+
+  return { typicalAmount };
+}
+
+function notifyIfUnusualTransaction(expense) {
+  const unusual = getUnusualTransaction(expense);
+  if (!unusual) return;
+  addNotification(
+    "suspicious",
+    `Unusually large ${expense.category} transaction: ${fmt(expense.amount)} is more than 3× your recent typical amount (${fmt(unusual.typicalAmount)}). Review it if you don't recognize it.`,
+  );
+}
+
+function getSpendingPatterns(monthKey) {
+  const expenses = monthExpenses(monthKey);
+  const { y, m } = parseMK(monthKey);
+  const previousMonthKey = m === 0 ? `${y - 1}-11` : `${y}-${m - 1}`;
+  const previousMonth = monthExpenses(previousMonthKey);
+  const isCurrentMonth = monthKey === mkNow();
+  const dayCutoff = isCurrentMonth ? new Date().getDate() : 31;
+  const inPeriod = (expense) => {
+    const date = expenseDate(expense.date);
+    return date && date.getDate() <= dayCutoff;
+  };
+  const currentToDate = expenses.filter(inPeriod);
+  const previousToDate = previousMonth.filter(inPeriod);
+
+  const categoryChanges = CATS.flatMap((category) => {
+    const current = currentToDate
+      .filter((expense) => expense.category === category.name)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    const previous = previousToDate
+      .filter((expense) => expense.category === category.name)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    if (previous <= 0 || current <= previous * 1.5) return [];
+    return [{ category, current, previous, increase: Math.round((current / previous - 1) * 100) }];
   });
 
-  if (!anomalies.length) {
+  const recurringGroups = new Map();
+  S.expenses.forEach((expense) => {
+    const name = String(expense.note || "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!name) return;
+    const key = `${expense.category}|${name}`;
+    if (!recurringGroups.has(key)) recurringGroups.set(key, []);
+    recurringGroups.get(key).push(expense);
+  });
+
+  const likelyRecurring = new Set(
+    currentToDate
+      .filter((expense) => expense.recurringId)
+  );
+  const currentExpenseSet = new Set(currentToDate);
+  recurringGroups.forEach((group) => {
+    const months = new Set(
+      group.map((expense) => {
+        const date = expenseDate(expense.date);
+        return date ? mk(date) : null;
+      }).filter(Boolean),
+    );
+    const typicalAmount = median(group.map((expense) => expense.amount));
+    const amounts = group.map((expense) => expense.amount);
+    const amountsAreSimilar =
+      typicalAmount > 0 &&
+      amounts.reduce((maximum, amount) => Math.max(maximum, amount), -Infinity) -
+        amounts.reduce((minimum, amount) => Math.min(minimum, amount), Infinity) <=
+        typicalAmount * 0.1;
+    if (months.size < 2 || !amountsAreSimilar) return;
+    group.forEach((expense) => {
+      const date = expenseDate(expense.date);
+      if (date && mk(date) === monthKey && currentExpenseSet.has(expense))
+        likelyRecurring.add(expense);
+    });
+  });
+
+  const recentExpenses = [...currentToDate]
+    .sort((a, b) => expenseDate(b.date) - expenseDate(a.date))
+    .slice(0, 100);
+  const unusualTransactions = recentExpenses
+    .map((expense) => {
+      const unusual = getUnusualTransaction(expense);
+      return unusual ? { expense, typicalAmount: unusual.typicalAmount } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const payout = monthPayout(monthKey)?.amount || 0;
+  const spent = currentToDate.reduce((sum, expense) => sum + expense.amount, 0);
+  const { y: monthYear, m: monthIndex } = parseMK(monthKey);
+  const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
+  const daysRemaining = isCurrentMonth
+    ? Math.max(0, daysInMonth - new Date().getDate())
+    : 0;
+  const advice =
+    payout > 0 && isCurrentMonth && daysRemaining > 0
+      ? spent < payout
+        ? `You have ${fmt(payout - spent)} of income left. To stay within it, aim for an average of ${fmt((payout - spent) / daysRemaining)} per day over the next ${daysRemaining} days.`
+        : `Spending is ${fmt(spent - payout)} over this month's income. Pause non-essential purchases for the remaining ${daysRemaining} days.`
+      : categoryChanges.length
+        ? `Review ${categoryChanges[0].category.name} transactions: spending is ${categoryChanges[0].increase}% higher than the same point last month.`
+        : payout <= 0 && isCurrentMonth && daysRemaining > 0
+          ? "Add this month's income to get a daily spending target tailored to the days remaining."
+          : "";
+
+  return {
+    expenses: currentToDate,
+    categoryChanges,
+    unusualTransactions,
+    recurringCount: likelyRecurring.size,
+    oneTimeCount: currentToDate.length - likelyRecurring.size,
+    advice,
+  };
+}
+
+function detectAnomalies() {
+  const area = document.getElementById("anomaly-area");
+  if (!area) return;
+  const patterns = getSpendingPatterns(activeMonth);
+  if (
+    !patterns.expenses.length &&
+    !(activeMonth === mkNow() && monthPayout(activeMonth)?.amount)
+  ) {
     area.innerHTML = "";
     return;
   }
+
+  const hasInsights =
+    patterns.categoryChanges.length ||
+    patterns.unusualTransactions.length ||
+    patterns.advice;
   area.innerHTML = `<div class="card anomaly-card" style="margin-bottom:18px;">
     <div class="anomaly-header">
       <div class="anomaly-dot"></div>
-      <div style="font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;">Spending Anomalies Detected</div>
+      <div class="anomaly-title">Spending patterns</div>
     </div>
-    ${anomalies.map((a) => `<div class="anomaly-item"><span class="arrow">↑</span><span><strong style="color:var(--yellow)">${a.cat.name}</strong> is up ${a.delta}% vs last month (${fmt(a.prev)} → ${fmt(a.curr)})</span></div>`).join("")}
+    ${patterns.unusualTransactions
+      .map(
+        ({ expense, typicalAmount }) =>
+          `<div class="anomaly-item"><span class="arrow">!</span><span>Unusually large ${escapeHtml(expense.category)} transaction: ${fmt(expense.amount)} vs ${fmt(typicalAmount)} typical. Check it if you don't recognize it.</span></div>`,
+      )
+      .join("")}
+    ${patterns.categoryChanges
+      .map(
+        ({ category, current, previous, increase }) =>
+          `<div class="anomaly-item"><span class="arrow">↑</span><span><strong style="color:var(--yellow)">${escapeHtml(category.name)}</strong> is up ${increase}% vs the same point last month (${fmt(previous)} → ${fmt(current)}).</span></div>`,
+      )
+      .join("")}
+    <div class="anomaly-item anomaly-classification"><span class="arrow">↻</span><span>${patterns.recurringCount} likely recurring · ${patterns.oneTimeCount} likely one-time transaction${patterns.oneTimeCount === 1 ? "" : "s"} this period. Repeated named expenses are matched across months.</span></div>
+    ${patterns.advice ? `<div class="anomaly-advice">${escapeHtml(patterns.advice)}</div>` : ""}
+    ${!hasInsights ? '<div class="anomaly-item">No unusual changes detected so far this period.</div>' : ""}
   </div>`;
 }
 
@@ -1295,17 +1442,20 @@ function addExpense() {
   }
   const exp = { id: Date.now(), amount, category: cat, note, date };
   if (recur) {
+    const recurringId = Date.now() + 1;
     S.recurring.push({
-      id: Date.now() + 1,
+      id: recurringId,
       name: note || cat,
       amount,
       cat,
       freq: recur,
       day: new Date(date).getDate(),
     });
+    exp.recurringId = recurringId;
   }
   S.expenses.push(exp);
   save();
+  notifyIfUnusualTransaction(exp);
   document.getElementById("f-amount").value = "";
   document.getElementById("f-note").value = "";
   document.getElementById("f-recur").value = "";
@@ -1885,8 +2035,10 @@ function confirmQuickAdd() {
     toast("Enter amount and date", "err");
     return;
   }
-  S.expenses.push({ id: Date.now(), amount, category: cat, note, date });
+  const expense = { id: Date.now(), amount, category: cat, note, date };
+  S.expenses.push(expense);
   save();
+  notifyIfUnusualTransaction(expense);
   closeQuickAdd();
   toast("Added ✓");
   renderAll();
@@ -2497,6 +2649,7 @@ async function submitPin() {
   const input = document.getElementById("pin-input");
   const pin = input.value.trim();
   const msg = document.getElementById("pin-message");
+  const modeLabel = document.getElementById("pin-mode-label");
   const btn = document.querySelector(".pin-submit-btn");
 
   // Validate based on mode
@@ -3725,11 +3878,18 @@ function renderNotifList() {
       '<div style="color:var(--text3);font-size:12px;text-align:center;padding:30px 0;">No notifications yet</div>';
     return;
   }
-  const typeIcon = { budget: "💸", recurring: "↺", goal: "◎", system: "✦" };
+  const typeIcon = {
+    budget: "💸",
+    recurring: "↺",
+    goal: "◎",
+    suspicious: "⚠",
+    system: "✦",
+  };
   const typeColor = {
     budget: "var(--red)",
     recurring: "var(--yellow)",
     goal: "var(--green)",
+    suspicious: "var(--yellow)",
     system: "var(--teal)",
   };
   el.innerHTML = notifications
@@ -3823,6 +3983,7 @@ function sendPushNotification(type, body) {
     budget: "💸 Budget Alert",
     recurring: "↺ Recurring Reminder",
     goal: "◎ Goal Update",
+    suspicious: "⚠ Spending Alert",
     system: "✦ Cashero",
   };
   try {

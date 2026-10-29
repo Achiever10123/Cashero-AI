@@ -1645,6 +1645,12 @@ nav {
   gap: 8px;
   margin-bottom: 10px;
 }
+.anomaly-title {
+  font-size: 10px;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
 .anomaly-dot {
   width: 8px;
   height: 8px;
@@ -1670,6 +1676,22 @@ nav {
 }
 .anomaly-item .arrow {
   color: var(--red);
+}
+.anomaly-item.anomaly-classification {
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  padding-top: 10px;
+}
+.anomaly-item.anomaly-classification .arrow {
+  color: var(--accent2);
+}
+.anomaly-advice {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 10px;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 /* ═══════════════════════════════════════════

@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.4";
+const CACHE_NAME = "cashero-static-v1.1.1";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -31,7 +31,10 @@ function fetchAndCache(request) {
     return caches
       .open(CACHE_NAME)
       .then((cache) => cache.put(request, response.clone()))
-      .then(() => response, () => response);
+      .then(
+        () => response,
+        () => response,
+      );
   });
 }
 
@@ -77,7 +80,10 @@ self.addEventListener("fetch", (event) => {
 
         if (cached) {
           event.waitUntil(
-            networkUpdate.then(() => undefined, () => undefined),
+            networkUpdate.then(
+              () => undefined,
+              () => undefined,
+            ),
           );
           return cached;
         }
@@ -140,7 +146,12 @@ self.addEventListener("fetch", (event) => {
       const networkUpdate = fetchAndCache(req);
 
       if (cached) {
-        event.waitUntil(networkUpdate.then(() => undefined, () => undefined));
+        event.waitUntil(
+          networkUpdate.then(
+            () => undefined,
+            () => undefined,
+          ),
+        );
         return cached;
       }
 

@@ -8,6 +8,9 @@ A modern web application for tracking and managing personal finances with intell
 - 🏷️ **Smart Categories** - Pre-configured categories including Food & Dining, Transport, Software, Entertainment, Health, Housing, Shopping, and Education
 - 🔐 **Secure Storage** - Local browser storage with PIN protection
 - 📈 **Financial Analytics** - Visualize spending patterns and trends
+- 🔎 **Spending Insights** - Flag unusually large transactions, compare category
+  spending with the same point last month, identify likely recurring charges,
+  and get a daily spending target for the rest of the month
 - 🌙 **Dark Mode Support** - Comfortable viewing in any lighting condition
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 - 🔄 **Recovery Phrases** - Secure account recovery mechanism
