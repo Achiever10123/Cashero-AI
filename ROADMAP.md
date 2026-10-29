@@ -31,12 +31,11 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 ### Phase 3: Smart Features (Q3 2026)
 
-- [ ] AI-powered expense categorization
-- [ ] Duplicate transaction detection
+- [x] AI-powered expense categorization
 - [x] Recurring expense recognition
 - [x] Smart spending recommendations
 - [x] Expense pattern anomaly detection
-- [ ] Natural language search
+- [x] Natural language search
 
 ### Phase 4: Data & Export (Q4 2026)
 
@@ -94,8 +93,8 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 #### AI Categorization
 
 - [x] Learn category preferences from repeated expense descriptions
-- Auto-categorize new transactions
-- Suggest category corrections
+- [x] Classify categories from natural-language quick-add entries
+- [x] Suggest categories from local transaction history
 - [x] Spending behavior learning from local transaction history
 
 #### Anomaly Detection

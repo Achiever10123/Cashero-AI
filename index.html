@@ -1155,6 +1155,15 @@
                   style="color: var(--red); font-weight: 700"></span>
               </div>
             </div>
+            <div class="history-search">
+              <label for="history-search-input">Search transactions</label>
+              <input
+                type="search"
+                id="history-search-input"
+                placeholder='Try "food last month" or "coffee over $5"'
+                autocomplete="off" />
+              <div id="history-search-count" aria-live="polite"></div>
+            </div>
             <div id="history-list"></div>
           </div>
         </div>
@@ -1768,6 +1777,10 @@
                   <li>View all expenses with dates, amounts, and categories</li>
                   <li>Delete transactions if needed</li>
                   <li>See duplicate expense warnings</li>
+                  <li>
+                    Search in plain language, such as "food last month" or
+                    "coffee over $5"
+                  </li>
                   <li>Total spent displayed at the top</li>
                 </ul>
               </div>

@@ -1667,32 +1667,283 @@ function renderPayoutHistory() {
 //  HISTORY
 // ═══════════════════════════════════════════
 function renderHistory() {
-  const exps = [...monthExpenses(activeMonth)].sort(
-    (a, b) => new Date(b.date) - new Date(a.date),
-  );
+  const searchInput = document.getElementById("history-search-input");
+  const query = searchInput?.value.trim() || "";
+  const exps = [
+    ...(query ? searchTransactions(query) : monthExpenses(activeMonth)),
+  ].sort((a, b) => new Date(b.date) - new Date(a.date));
   const { m, y } = parseMK(activeMonth);
-  document.getElementById("history-title").textContent =
-    `${MONTHS[m]} ${y} — All Expenses`;
+  document.getElementById("history-title").textContent = query
+    ? "Search Results — All Expenses"
+    : `${MONTHS[m]} ${y} — All Expenses`;
   document.getElementById("history-total").textContent = fmt(
     exps.reduce((s, e) => s + e.amount, 0),
   );
-  renderTxList("history-list", exps, true);
+  document.getElementById("history-search-count").textContent = query
+    ? `${exps.length} matching transaction${exps.length === 1 ? "" : "s"}`
+    : "";
+  renderTxList(
+    "history-list",
+    exps,
+    true,
+    query ? "No transactions match this search" : "Nothing here yet",
+  );
+}
+
+function searchTransactions(query) {
+  const normalizedQuery = query.toLowerCase();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let dateStart = null;
+  let dateEnd = null;
+
+  function setDateRange(start, end) {
+    dateStart = start;
+    dateEnd = end;
+  }
+
+  const datePhrases = [
+    ["today", () => [today, today]],
+    [
+      "yesterday",
+      () => {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return [yesterday, yesterday];
+      },
+    ],
+    [
+      "this week",
+      () => {
+        const start = new Date(today);
+        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        return [start, today];
+      },
+    ],
+    [
+      "last week",
+      () => {
+        const end = new Date(today);
+        end.setDate(end.getDate() - ((end.getDay() + 6) % 7) - 1);
+        const start = new Date(end);
+        start.setDate(start.getDate() - 6);
+        return [start, end];
+      },
+    ],
+    [
+      "this month",
+      () => [new Date(now.getFullYear(), now.getMonth(), 1), today],
+    ],
+    [
+      "last month",
+      () => [
+        new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        new Date(now.getFullYear(), now.getMonth(), 0),
+      ],
+    ],
+    [
+      "this year",
+      () => [new Date(now.getFullYear(), 0, 1), today],
+    ],
+    [
+      "last year",
+      () => [
+        new Date(now.getFullYear() - 1, 0, 1),
+        new Date(now.getFullYear() - 1, 11, 31),
+      ],
+    ],
+  ];
+  let remainingQuery = normalizedQuery;
+  for (const [phrase, getRange] of datePhrases) {
+    if (remainingQuery.includes(phrase)) {
+      [dateStart, dateEnd] = getRange();
+      remainingQuery = remainingQuery.replace(phrase, " ");
+      break;
+    }
+  }
+
+  const fullMonthNames = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+  const monthNames = MONTHS.map((month, index) => [
+    month.toLowerCase(),
+    fullMonthNames[index],
+  ])
+    .flat()
+    .sort((a, b) => b.length - a.length)
+    .join("|");
+  const monthMatch = remainingQuery.match(
+    new RegExp(`\\b(?:in\\s+)?(${monthNames})(?:\\s+(\\d{4}))?\\b`, "i"),
+  );
+  if (monthMatch) {
+    const monthIndex = fullMonthNames.findIndex(
+      (month, index) =>
+        month === monthMatch[1] ||
+        MONTHS[index].toLowerCase() === monthMatch[1],
+    );
+    const year = Number(monthMatch[2]) || now.getFullYear();
+    setDateRange(
+      new Date(year, monthIndex, 1),
+      new Date(year, monthIndex + 1, 0),
+    );
+    remainingQuery = remainingQuery.replace(monthMatch[0], " ");
+  }
+
+  let minimumAmount = null;
+  let maximumAmount = null;
+  let exactAmount = null;
+  const amountMatch = remainingQuery.match(
+    /\b(under|below|less than|at most|over|above|more than|at least|exactly)\s+\$?\s*(\d+(?:\.\d{1,2})?)\b/i,
+  );
+  if (amountMatch) {
+    const amount = Number(amountMatch[2]);
+    const comparator = amountMatch[1].toLowerCase();
+    if (["under", "below", "less than"].includes(comparator)) {
+      maximumAmount = { value: amount, inclusive: false };
+    } else if (comparator === "at most") {
+      maximumAmount = { value: amount, inclusive: true };
+    } else if (["over", "above", "more than"].includes(comparator)) {
+      minimumAmount = { value: amount, inclusive: false };
+    } else if (comparator === "at least") {
+      minimumAmount = { value: amount, inclusive: true };
+    } else {
+      exactAmount = amount;
+    }
+    remainingQuery = remainingQuery.replace(amountMatch[0], " ");
+  } else {
+    const exactMatch = remainingQuery.match(/\$\s*(\d+(?:\.\d{1,2})?)/);
+    if (exactMatch) {
+      exactAmount = Number(exactMatch[1]);
+      remainingQuery = remainingQuery.replace(exactMatch[0], " ");
+    }
+  }
+
+  const categoryAliases = [
+    {
+      category: "Food & Dining",
+      aliases: ["food", "dining"],
+    },
+    {
+      category: "Transport",
+      aliases: [
+        "transport",
+        "transportation",
+        "transit",
+        "gas",
+        "fuel",
+        "uber",
+        "lyft",
+        "taxi",
+        "parking",
+        "bus",
+        "train",
+      ],
+    },
+    {
+      category: "Software & Tools",
+      aliases: ["software", "tools", "apps", "application", "subscriptions"],
+    },
+    {
+      category: "Entertainment",
+      aliases: ["entertainment", "movie", "movies", "game", "games", "concert"],
+    },
+    {
+      category: "Health",
+      aliases: ["health", "medical", "medicine", "pharmacy", "doctor"],
+    },
+    {
+      category: "Housing",
+      aliases: ["housing", "rent", "mortgage", "utilities"],
+    },
+    {
+      category: "Shopping",
+      aliases: ["shopping", "shop", "purchase", "purchases"],
+    },
+    {
+      category: "Education",
+      aliases: ["education", "school", "course", "courses", "tuition"],
+    },
+  ];
+  const matchedCategories = categoryAliases.filter(({ aliases }) =>
+    aliases.some((alias) =>
+      new RegExp(`\\b${alias}\\b`, "i").test(remainingQuery),
+    ),
+  );
+  for (const { aliases } of matchedCategories) {
+    for (const alias of aliases) {
+      remainingQuery = remainingQuery.replace(
+        new RegExp(`\\b${alias}\\b`, "gi"),
+        " ",
+      );
+    }
+  }
+
+  const terms =
+    remainingQuery
+      .replace(
+        /\b(?:what|did|i|spend|spent|show|find|search|for|on|in|the|my|a|an|all|transactions?|expenses?)\b/gi,
+        " ",
+      )
+      .match(/[\p{L}\p{N}]+/gu) || [];
+  const dateFrom = dateStart || null;
+  const dateTo = dateEnd || null;
+
+  return S.expenses.filter((expense) => {
+    const date = expenseDate(expense.date);
+    if (!date) return false;
+    if (
+      (dateFrom && date < dateFrom) ||
+      (dateTo &&
+        date >=
+          new Date(
+            dateTo.getFullYear(),
+            dateTo.getMonth(),
+            dateTo.getDate() + 1,
+          ))
+    ) {
+      return false;
+    }
+    if (
+      matchedCategories.length &&
+      !matchedCategories.some(({ category }) => expense.category === category)
+    ) {
+      return false;
+    }
+    if (
+      (minimumAmount &&
+        (minimumAmount.inclusive
+          ? expense.amount < minimumAmount.value
+          : expense.amount <= minimumAmount.value)) ||
+      (maximumAmount &&
+        (maximumAmount.inclusive
+          ? expense.amount > maximumAmount.value
+          : expense.amount >= maximumAmount.value)) ||
+      (exactAmount !== null && Math.abs(expense.amount - exactAmount) >= 0.005)
+    ) {
+      return false;
+    }
+    const searchableText =
+      `${expense.note || ""} ${expense.category} ${expense.date}`.toLowerCase();
+    return terms.every((term) => searchableText.includes(term));
+  });
 }
 
 // ═══════════════════════════════════════════
 //  TX LIST RENDERER
 // ═══════════════════════════════════════════
-function renderTxList(id, list, showDel) {
+function renderTxList(id, list, showDel, emptyMessage = "Nothing here yet") {
   const el = document.getElementById(id);
-  if (!list.length) {
-    el.innerHTML =
-      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i></div>Nothing here yet</div>';
-    return;
-  }
-  // For very large lists, render in chunks to avoid blocking the main thread.
-  const LARGE_THRESHOLD = 2000;
-  const CHUNK_SIZE = 200;
-
   // Clean up any previous observers/props
   if (el._observer) {
     try {
@@ -1705,6 +1956,17 @@ function renderTxList(id, list, showDel) {
     el._observer = null;
   }
   el._sentinel = null;
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon"><i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i></div>
+      ${escapeHtml(emptyMessage)}
+    </div>`;
+    return;
+  }
+  // For very large lists, render in chunks to avoid blocking the main thread.
+  const LARGE_THRESHOLD = 2000;
+  const CHUNK_SIZE = 200;
 
   if (list.length > LARGE_THRESHOLD) {
     el.innerHTML = "";
@@ -2487,6 +2749,9 @@ function initSelects() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = catOpts;
   });
+  document
+    .getElementById("history-search-input")
+    ?.addEventListener("input", renderHistory);
   [
     ["f-note", "f-cat", "f-category-suggestion"],
     ["qa-note", "qa-cat", "qa-category-suggestion"],
@@ -3255,25 +3520,30 @@ function detectDuplicates() {
   if (!banner) return;
   const exps = monthExpenses(activeMonth);
 
-  // Enhanced duplicate detection - finds expenses within same day/time range with similar amounts
-  const seen = {};
+  const seen = new Map();
   const dupes = [];
 
   exps.forEach((e) => {
-    const key = `${e.date}__${Math.round(e.amount)}__${e.category}`;
-    seen[key] = seen[key] || [];
-    seen[key].push(e);
+    const key = JSON.stringify([
+      e.date,
+      Math.round(e.amount * 100),
+      e.category,
+      normalizeExpenseNote(e.note),
+    ]);
+    const items = seen.get(key) || [];
+    items.push(e);
+    seen.set(key, items);
   });
 
-  Object.entries(seen).forEach(([key, items]) => {
+  seen.forEach((items) => {
     if (items.length > 1) {
-      const [date, amount, category] = key.split("__");
+      const { date, amount, category } = items[0];
       dupes.push({
         date,
-        amount: +amount,
+        amount,
         category,
         count: items.length,
-        items: items,
+        items,
       });
     }
   });
