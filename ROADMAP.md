@@ -111,7 +111,7 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 - CSV format for spreadsheet analysis
 - PDF reports with charts and summaries
-- JSON backup format
+- [x] JSON backup and restore format
 - Formatted receipts
 
 #### Import Features

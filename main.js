@@ -3160,13 +3160,16 @@ const BACKUP_SCHEMA = {
       day: { type: "number", required: false },
     },
   },
-  lastAnalysis: { type: "string", required: false },
-  lastAnalysisDate: { type: "string", required: false },
-  lastCheckin: { type: "string", required: false },
-  lastCheckinDate: { type: "string", required: false },
-  lastAnalysisMonthKey: { type: "string", required: false },
+  lastAnalysis: { type: "string", required: false, nullable: true },
+  lastAnalysisDate: { type: "string", required: false, nullable: true },
+  lastCheckin: { type: "string", required: false, nullable: true },
+  lastCheckinDate: { type: "string", required: false, nullable: true },
+  lastAnalysisMonthKey: { type: "string", required: false, nullable: true },
   theme: { type: "string", required: false },
-  // pinEnabled intentionally excluded — PIN state must never be restored from backup
+  currency: { type: "string", required: false },
+  autoLockTimeout: { type: "number", required: false },
+  // Accepted for older backups, but PIN state must never be restored.
+  pinEnabled: { type: "boolean", required: false },
 };
 
 function validateBackupSchema(data) {
@@ -3197,6 +3200,8 @@ function validateBackupSchema(data) {
 
     // Skip validation if field is not present and not required
     if (!(field in data)) continue;
+
+    if (value === null && fieldSchema.nullable) continue;
 
     // Type validation for arrays
     if (fieldSchema.type === "array") {
@@ -3301,6 +3306,17 @@ function validateBackupSchema(data) {
           error: `Field "${field}" must be ${fieldSchema.type}, got ${typeof value}`,
         };
       }
+
+      if (field === "currency" && !Object.hasOwn(CURRENCIES, value)) {
+        return { valid: false, error: `Unsupported currency: ${value}` };
+      }
+
+      if (field === "autoLockTimeout" && ![0, 5, 10, 15, 30].includes(value)) {
+        return {
+          valid: false,
+          error: "Auto-lock timeout must be 0, 5, 10, 15, or 30 minutes",
+        };
+      }
     }
   }
 
@@ -3308,7 +3324,21 @@ function validateBackupSchema(data) {
 }
 
 function backupJSON() {
-  const blob = new Blob([JSON.stringify(S, null, 2)], {
+  const backup = {
+    expenses: S.expenses,
+    payouts: S.payouts,
+    goals: S.goals,
+    recurring: S.recurring,
+    lastAnalysis: S.lastAnalysis,
+    lastAnalysisDate: S.lastAnalysisDate,
+    lastCheckin: S.lastCheckin,
+    lastCheckinDate: S.lastCheckinDate,
+    lastAnalysisMonthKey: S.lastAnalysisMonthKey,
+    theme: S.theme,
+    currency: S.currency,
+    autoLockTimeout: S.autoLockTimeout,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
@@ -3359,6 +3389,8 @@ function restoreJSON(event) {
         lastCheckinDate: parsed.lastCheckinDate || null,
         lastAnalysisMonthKey: parsed.lastAnalysisMonthKey || null,
         theme: parsed.theme || "dark",
+        currency: parsed.currency || "USD",
+        autoLockTimeout: parsed.autoLockTimeout ?? 15,
         pinEnabled: false, // never restore PIN state from backup — security risk
       };
       // Clear any PIN keys that might have been imported

@@ -11,6 +11,8 @@ A modern web application for tracking and managing personal finances with intell
 - 🌙 **Dark Mode Support** - Comfortable viewing in any lighting condition
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 - 🔄 **Recovery Phrases** - Secure account recovery mechanism
+- 💾 **JSON Backup & Restore** - Download and restore expenses, income, goals,
+  recurring items, and preferences
 - 📝 **Error Logging** - Comprehensive API error tracking for debugging
 
 ## Technology Stack
@@ -58,6 +60,9 @@ discarding the rest of the application defaults.
 3. Start adding transactions with categories
 4. View analytics and spending patterns
 5. Use recovery phrase backup for account recovery
+6. Use **Backup JSON** and **Restore JSON** in the sidebar to save or restore
+   your data; restoring replaces current app data and does not restore PIN
+   security credentials
 
 ## Development
 
