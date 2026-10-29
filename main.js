@@ -666,6 +666,7 @@ function renderDashboard() {
 
   // Anomalies
   detectAnomalies();
+  renderSpendingBehavior();
   // Weekly checkin banner
   renderCheckinBanner();
 }
@@ -916,6 +917,151 @@ function detectAnomalies() {
     <div class="anomaly-item anomaly-classification"><span class="arrow">↻</span><span>${patterns.recurringCount} likely recurring · ${patterns.oneTimeCount} likely one-time transaction${patterns.oneTimeCount === 1 ? "" : "s"} this period. Repeated named expenses are matched across months.</span></div>
     ${patterns.advice ? `<div class="anomaly-advice">${escapeHtml(patterns.advice)}</div>` : ""}
     ${!hasInsights ? '<div class="anomaly-item">No unusual changes detected so far this period.</div>' : ""}
+  </div>`;
+}
+
+function normalizeExpenseNote(note) {
+  return String(note || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function getLearnedCategorySuggestion(note) {
+  const normalizedNote = normalizeExpenseNote(note);
+  if (!normalizedNote) return null;
+
+  const counts = new Map();
+  let total = 0;
+  S.expenses.forEach((expense) => {
+    if (
+      normalizeExpenseNote(expense.note) !== normalizedNote ||
+      !CATS.some((category) => category.name === expense.category)
+    ) {
+      return;
+    }
+    counts.set(expense.category, (counts.get(expense.category) || 0) + 1);
+    total++;
+  });
+
+  const [category, count] = [...counts.entries()].sort(
+    (a, b) => b[1] - a[1],
+  )[0] || [];
+  return count >= 2 && count / total >= 0.75
+    ? { category, count }
+    : null;
+}
+
+function updateCategorySuggestion(noteId, categoryId, suggestionId) {
+  const note = document.getElementById(noteId);
+  const categorySelect = document.getElementById(categoryId);
+  const suggestion = document.getElementById(suggestionId);
+  if (!note || !categorySelect || !suggestion) return;
+
+  const learned = getLearnedCategorySuggestion(note.value);
+  suggestion.replaceChildren();
+  suggestion.hidden = !learned;
+  if (!learned) return;
+
+  const message = document.createElement("span");
+  message.textContent = `Based on ${learned.count} similar expenses: ${learned.category}. `;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "learning-suggestion";
+  button.textContent = "Use suggestion";
+  button.addEventListener("click", () => {
+    categorySelect.value = learned.category;
+    categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  suggestion.append(message, button);
+}
+
+function renderSpendingBehavior() {
+  const area = document.getElementById("behavior-area");
+  if (!area) return;
+
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - 89);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+  const recentExpenses = S.expenses.filter((expense) => {
+    const date = expenseDate(expense.date);
+    return (
+      date &&
+      date >= start &&
+      date <= end &&
+      Number.isFinite(expense.amount) &&
+      expense.amount > 0
+    );
+  });
+  if (!recentExpenses.length) {
+    area.innerHTML = "";
+    return;
+  }
+
+  const categoryTotals = new Map();
+  const dailyTotals = new Map();
+  recentExpenses.forEach((expense) => {
+    categoryTotals.set(expense.category, {
+      total: (categoryTotals.get(expense.category)?.total || 0) + expense.amount,
+      count: (categoryTotals.get(expense.category)?.count || 0) + 1,
+    });
+    const date = expenseDate(expense.date);
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    dailyTotals.set(dateKey, {
+      weekday: date.getDay(),
+      total: (dailyTotals.get(dateKey)?.total || 0) + expense.amount,
+    });
+  });
+
+  const insights = [];
+  const totalSpent = recentExpenses.reduce(
+    (total, expense) => total + expense.amount,
+    0,
+  );
+  const topCategory = [...categoryTotals.entries()].sort(
+    (a, b) => b[1].total - a[1].total,
+  )[0];
+  if (recentExpenses.length >= 5 && topCategory) {
+    const [category, totals] = topCategory;
+    const share = Math.round((totals.total / totalSpent) * 100);
+    insights.push(
+      `<div class="behavior-item"><span class="behavior-mark">↗</span><span><strong>${escapeHtml(category)}</strong> is your largest category over the last 90 days: ${fmt(totals.total)} across ${totals.count} expenses (${share}% of recorded spending).</span></div>`,
+    );
+  }
+
+  if (dailyTotals.size >= 14) {
+    const weekdayTotals = Array.from({ length: 7 }, () => ({
+      total: 0,
+      days: 0,
+    }));
+    dailyTotals.forEach(({ weekday, total }) => {
+      weekdayTotals[weekday].total += total;
+      weekdayTotals[weekday].days++;
+    });
+    const busiestDay = weekdayTotals
+      .map((stats, weekday) => ({ ...stats, weekday }))
+      .filter((stats) => stats.days >= 3)
+      .sort((a, b) => b.total / b.days - a.total / a.days)[0];
+    if (busiestDay) {
+      const weekday = new Intl.DateTimeFormat("en", {
+        weekday: "long",
+      }).format(new Date(2024, 0, 7 + busiestDay.weekday));
+      insights.push(
+        `<div class="behavior-item"><span class="behavior-mark">◷</span><span>On days with recorded expenses, ${weekday} is your highest-spend day on average: ${fmt(busiestDay.total / busiestDay.days)} across ${busiestDay.days} logged ${weekday}s.</span></div>`,
+      );
+    }
+  }
+
+  area.innerHTML = `<div class="card behavior-card" style="margin-bottom:18px;">
+    <div class="behavior-header">
+      <div class="behavior-title">Your spending habits · last 90 days</div>
+      <span class="behavior-note">Learns from expenses saved on this device</span>
+    </div>
+    ${insights.length ? insights.join("") : '<div class="behavior-item">Keep logging expenses to uncover reliable personal patterns.</div>'}
   </div>`;
 }
 
@@ -2007,6 +2153,11 @@ If amount not found, use 0. Pick the closest matching category.`;
         }
     }
     document.getElementById("qa-note").value = nlpParsed.note || "";
+    updateCategorySuggestion(
+      "qa-note",
+      "qa-cat",
+      "qa-category-suggestion",
+    );
     document.getElementById("qa-date").value =
       nlpParsed.date || new Date().toISOString().slice(0, 10);
     document.getElementById("nlp-form").style.display = "block";
@@ -2332,6 +2483,16 @@ function initSelects() {
   ["f-cat", "qa-cat", "r-cat"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = catOpts;
+  });
+  [
+    ["f-note", "f-cat", "f-category-suggestion"],
+    ["qa-note", "qa-cat", "qa-category-suggestion"],
+  ].forEach(([noteId, categoryId, suggestionId]) => {
+    const note = document.getElementById(noteId);
+    if (note)
+      note.addEventListener("input", () =>
+        updateCategorySuggestion(noteId, categoryId, suggestionId),
+      );
   });
   const monOpts = MONTHS.map(
     (m, i) => `<option value="${i}">${m}</option>`,

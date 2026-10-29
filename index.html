@@ -284,6 +284,11 @@
               <div class="field">
                 <label>Category</label
                 ><select id="qa-cat"></select>
+                <div
+                class="category-learning"
+                id="qa-category-suggestion"
+                aria-live="polite"
+                hidden></div>
               </div>
             </div>
             <div class="form-row">
@@ -735,6 +740,7 @@
         <div class="page active" id="page-dashboard">
           <div id="checkin-area"></div>
           <div id="anomaly-area"></div>
+          <div id="behavior-area"></div>
           <div class="stat-grid" id="stat-grid"></div>
           <div class="g21">
             <div class="card">
@@ -1101,6 +1107,11 @@
                   <div class="field">
                     <label>Category</label
                     ><select id="f-cat"></select>
+                    <div
+                      class="category-learning"
+                      id="f-category-suggestion"
+                      aria-live="polite"
+                      hidden></div>
                   </div>
                   <div class="field">
                     <label>Date</label><input type="date" id="f-date" />

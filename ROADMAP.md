@@ -93,10 +93,10 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 #### AI Categorization
 
-- Train on user patterns
+- [x] Learn category preferences from repeated expense descriptions
 - Auto-categorize new transactions
 - Suggest category corrections
-- Spending behavior learning
+- [x] Spending behavior learning from local transaction history
 
 #### Anomaly Detection
 
