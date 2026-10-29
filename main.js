@@ -405,6 +405,7 @@ let donutChart = null,
   lineChart = null,
   savingsChart = null,
   yrLineChart = null;
+let chartJsPromise = null;
 let nlpParsed = null;
 let analysisLastRun = null;
 let analysisCountdownInterval = null;
@@ -539,15 +540,8 @@ function setMonth(mk2) {
 //  RENDER ALL
 // ═══════════════════════════════════════════
 function renderAll() {
-  renderDashboard();
-  renderGoals();
-  renderRecurring();
-  renderPayoutHistory();
-  renderHistory();
-  if (document.querySelector("#page-charts.active")) renderCharts();
-  renderCompare();
-  renderCatDeep();
-  detectDuplicates();
+  const activePage = document.querySelector(".page.active")?.id;
+  if (activePage) renderPage(activePage.replace(/^page-/, ""));
 }
 function renderPage(page) {
   if (page === "dashboard") renderDashboard();
@@ -788,10 +782,45 @@ function getChartColors() {
     text: isDark ? "#8888b0" : "#5a5580",
   };
 }
+
+function loadChartJS() {
+  if (window.Chart) return Promise.resolve(window.Chart);
+  if (chartJsPromise) return chartJsPromise;
+
+  chartJsPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
+    script.onload = () => {
+      if (window.Chart) {
+        resolve(window.Chart);
+      } else {
+        chartJsPromise = null;
+        reject(new Error("Chart.js loaded without exposing its API."));
+      }
+    };
+    script.onerror = () => {
+      chartJsPromise = null;
+      reject(new Error("Could not load Chart.js."));
+    };
+    document.head.append(script);
+  });
+
+  return chartJsPromise;
+}
+
 function renderCharts() {
-  renderDonut();
-  renderLineChart();
   renderHeatmap();
+  loadChartJS()
+    .then(() => {
+      if (!document.getElementById("page-charts")?.classList.contains("active"))
+        return;
+      renderDonut();
+      renderLineChart();
+    })
+    .catch((error) =>
+      CasheroErrors.reportError(error, "Could not load charts"),
+    );
 }
 function renderDonut() {
   const exps = monthExpenses(activeMonth);
@@ -807,7 +836,7 @@ function renderDonut() {
   if (donutChart) donutChart.destroy();
   if (!byCat.length) return;
   const { text } = getChartColors();
-  donutChart = new Chart(ctx, {
+  donutChart = new window.Chart(ctx, {
     type: "doughnut",
     data: {
       labels: byCat.map((c) => c.label),
@@ -856,7 +885,7 @@ function renderLineChart() {
   const { grid, text } = getChartColors();
   const ctx = document.getElementById("line-chart").getContext("2d");
   if (lineChart) lineChart.destroy();
-  lineChart = new Chart(ctx, {
+  lineChart = new window.Chart(ctx, {
     type: "line",
     data: {
       labels: months.map((m) => m.label),
@@ -995,57 +1024,75 @@ function renderCompare() {
   document.getElementById("mom-table-wrap").innerHTML = table;
 
   // Savings trend chart
-  const { grid, text } = getChartColors();
-  const ctx = document.getElementById("savings-trend-chart").getContext("2d");
-  if (savingsChart) savingsChart.destroy();
   const validRows = rows.filter((r) => r.payout > 0);
+  if (savingsChart) {
+    savingsChart.destroy();
+    savingsChart = null;
+  }
   if (!validRows.length) return;
-  savingsChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: rows.map((r) => r.label.split(" ")[0]),
-      datasets: [
-        {
-          label: "Savings Rate %",
-          data: rows.map((r) => (r.payout > 0 ? +r.savePct : null)),
-          backgroundColor: rows.map((r) =>
-            +r.savePct >= 20 ? "#00e5a0aa" : "#ff4d6d88",
-          ),
-          borderColor: rows.map((r) =>
-            +r.savePct >= 20 ? "var(--green)" : "var(--red)",
-          ),
-          borderWidth: 1,
-          borderRadius: 4,
+
+  loadChartJS()
+    .then(() => {
+      if (
+        !document.getElementById("page-compare")?.classList.contains("active")
+      )
+        return;
+      const { grid, text } = getChartColors();
+      const ctx = document
+        .getElementById("savings-trend-chart")
+        .getContext("2d");
+      savingsChart = new window.Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: rows.map((r) => r.label.split(" ")[0]),
+          datasets: [
+            {
+              label: "Savings Rate %",
+              data: rows.map((r) => (r.payout > 0 ? +r.savePct : null)),
+              backgroundColor: rows.map((r) =>
+                +r.savePct >= 20 ? "#00e5a0aa" : "#ff4d6d88",
+              ),
+              borderColor: rows.map((r) =>
+                +r.savePct >= 20 ? "var(--green)" : "var(--red)",
+              ),
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+          ],
         },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}% saved` } },
-      },
-      scales: {
-        x: {
-          grid: { color: grid },
-          ticks: {
-            color: text,
-            font: { family: "JetBrains Mono", size: 10 },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: { label: (ctx) => `${ctx.parsed.y}% saved` },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: grid },
+              ticks: {
+                color: text,
+                font: { family: "JetBrains Mono", size: 10 },
+              },
+            },
+            y: {
+              grid: { color: grid },
+              ticks: {
+                color: text,
+                font: { family: "JetBrains Mono", size: 10 },
+                callback: (v) => v + "%",
+              },
+              suggestedMin: 0,
+            },
           },
         },
-        y: {
-          grid: { color: grid },
-          ticks: {
-            color: text,
-            font: { family: "JetBrains Mono", size: 10 },
-            callback: (v) => v + "%",
-          },
-          suggestedMin: 0,
-        },
-      },
-    },
-  });
+      });
+    })
+    .catch((error) =>
+      CasheroErrors.reportError(error, "Could not load charts"),
+    );
 }
 
 // ═══════════════════════════════════════════
@@ -1874,11 +1921,12 @@ function toggleTheme() {
   S.theme = S.theme === "dark" ? "light" : "dark";
   applyTheme();
   save();
-  // Redraw charts after theme change
-  setTimeout(() => {
+  if (document.getElementById("page-charts")?.classList.contains("active"))
     renderCharts();
+  if (document.getElementById("page-compare")?.classList.contains("active"))
     renderCompare();
-  }, 100);
+  if (document.getElementById("page-yearly")?.classList.contains("active"))
+    renderYearly();
 }
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", S.theme);
@@ -3470,78 +3518,92 @@ function renderYearly() {
     : '<div class="empty"><div class="empty-icon">📊</div>No data</div>';
 
   // Yearly line chart
-  const { grid, text } = getChartColors();
-  const ctx = document.getElementById("yr-line-chart").getContext("2d");
-  if (yrLineChart) yrLineChart.destroy();
-  yrLineChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: mData.map((d) => d.label),
-      datasets: [
-        {
-          label: "Income",
-          data: mData.map((d) => d.payout || null),
-          borderColor: "#6c47ff",
-          backgroundColor: "#6c47ff18",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: "#6c47ff",
+  const chartYear = activeYear;
+  loadChartJS()
+    .then(() => {
+      if (
+        activeYear !== chartYear ||
+        !document.getElementById("page-yearly")?.classList.contains("active")
+      )
+        return;
+      const { grid, text } = getChartColors();
+      const ctx = document.getElementById("yr-line-chart").getContext("2d");
+      if (yrLineChart) yrLineChart.destroy();
+      yrLineChart = new window.Chart(ctx, {
+        type: "line",
+        data: {
+          labels: mData.map((d) => d.label),
+          datasets: [
+            {
+              label: "Income",
+              data: mData.map((d) => d.payout || null),
+              borderColor: "#6c47ff",
+              backgroundColor: "#6c47ff18",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: "#6c47ff",
+            },
+            {
+              label: "Expenses",
+              data: mData.map((d) => d.spent || null),
+              borderColor: "#ff4d6d",
+              backgroundColor: "#ff4d6d15",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: "#ff4d6d",
+            },
+            {
+              label: "Saved",
+              data: mData.map((d) =>
+                d.payout > 0 ? Math.max(0, d.saved) : null,
+              ),
+              borderColor: "#00e5a0",
+              backgroundColor: "#00e5a010",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: "#00e5a0",
+            },
+          ],
         },
-        {
-          label: "Expenses",
-          data: mData.map((d) => d.spent || null),
-          borderColor: "#ff4d6d",
-          backgroundColor: "#ff4d6d15",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: "#ff4d6d",
-        },
-        {
-          label: "Saved",
-          data: mData.map((d) => (d.payout > 0 ? Math.max(0, d.saved) : null)),
-          borderColor: "#00e5a0",
-          backgroundColor: "#00e5a010",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: "#00e5a0",
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: text,
-            font: { family: "JetBrains Mono", size: 10 },
-            boxWidth: 12,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: text,
+                font: { family: "JetBrains Mono", size: 10 },
+                boxWidth: 12,
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: grid },
+              ticks: {
+                color: text,
+                font: { family: "JetBrains Mono", size: 10 },
+              },
+            },
+            y: {
+              grid: { color: grid },
+              ticks: {
+                color: text,
+                font: { family: "JetBrains Mono", size: 10 },
+                callback: (v) => fmtShort(v),
+              },
+              suggestedMin: 0,
+            },
           },
         },
-      },
-      scales: {
-        x: {
-          grid: { color: grid },
-          ticks: {
-            color: text,
-            font: { family: "JetBrains Mono", size: 10 },
-          },
-        },
-        y: {
-          grid: { color: grid },
-          ticks: {
-            color: text,
-            font: { family: "JetBrains Mono", size: 10 },
-            callback: (v) => fmtShort(v),
-          },
-          suggestedMin: 0,
-        },
-      },
-    },
-  });
+      });
+    })
+    .catch((error) =>
+      CasheroErrors.reportError(error, "Could not load charts"),
+    );
 }
 
 // ═══════════════════════════════════════════

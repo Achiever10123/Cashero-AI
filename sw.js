@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.3";
+const CACHE_NAME = "cashero-static-v1.1.4";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -25,6 +25,16 @@ const CORE_ASSETS = [
   "/assets/favicon/site.webmanifest",
 ];
 
+function fetchAndCache(request) {
+  return fetch(request).then((response) => {
+    if (!response.ok) return response;
+    return caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.put(request, response.clone()))
+      .then(() => response, () => response);
+  });
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -42,7 +52,9 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)),
+          keys
+            .filter((key) => key !== CACHE_NAME && key !== RUNTIME_CACHE)
+            .map((key) => caches.delete(key)),
         ),
       ),
   );
@@ -54,21 +66,28 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests in SW caching logic
   if (req.method !== "GET") return;
 
-  // For navigation requests prefer network first then cache fallback
+  // Return cached documents immediately while refreshing them in the background.
   if (
     req.mode === "navigate" ||
     req.headers.get("accept")?.includes("text/html")
   ) {
     event.respondWith(
-      fetch(req, { cache: "no-store" })
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          return res;
-        })
-        .catch(() =>
-          caches.match(req).then((r) => r || caches.match("/index.html")),
-        ),
+      caches.match(req).then((cached) => {
+        const networkUpdate = fetchAndCache(req);
+
+        if (cached) {
+          event.waitUntil(
+            networkUpdate.then(() => undefined, () => undefined),
+          );
+          return cached;
+        }
+
+        return networkUpdate.catch(async (error) => {
+          const fallback = await caches.match("/index.html");
+          if (fallback) return fallback;
+          throw error;
+        });
+      }),
     );
     return;
   }
@@ -113,18 +132,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Default: network-first for same-origin assets (js, css, etc.)
-  // Cache only serves as offline fallback
+  if (!isSameOrigin) return;
+
+  // Serve cached same-origin assets immediately and refresh them in background.
   event.respondWith(
-    fetch(req, { cache: "no-store" })
-      .then((res) => {
-        if (res && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(req)),
+    caches.match(req).then((cached) => {
+      const networkUpdate = fetchAndCache(req);
+
+      if (cached) {
+        event.waitUntil(networkUpdate.then(() => undefined, () => undefined));
+        return cached;
+      }
+
+      return networkUpdate;
+    }),
   );
 });
 

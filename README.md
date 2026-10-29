@@ -22,6 +22,8 @@ A modern web application for tracking and managing personal finances with intell
 - **Storage**: Browser LocalStorage with JSON serialization
 - **Deployment**: Vercel
 - **Icons**: Unicode emoji with color-coded categories
+- **Performance**: Chart.js loads on demand; the service worker serves cached
+  pages and static assets immediately while refreshing them in the background
 
 ## Quick Start
 
