@@ -14,23 +14,15 @@
 
       gtag("config", "G-L47MSEL6C8");
     </script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-      media="print"
-      onload="this.media = 'all'" />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    </noscript>
-
     <!-- Essential Meta Tags -->
     <meta charset="UTF-8" />
     <!-- Content Security Policy -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://vercel-deploy-xptk.vercel.app https://zenquotes.io https://www.google-analytics.com https://region1.google-analytics.com; img-src 'self' data: blob: https://www.googletagmanager.com; worker-src 'self';" />
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://ka-f.fontawesome.com; font-src 'self' https://fonts.gstatic.com https://ka-f.fontawesome.com; connect-src 'self' https://vercel-deploy-xptk.vercel.app https://zenquotes.io https://www.google-analytics.com https://region1.google-analytics.com https://ka-f.fontawesome.com; img-src 'self' data: blob: https://www.googletagmanager.com; worker-src 'self';" />
+    <script
+      src="https://kit.fontawesome.com/aea47affd4.js"
+      crossorigin="anonymous"></script>
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
@@ -231,17 +223,7 @@
         <div class="modal-title">
           <span>Quick Add</span>
           <button class="modal-close" onclick="closeQuickAdd()">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M18 6l-12 12M6 6l12 12"></path>
-            </svg>
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
         <div class="nlp-bar">
@@ -317,17 +299,7 @@
         <div class="modal-title">
           <span>Export CSV</span>
           <button class="modal-close" onclick="closeCSVExportModal()">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M18 6l-12 12M6 6l12 12"></path>
-            </svg>
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
         <div class="form-grid">
@@ -377,17 +349,7 @@
       <div class="notif-header">
         <div class="notif-title">Notifications</div>
         <button class="notif-close" onclick="closeNotifPanel()">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M18 6l-12 12M6 6l12 12"></path>
-          </svg>
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       </div>
       <div class="notif-list" id="notif-list">
@@ -460,7 +422,10 @@
     <div id="recovery-overlay" class="pin-overlay">
       <div class="pin-modal" style="max-width: 500px">
         <div class="pin-header">
-          <h1 class="pin-title">⚠ Recovery Phrase</h1>
+          <h1 class="pin-title">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            Recovery Phrase
+          </h1>
           <p class="pin-subtitle">
             Save this safely. You cannot recover your PIN without it.
           </p>
@@ -478,20 +443,8 @@
             class="btn btn-ghost"
             onclick="copyRecoveryPhrase()"
             style="width: 100%; margin: 16px 0 0 0; font-size: 11px">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="display: inline-block; margin-right: 4px">
-              <path
-                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg
-            >Copy to Clipboard
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+            Copy to Clipboard
           </button>
         </div>
         <div
@@ -509,7 +462,8 @@
               font-weight: 600;
               margin-bottom: 4px;
             ">
-            ⚠ IMPORTANT
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            IMPORTANT
           </div>
           <div style="font-size: 11px; color: var(--text2); line-height: 1.5">
             Write down these words in order. Store them offline in a safe place.
@@ -577,7 +531,7 @@
               class="nav-item active"
               data-page="dashboard"
               title="Dashboard">
-              <i class="nav-icon fa-solid fa-home"></i>
+              <i class="nav-icon fa-solid fa-house"></i>
               <span class="nav-label">Dashboard</span>
             </button>
 
@@ -602,17 +556,17 @@
             </button>
 
             <button class="nav-item" data-page="recurring" title="Recurring">
-              <i class="nav-icon fa-solid fa-sync-alt"></i>
+              <i class="nav-icon fa-solid fa-rotate"></i>
               <span class="nav-label">Recurring</span>
             </button>
 
             <button class="nav-item" data-page="analysis" title="AI Analysis">
-              <i class="nav-icon fas fa-brain"></i>
+              <i class="nav-icon fa-solid fa-brain"></i>
               <span class="nav-label">AI Analysis</span>
             </button>
 
             <button class="nav-item" data-page="add" title="Add Expense">
-              <i class="nav-icon fa-sharp fa-solid fa-plus"></i>
+              <i class="nav-icon fa-solid fa-plus"></i>
               <span class="nav-label">Add Expense</span>
             </button>
 
@@ -636,7 +590,7 @@
               <span class="nav-label">Settings</span>
             </button>
             <button class="nav-item" data-page="help" title="Help">
-              <i class="nav-icon fa-solid fa-info-circle"></i>
+              <i class="nav-icon fa-solid fa-circle-info"></i>
               <span class="nav-label">Help</span>
             </button>
           </div>
@@ -720,18 +674,8 @@
               class="quick-add-btn"
               onclick="openQuickAdd()"
               title="Quick add (press Q)">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                style="display: inline-block; margin-right: 4px">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg
-              >Quick Add
+              <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+              Quick Add
             </button>
           </div>
         </div>
@@ -1039,7 +983,8 @@
                     class="btn btn-ghost"
                     id="analysis-btn"
                     onclick="runAnalysis()">
-                    ✦ Analyze Now
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    Analyze Now
                   </button>
                 </div>
                 <div id="analysis-output">
@@ -1240,20 +1185,8 @@
               class="btn btn-primary"
               style="margin-left: auto; padding: 9px 18px; font-size: 11px"
               onclick="printPDFReport()">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                style="display: inline-block; margin-right: 4px">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line></svg
-              >Download PDF
+              <i class="fa-solid fa-download" aria-hidden="true"></i>
+              Download PDF
             </button>
           </div>
           <div id="yearly-report">
@@ -1360,20 +1293,7 @@
                 align-items: flex-start;
               ">
               <div style="font-size: 20px; flex-shrink: 0">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path
-                    d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                  <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
               </div>
               <div>
                 <div
@@ -1728,7 +1648,7 @@
             <div class="card" style="margin-bottom: 20px">
               <div class="sec-label" style="margin-bottom: 14px">
                 <i
-                  class="fa-solid fa-sync-alt"
+                  class="fa-solid fa-rotate"
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Recurring
               </div>

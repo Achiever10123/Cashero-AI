@@ -43,41 +43,44 @@ const CURRENCIES = {
 };
 
 // ═══════════════════════════════════════════
-//  LUCIDE ICON HELPER
+//  FONT AWESOME ICON HELPER
 // ═══════════════════════════════════════════
-function getLucideIcon(name, size = 24) {
+function getFontAwesomeIcon(name, size = 24) {
   const icons = {
-    UtensilsCrossed: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h-2.5A2.5 2.5 0 0 0 11 5.5v13a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V5.5a1 1 0 0 1 1-1h.5a1 1 0 0 1 1 1v13a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V5.5A2.5 2.5 0 0 0 16 3"></path><path d="M2 12.5a6.5 6.5 0 0 1 13 0"></path></svg>`,
-    Car: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.5 0 1-.5 1-1v-3c0-.9-.7-1.7-1.5-1.8C18.4 10.5 16.9 10 15.5 10c-.6 0-1.2-.1-1.7-.3l-1.2-5.2c-.1-.4-.5-.7-1-. 7-2h-3c-.5 0-1 .5-1 1v.5"></path><circle cx="6" cy="17" r="2"></circle><circle cx="18" cy="17" r="2"></circle></svg>`,
-    Laptop: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"></path><path d="M6 17v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2"></path></svg>`,
-    Gamepad2: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4m-2-2v4"></path><circle cx="13" cy="11" r="1"></circle><circle cx="13" cy="15" r="1"></circle><circle cx="16" cy="13" r="1"></circle><path d="M5 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"></path></svg>`,
-    Pill: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6m-11 1 17-17m-2.5 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"></path></svg>`,
-    Home: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
-    ShoppingBag: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>`,
-    BookOpen: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
-    Package: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`,
-    X: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-12 12M6 6l12 12"></path></svg>`,
-    Bell: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`,
-    Copy: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`,
-    Download: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
-    AlertTriangle: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
-    Save: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`,
-    BarChart3: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="16" width="4" height="4"></rect><rect x="15" y="10" width="4" height="10"></rect><rect x="11" y="13" width="4" height="7"></rect></svg>`,
-    TrendingUp: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 17"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`,
-    Palette: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="13" r="8"></circle><path d="M5.5 11.5a7.5 7.5 0 1 0 10.5 10.5"></path><circle cx="5.5" cy="5.5" r="1"></circle><circle cx="18" cy="5" r="1"></circle><circle cx="20" cy="11" r="1"></circle><circle cx="15" cy="20" r="1"></circle></svg>`,
-    Lightbulb: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.83-1.48 1.5-2.75 1.5-4.5A6 6 0 0 0 6 9.5c0 1.75.67 3 1.5 4.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>`,
-    ArrowLeftRight: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline><polyline points="5 12 12 5 19 12"></polyline></svg>`,
-    Target: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="9"></circle></svg>`,
-    RotateCw: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2-8.83"></path></svg>`,
-    Sparkles: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6"></path><path d="M15.5 3.5l4.5 4.5"></path><path d="M15 9h6"></path><path d="M3 15h6"></path><path d="M3.5 15.5l4.5 4.5"></path><path d="M3 21h6"></path></svg>`,
-    Plus: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    Menu: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></svg>`,
-    Grid: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
-    Check: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-    Clipboard: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`,
-    Wallet: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 24H5a2 2 0 0 1-2-2V8c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v14c0 1.1-.9 2-2 2z"></path><path d="M16.5 11.5v3"></path></svg>`,
+    UtensilsCrossed: "fa-utensils",
+    Car: "fa-car",
+    Laptop: "fa-laptop",
+    Gamepad2: "fa-gamepad",
+    Pill: "fa-pills",
+    Home: "fa-house",
+    ShoppingBag: "fa-bag-shopping",
+    BookOpen: "fa-book-open",
+    Package: "fa-box",
+    X: "fa-xmark",
+    Bell: "fa-bell",
+    Copy: "fa-copy",
+    Download: "fa-download",
+    AlertTriangle: "fa-triangle-exclamation",
+    Save: "fa-floppy-disk",
+    BarChart3: "fa-chart-bar",
+    TrendingUp: "fa-arrow-trend-up",
+    Palette: "fa-palette",
+    Lightbulb: "fa-lightbulb",
+    ArrowLeftRight: "fa-right-left",
+    Target: "fa-bullseye",
+    RotateCw: "fa-rotate",
+    Sparkles: "fa-wand-magic-sparkles",
+    Plus: "fa-plus",
+    Menu: "fa-bars",
+    Grid: "fa-table-cells",
+    Check: "fa-check",
+    Clipboard: "fa-clipboard",
+    Wallet: "fa-wallet",
   };
-  return icons[name] || "";
+  const icon = icons[name];
+  return icon
+    ? `<i class="fa-solid ${icon}" style="font-size:${size}px" aria-hidden="true"></i>`
+    : "";
 }
 
 // Currency to Regional/Economic Context Mapping
@@ -637,7 +640,7 @@ function renderDashboard() {
   const dashCats = document.getElementById("dash-cats");
   if (!byCat.length) {
     dashCats.innerHTML =
-      '<div class="empty"><div class="empty-icon">📦</div>No expenses yet</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></div>No expenses yet</div>';
   } else {
     dashCats.innerHTML = byCat
       .map((c) => {
@@ -645,7 +648,7 @@ function renderDashboard() {
         const warn = pct > 30 ? '<span class="cat-badge">HIGH</span>' : "";
         return `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getFontAwesomeIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:5px;"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
@@ -1395,7 +1398,7 @@ function renderGoals() {
   const el = document.getElementById("goals-list");
   if (!S.goals.length) {
     el.innerHTML =
-      '<div class="empty"><div class="empty-icon">🎯</div>No goals yet.<br>Add one to start tracking.</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></div>No goals yet.<br>Add one to start tracking.</div>';
     return;
   }
   el.innerHTML = S.goals
@@ -1421,7 +1424,7 @@ function renderGoals() {
         <div class="goal-deadline" style="color:${deadlineColor}">${deadlineStr}${daysLeft !== null ? ` (${daysLeft}d left)` : ""}</div>
         <div style="display:flex;gap:6px;">
           <button class="btn btn-ghost" onclick="addToGoal('${g.id}')" style="font-size:9px;padding:4px 10px;">+ Add</button>
-          <button class="del-btn" onclick="deleteGoal('${g.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
+          <button class="del-btn" onclick="deleteGoal('${g.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getFontAwesomeIcon("X", 16)}</button>
         </div>
       </div>
     </div>`;
@@ -1451,7 +1454,7 @@ function addGoal() {
   document.getElementById("g-deadline").value = "";
   hideGoalForm();
   renderGoals();
-  toast("Goal added ✓");
+  toast("Goal added");
 }
 function addToGoal(id) {
   const goal = S.goals.find((g) => g.id == id);
@@ -1461,7 +1464,7 @@ function addToGoal(id) {
   goal.saved = Math.min(goal.target, goal.saved + amt);
   save();
   renderGoals();
-  toast(`+${fmt(amt)} added ✓`);
+  toast(`${fmt(amt)} added`);
 }
 function deleteGoal(id) {
   if (!confirm("Delete this goal?")) return;
@@ -1484,7 +1487,7 @@ function renderRecurring() {
   const el = document.getElementById("recur-list");
   if (!S.recurring.length) {
     el.innerHTML =
-      '<div class="empty"><div class="empty-icon">↺</div>No recurring expenses</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></div>No recurring expenses</div>';
     document.getElementById("recur-total").textContent = "$0.00";
     return;
   }
@@ -1500,13 +1503,13 @@ function renderRecurring() {
     .map((r, i) => {
       const c = cat(r.cat);
       return `<div class="recur-item">
-      <div class="recur-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
+      <div class="recur-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getFontAwesomeIcon(c.icon, 16)}</div>
       <div class="recur-info">
         <div class="recur-name">${escapeHtml(r.name)}</div>
         <div class="recur-meta">${r.freq} · ${r.cat}${r.day ? ` · day ${r.day}` : ""}</div>
       </div>
       <div class="recur-amount">${fmt(r.amount)}</div>
-      <button class="del-btn" onclick="deleteRecurring('${r.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>
+      <button class="del-btn" onclick="deleteRecurring('${r.id}')" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getFontAwesomeIcon("X", 16)}</button>
     </div>`;
     })
     .join("");
@@ -1528,7 +1531,7 @@ function addRecurring() {
   document.getElementById("r-day").value = "";
   hideRecurForm();
   renderRecurring();
-  toast("Recurring expense saved ✓");
+  toast("Recurring expense saved");
 }
 function deleteRecurring(id) {
   S.recurring = S.recurring.filter((r) => r.id != id);
@@ -1605,7 +1608,7 @@ function addExpense() {
   document.getElementById("f-amount").value = "";
   document.getElementById("f-note").value = "";
   document.getElementById("f-recur").value = "";
-  toast("Expense added ✓");
+  toast("Expense added");
   renderAll();
   renderMonthPills();
 }
@@ -1633,7 +1636,7 @@ function savePayout() {
   save();
   document.getElementById("p-amount").value = "";
   document.getElementById("p-note").value = "";
-  toast("Payout saved ✓");
+  toast("Payout saved");
   renderAll();
   renderMonthPills();
   renderPayoutHistory();
@@ -1645,7 +1648,7 @@ function renderPayoutHistory() {
   );
   if (!sorted.length) {
     el.innerHTML =
-      '<div class="empty"><div class="empty-icon">💰</div>No payouts yet</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i></div>No payouts yet</div>';
     return;
   }
   el.innerHTML = sorted
@@ -1683,7 +1686,7 @@ function renderTxList(id, list, showDel) {
   const el = document.getElementById(id);
   if (!list.length) {
     el.innerHTML =
-      '<div class="empty"><div class="empty-icon">💸</div>Nothing here yet</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i></div>Nothing here yet</div>';
     return;
   }
   // For very large lists, render in chunks to avoid blocking the main thread.
@@ -1720,15 +1723,15 @@ function renderTxList(id, list, showDel) {
         const row = document.createElement("div");
         row.className = "tx-row";
         row.innerHTML = `
-          <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
+          <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getFontAwesomeIcon(c.icon, 16)}</div>
           <div class="tx-info">
             <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
             <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
           </div>
           <div class="tx-right">
-            ${e.recurringId ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getLucideIcon("RotateCw", 12)}</span>` : ""}
+            ${e.recurringId ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getFontAwesomeIcon("RotateCw", 12)}</span>` : ""}
             <div class="tx-amount" style="color:${c.color}">${fmt(e.amount)}</div>
-            ${showDel ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>` : ""}
+            ${showDel ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getFontAwesomeIcon("X", 16)}</button>` : ""}
           </div>`;
         frag.appendChild(row);
       }
@@ -1774,13 +1777,13 @@ function renderTxList(id, list, showDel) {
       const c =
         CATS.find((x) => x.name === e.category) || CATS[CATS.length - 1];
       const del = showDel
-        ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getLucideIcon("X", 16)}</button>`
+        ? `<button class="del-btn" onclick="deleteExpense(${e.id})" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px">${getFontAwesomeIcon("X", 16)}</button>`
         : "";
       const recur = e.recurringId
-        ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getLucideIcon("RotateCw", 12)}</span>`
+        ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getFontAwesomeIcon("RotateCw", 12)}</span>`
         : "";
       return `<div class="tx-row">
-      <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getLucideIcon(c.icon, 16)}</div>
+      <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getFontAwesomeIcon(c.icon, 16)}</div>
       <div class="tx-info">
         <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
         <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
@@ -1814,7 +1817,7 @@ function renderCatDeep() {
   const el = document.getElementById("cat-deep");
   if (!byCat.length) {
     el.innerHTML =
-      '<div class="empty"><div class="empty-icon">📊</div>No data yet</div>';
+      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>No data yet</div>';
     return;
   }
   el.innerHTML = byCat
@@ -1823,7 +1826,7 @@ function renderCatDeep() {
       const warn = pct > 30 ? `<span class="cat-badge">HIGH</span>` : "";
       return `<div class="cat-row">
       <div class="cat-header">
-        <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
+        <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getFontAwesomeIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
         <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div><div style="font-size:9px;color:var(--text3)">${c.count} txn${c.count !== 1 ? "s" : ""}</div></div>
       </div>
       <div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
@@ -1863,7 +1866,7 @@ async function runAnalysis() {
   }
   btn.disabled = true;
   btn.textContent = "Analyzing…";
-  out.innerHTML = `<div style="color:var(--accent2);font-size:12px;text-align:center;padding:36px 0;animation:blink 1.5s infinite">✦ Crunching your numbers…</div>`;
+  out.innerHTML = `<div style="color:var(--accent2);font-size:12px;text-align:center;padding:36px 0;animation:blink 1.5s infinite"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Crunching your numbers…</div>`;
 
   const byCat = CATS.map((c) => ({
     name: c.name,
@@ -1937,7 +1940,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
     S.lastAnalysisMonthKey = activeMonth;
     save();
     out.innerHTML = buildAnalysisHTML(a);
-    toast("Analysis complete ✓");
+    toast("Analysis complete");
 
     // ═══ SET COOLDOWN TIMESTAMP ═══
     analysisLastRun = Date.now();
@@ -1954,15 +1957,15 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
     out.innerHTML = `<div style="color:var(--red);font-size:12px">${errMsg}</div>`;
     toast(errMsg, "err");
     btn.disabled = false;
-    btn.textContent = "✦ Analyze Now";
+    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyze Now';
   }
 }
 function buildAnalysisHTML(a) {
   const esc = escapeHtml;
   return `
     <div class="verdict-box"><div class="verdict-label">VERDICT</div><div class="verdict-text">"${a.verdict}"</div></div>
-    ${a.danger ? `<div class="danger-box"><div class="danger-label">⚠ DANGER ZONE</div><div style="font-size:12px;color:#ffa0b4;line-height:1.5">${a.danger}</div></div>` : ""}
-    ${a.projectionNote ? `<div class="warn-box"><div class="warn-label">📊 PROJECTION</div><div style="font-size:12px;color:#ffd980;line-height:1.5">${a.projectionNote}</div></div>` : ""}
+    ${a.danger ? `<div class="danger-box"><div class="danger-label"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> DANGER ZONE</div><div style="font-size:12px;color:#ffa0b4;line-height:1.5">${a.danger}</div></div>` : ""}
+    ${a.projectionNote ? `<div class="warn-box"><div class="warn-label"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> PROJECTION</div><div style="font-size:12px;color:#ffd980;line-height:1.5">${a.projectionNote}</div></div>` : ""}
     ${a.goal ? `<div class="goal-box"><div class="goal-label">NEXT MONTH GOAL</div><div style="font-size:12px;color:#7eebd3;line-height:1.5">${a.goal}</div></div>` : ""}
     <div style="margin-bottom:14px">
       <div class="sec-label" style="margin-bottom:8px">CUT BACK ON</div>
@@ -1995,10 +1998,10 @@ function startCooldownTimer(btn, secondsLeft) {
 
   const updateButton = () => {
     if (secondsLeft > 0) {
-      btn.textContent = `✦ Analyze (${secondsLeft}s)`;
+      btn.textContent = `Analyze (${secondsLeft}s)`;
       secondsLeft--;
     } else {
-      btn.textContent = "✦ Analyze Now";
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyze Now';
       btn.disabled = false;
       clearInterval(analysisCountdownInterval);
       analysisCountdownInterval = null;
@@ -2020,7 +2023,7 @@ function renderCheckinBanner() {
     return;
   }
   area.innerHTML = `<div class="checkin-banner" onclick="navigate('analysis')">
-    <div class="checkin-icon">📋</div>
+    <div class="checkin-icon"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i></div>
     <div class="checkin-text">
       <div class="checkin-title">Weekly check-in available</div>
       <div class="checkin-sub">See how your spending is tracking this week</div>
@@ -2080,7 +2083,7 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
     out.innerHTML = `<div class="checkin-output">${safeText}</div>`;
 
     renderCheckinBanner();
-    toast("Check-in complete ✓");
+    toast("Check-in complete");
   } catch (e) {
     console.error("[CHECK-IN ERROR]", e);
     const errMsg =
@@ -2191,7 +2194,7 @@ function confirmQuickAdd() {
   save();
   notifyIfUnusualTransaction(expense);
   closeQuickAdd();
-  toast("Added ✓");
+  toast("Added");
   renderAll();
   renderMonthPills();
 }
@@ -2308,7 +2311,7 @@ function exportCSV() {
   a.download = `cashero-export-${startStr}-to-${endStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast(`CSV exported (${filteredExpenses.length} records) ✓`);
+  toast(`CSV exported (${filteredExpenses.length} records)`);
   closeCSVExportModal();
 }
 
@@ -2368,7 +2371,7 @@ function toast(msg, type = "ok") {
   close.className = "toast-close";
   close.type = "button";
   close.title = "Dismiss";
-  close.innerHTML = getLucideIcon("X", 16);
+  close.innerHTML = getFontAwesomeIcon("X", 16);
   close.addEventListener("click", (e) => {
     e.stopPropagation();
     if (el._timeout) clearTimeout(el._timeout);
@@ -2544,7 +2547,7 @@ function changeAutoLockTimeout() {
 
 function clearAllData() {
   const confirmed = confirm(
-    "⚠️ Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?",
+    "Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?",
   );
   if (!confirmed) return;
   const doubleConfirm = confirm(
@@ -2593,7 +2596,7 @@ function changeCurrency() {
   if (newCurrency && CURRENCIES[newCurrency]) {
     S.currency = newCurrency;
     save();
-    toast(`Currency changed to ${CURRENCIES[newCurrency].name} ✓`);
+    toast(`Currency changed to ${CURRENCIES[newCurrency].name}`);
     // Redraw all pages that display currency
     setTimeout(() => {
       renderAll();
@@ -2863,7 +2866,7 @@ async function submitPin() {
       CasheroStorage.setItem("cashero_pin_salt", salt);
       S.pinEnabled = true;
       save();
-      msg.textContent = "PIN set successfully ✓";
+      msg.textContent = "PIN set successfully";
       msg.classList.add("success");
       setTimeout(() => {
         hidePinOverlay();
@@ -2879,7 +2882,7 @@ async function submitPin() {
       const { hash: verifyHash } = await hashPin(pin, storedSalt);
       if (verifyHash === storedHash) {
         pinFailCount = 0; // reset on success
-        msg.textContent = "Access granted ✓";
+        msg.textContent = "Access granted";
         msg.classList.add("success");
         setTimeout(() => {
           hidePinOverlay();
@@ -2910,7 +2913,7 @@ async function submitPin() {
       const { hash: verifyHash } = await hashPin(pin, storedSalt);
       if (verifyHash === storedHash) {
         pinFailCount = 0;
-        msg.textContent = "✓ Verified";
+        msg.textContent = "Verified";
         msg.classList.add("success");
         setTimeout(() => {
           pinMode = "changeNew";
@@ -2935,7 +2938,7 @@ async function submitPin() {
       }
     } else if (pinMode === "changeNew") {
       // Store new PIN and ask for confirmation
-      msg.textContent = "✓ Entered";
+      msg.textContent = "Entered";
       msg.classList.add("success");
       tempNewPin = pin;
       setTimeout(() => {
@@ -2949,7 +2952,7 @@ async function submitPin() {
         CasheroStorage.setItem("cashero_pin_hash", newHash);
         CasheroStorage.setItem("cashero_pin_salt", newSalt);
         save();
-        msg.textContent = "PIN changed ✓";
+        msg.textContent = "PIN changed";
         msg.classList.add("success");
         tempNewPin = null;
         setTimeout(() => {
@@ -2974,7 +2977,7 @@ async function submitPin() {
       const isValid = await verifyRecoveryPhrase(phrase);
 
       if (isValid) {
-        msg.textContent = "Recovery phrase verified ✓";
+        msg.textContent = "Recovery phrase verified";
         msg.classList.add("success");
         setTimeout(() => {
           // Reset to PIN input mode for new PIN
@@ -3006,7 +3009,7 @@ async function submitPin() {
       CasheroStorage.setItem("cashero_pin_hash", newPinHash);
       CasheroStorage.setItem("cashero_pin_salt", newPinSalt);
       save();
-      msg.textContent = "PIN reset successfully ✓";
+      msg.textContent = "PIN reset successfully";
       msg.classList.add("success");
       setTimeout(() => {
         hidePinOverlay();
@@ -3281,7 +3284,7 @@ function detectDuplicates() {
   }
   banner.style.display = "block";
   banner.innerHTML = `<div style="background:#ffc94715;border:1px solid var(--yellow);border-radius:10px;padding:12px 16px;">
-    <div style="font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">⚠ Possible Duplicates Detected (${dupes.length})</div>
+    <div style="font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Possible Duplicates Detected (${dupes.length})</div>
     ${dupes
       .map(
         (
@@ -3292,7 +3295,7 @@ function detectDuplicates() {
     </div>`,
       )
       .join("")}
-    <div style="font-size:10px;color:var(--text3);margin-top:8px;">💡 Tip: Review in History page to delete duplicate transactions.</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Tip: Review in History page to delete duplicate transactions.</div>
   </div>`;
 }
 
@@ -3384,7 +3387,7 @@ function renderMonthlySummary() {
         summary.topCategory
           ? `<div class="summary-detail-row">
         <span class="detail-label">Top Category</span>
-        <span class="detail-value"><span style="display:inline-block;width:16px;height:16px;margin-right:4px">${getLucideIcon(summary.topCategory.icon, 16)}</span>${summary.topCategory.name}</span>
+        <span class="detail-value"><span style="display:inline-block;width:16px;height:16px;margin-right:4px">${getFontAwesomeIcon(summary.topCategory.icon, 16)}</span>${summary.topCategory.name}</span>
       </div>`
           : ""
       }
@@ -3406,7 +3409,7 @@ function renderMonthlySummary() {
                     : 0;
                 return `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getFontAwesomeIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:6px;"><div class="prog-fill" style="width:${Math.min(100, pct)}%;background:${c.color}"></div></div>
@@ -3414,7 +3417,7 @@ function renderMonthlySummary() {
       </div>`;
               })
               .join("")
-          : '<div class="empty"><div class="empty-icon">📊</div>No expenses this month</div>'
+          : '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>No expenses this month</div>'
       }
     </div>
   `;
@@ -3474,7 +3477,11 @@ const BACKUP_SCHEMA = {
       day: { type: "number", required: false },
     },
   },
-  lastAnalysis: { type: "string", required: false, nullable: true },
+  lastAnalysis: {
+    type: ["string", "object"],
+    required: false,
+    nullable: true,
+  },
   lastAnalysisDate: { type: "string", required: false, nullable: true },
   lastCheckin: { type: "string", required: false, nullable: true },
   lastCheckinDate: { type: "string", required: false, nullable: true },
@@ -3614,10 +3621,16 @@ function validateBackupSchema(data) {
       }
     } else {
       // Type validation for non-array fields
-      if (typeof value !== fieldSchema.type) {
+      const expectedTypes = Array.isArray(fieldSchema.type)
+        ? fieldSchema.type
+        : [fieldSchema.type];
+      const validType =
+        expectedTypes.includes(typeof value) &&
+        (typeof value !== "object" || !Array.isArray(value));
+      if (!validType) {
         return {
           valid: false,
-          error: `Field "${field}" must be ${fieldSchema.type}, got ${typeof value}`,
+          error: `Field "${field}" must be ${expectedTypes.join(" or ")}, got ${typeof value}`,
         };
       }
 
@@ -3661,7 +3674,7 @@ function backupJSON() {
   a.download = `cashero-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast("Backup downloaded ✓");
+  toast("Backup downloaded");
 }
 
 function restoreJSON(event) {
@@ -3717,7 +3730,7 @@ function restoreJSON(event) {
       renderMonthPills();
       renderAll();
       initYearPills();
-      toast(`Restored: ${expCount} expenses, ${payCount} payouts ✓`);
+      toast(`Restored: ${expCount} expenses, ${payCount} payouts`);
     } catch (err) {
       toast("Failed to parse backup file - invalid JSON", "err");
     }
@@ -3853,7 +3866,7 @@ function renderYearly() {
         .map(
           (c) => `<div class="cat-row">
         <div class="cat-header">
-          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getLucideIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
+          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getFontAwesomeIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span></div>
           <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
         </div>
         <div class="prog-wrap" style="height:5px;"><div class="prog-fill" style="width:${((c.total / catMax) * 100).toFixed(0)}%;background:${c.color}"></div></div>
@@ -3861,7 +3874,7 @@ function renderYearly() {
       </div>`,
         )
         .join("")
-    : '<div class="empty"><div class="empty-icon">📊</div>No data</div>';
+    : '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>No data</div>';
 
   // Yearly line chart
   const chartYear = activeYear;
@@ -4040,11 +4053,11 @@ function renderNotifList() {
     return;
   }
   const typeIcon = {
-    budget: "💸",
-    recurring: "↺",
-    goal: "◎",
-    suspicious: "⚠",
-    system: "✦",
+    budget: "fa-money-bill-transfer",
+    recurring: "fa-rotate",
+    goal: "fa-bullseye",
+    suspicious: "fa-triangle-exclamation",
+    system: "fa-wand-magic-sparkles",
   };
   const typeColor = {
     budget: "var(--red)",
@@ -4057,7 +4070,7 @@ function renderNotifList() {
     .map(
       (n) => `
     <div class="notif-item ${n.read ? "" : "unread"}" onclick="markRead('${n.id}')">
-      <div class="notif-type" style="color:${typeColor[n.type] || "var(--text3)"};">${typeIcon[n.type] || "•"} ${n.type}</div>
+      <div class="notif-type" style="color:${typeColor[n.type] || "var(--text3)"};"><i class="fa-solid ${typeIcon[n.type] || "fa-circle-info"}" aria-hidden="true"></i> ${n.type}</div>
       <div class="notif-msg">${n.msg}</div>
       <div class="notif-time">${timeAgo(n.time)}</div>
     </div>`,
@@ -4114,7 +4127,7 @@ async function requestNotifPermission() {
       "err",
     );
     const btn = document.getElementById("notif-perm-btn");
-    if (btn) btn.textContent = "⚠ Host app to enable push";
+    if (btn) btn.textContent = "Host app to enable push";
     return;
   }
   try {
@@ -4122,10 +4135,10 @@ async function requestNotifPermission() {
     const btn = document.getElementById("notif-perm-btn");
     if (perm === "granted") {
       if (btn) {
-        btn.textContent = "✓ Push Alerts Enabled";
+        btn.textContent = "Push Alerts Enabled";
         btn.classList.add("granted");
       }
-      toast("Push alerts enabled ✓");
+      toast("Push alerts enabled");
     } else {
       if (btn) btn.textContent = "Permission Denied";
       toast("Permission denied — in-app alerts still work", "err");
@@ -4141,11 +4154,11 @@ function sendPushNotification(type, body) {
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   const titles = {
-    budget: "💸 Budget Alert",
-    recurring: "↺ Recurring Reminder",
-    goal: "◎ Goal Update",
-    suspicious: "⚠ Spending Alert",
-    system: "✦ Cashero",
+    budget: "Budget Alert",
+    recurring: "Recurring Reminder",
+    goal: "Goal Update",
+    suspicious: "Spending Alert",
+    system: "Cashero",
   };
   try {
     new Notification(titles[type] || "Cashero", {
@@ -4167,11 +4180,11 @@ function sendPushNotification(type, body) {
     return;
   }
   if (location.protocol === "file:") {
-    btn.textContent = "⚠ Host app to enable push";
+    btn.textContent = "Host app to enable push";
     return;
   }
   if (Notification.permission === "granted") {
-    btn.textContent = "✓ Push Alerts Enabled";
+    btn.textContent = "Push Alerts Enabled";
     btn.classList.add("granted");
   } else if (Notification.permission === "denied") {
     btn.textContent = "Permission Denied";

@@ -29,7 +29,7 @@ A modern web application for tracking and managing personal finances with intell
   bridge for existing inline handlers
 - **Storage**: Browser LocalStorage with JSON serialization
 - **Deployment**: Vercel
-- **Icons**: Unicode emoji with color-coded categories
+- **Icons**: Font Awesome via the project kit
 - **Performance**: Chart.js loads on demand; the service worker serves cached
   pages and static assets immediately while refreshing them in the background
 
