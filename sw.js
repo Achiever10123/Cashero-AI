@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.1";
+const CACHE_NAME = "cashero-static-v1.1.2";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -10,6 +10,8 @@ const EXTERNAL_CACHE_FIRST_ORIGINS = new Set([
   "https://cdn.jsdelivr.net",
   "https://fonts.googleapis.com",
   "https://fonts.gstatic.com",
+  "https://kit.fontawesome.com",
+  "https://ka-f.fontawesome.com",
 ]);
 const CORE_ASSETS = [
   "/",
@@ -23,7 +25,13 @@ const CORE_ASSETS = [
   "/modules/errors.js",
   "/modules/storage.js",
   "/favicon.ico",
-  "/assets/favicon/site.webmanifest",
+  "/apple-touch-icon.png",
+  "/android-chrome-192x192.png",
+  "/android-chrome-512x512.png",
+  "/assets/site.webmanifest",
+  "/assets/favicon/favicon.ico",
+  "/assets/favicon/favicon-16x16.png",
+  "/assets/favicon/favicon-32x32.png",
 ];
 
 function fetchAndCache(request) {

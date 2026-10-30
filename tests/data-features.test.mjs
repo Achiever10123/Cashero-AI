@@ -6,6 +6,7 @@ import {
   encryptBackup,
   filterTransactions,
   normalizeTags,
+  paginateItems,
   parseTransactionCSV,
   transactionsToCSV,
   transactionsToExcelXML,
@@ -142,6 +143,37 @@ test("normalizes tags and applies structured transaction filters", () => {
     () => filterTransactions(expenses, { minimumAmount: "not-an-amount" }),
     /invalid date or amount range/,
   );
+});
+
+test("paginates items and clamps pages to the available range", () => {
+  const largeDataset = Array.from({ length: 10_000 }, (_, index) => index);
+  const largePage = paginateItems(largeDataset, 200, 50);
+  assert.equal(largePage.totalPages, 200);
+  assert.deepEqual(largePage.items, largeDataset.slice(9_950));
+
+  const items = Array.from({ length: 105 }, (_, index) => index);
+  assert.deepEqual(paginateItems(items, 2, 50), {
+    items: items.slice(50, 100),
+    page: 2,
+    totalItems: 105,
+    totalPages: 3,
+    startIndex: 50,
+  });
+  assert.deepEqual(paginateItems(items, 10, 50), {
+    items: [100, 101, 102, 103, 104],
+    page: 3,
+    totalItems: 105,
+    totalPages: 3,
+    startIndex: 100,
+  });
+  assert.deepEqual(paginateItems([], 1, 50), {
+    items: [],
+    page: 1,
+    totalItems: 0,
+    totalPages: 0,
+    startIndex: 0,
+  });
+  assert.throws(() => paginateItems(items, 1, 0), /positive integer/);
 });
 
 test("exports Excel-safe CSV and a spreadsheet workbook", () => {

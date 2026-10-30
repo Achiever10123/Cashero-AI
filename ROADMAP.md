@@ -140,11 +140,11 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 ### Performance
 
-- [ ] Implement data pagination for large datasets
-- [ ] Optimize rendering for 10k+ transactions
-- [ ] Add service workers for offline support
-- [ ] Lazy load analytics components
-- [ ] Implement caching strategies
+- [x] Paginate transaction history for large datasets
+- [x] Optimize transaction-history rendering for 10k+ transactions
+- [x] Add service workers for offline support
+- [x] Lazy load Chart.js until chart views are opened
+- [x] Implement caching strategies
 
 ### Code Quality
 

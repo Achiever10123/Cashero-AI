@@ -880,6 +880,25 @@ nav {
 .history-filter-reset {
   align-self: end;
 }
+.history-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 2px;
+  color: var(--text2);
+  font-size: 10px;
+}
+.history-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.history-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 .tx-tags {
   display: flex;
   flex-wrap: wrap;

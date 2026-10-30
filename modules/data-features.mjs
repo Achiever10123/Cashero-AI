@@ -434,3 +434,28 @@ export function filterTransactions(expenses, filters = {}) {
     );
   });
 }
+
+export function paginateItems(items, page, pageSize) {
+  if (!Array.isArray(items)) {
+    throw new TypeError("Items to paginate must be an array.");
+  }
+  if (!Number.isInteger(page) || page < 1) {
+    throw new RangeError("Page must be a positive integer.");
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1) {
+    throw new RangeError("Page size must be a positive integer.");
+  }
+
+  const totalItems = items.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
+  const startIndex = (currentPage - 1) * pageSize;
+
+  return {
+    items: items.slice(startIndex, startIndex + pageSize),
+    page: currentPage,
+    totalItems,
+    totalPages,
+    startIndex,
+  };
+}

@@ -405,6 +405,8 @@ let S = {
 };
 let activeMonth = mkNow();
 let activeYear = new Date().getFullYear();
+let historyPage = 1;
+const HISTORY_PAGE_SIZE = 50;
 let donutChart = null,
   lineChart = null,
   savingsChart = null,
@@ -538,6 +540,7 @@ function renderMonthPills() {
 }
 function setMonth(mk2) {
   activeMonth = mk2;
+  historyPage = 1;
   renderMonthPills();
   renderAll();
 }
@@ -1702,6 +1705,12 @@ function renderHistory() {
   const exps = CasheroDataFeatures.filterTransactions(candidates, filters).sort(
     (a, b) => new Date(b.date) - new Date(a.date),
   );
+  const page = CasheroDataFeatures.paginateItems(
+    exps,
+    historyPage,
+    HISTORY_PAGE_SIZE,
+  );
+  historyPage = page.page;
   const { m, y } = parseMK(activeMonth);
   const isFiltered = Boolean(query || hasFilters);
   document.getElementById("history-title").textContent = isFiltered
@@ -1715,10 +1724,37 @@ function renderHistory() {
     : "";
   renderTxList(
     "history-list",
-    exps,
+    page.items,
     true,
     isFiltered ? "No transactions match these filters" : "Nothing here yet",
   );
+  if (page.totalItems > HISTORY_PAGE_SIZE) {
+    const pagination = document.createElement("nav");
+    pagination.className = "history-pagination";
+    pagination.setAttribute("aria-label", "Transaction pages");
+    pagination.innerHTML = `
+      <span>Showing ${page.startIndex + 1}–${Math.min(
+        page.startIndex + HISTORY_PAGE_SIZE,
+        page.totalItems,
+      )} of ${page.totalItems}</span>
+      <div class="history-pagination-controls">
+        <button class="btn btn-ghost" type="button" aria-label="Previous page" ${
+          page.page === 1 ? "disabled" : `onclick="changeHistoryPage(${page.page - 1})"`
+        }>Previous</button>
+        <span>Page ${page.page} of ${page.totalPages}</span>
+        <button class="btn btn-ghost" type="button" aria-label="Next page" ${
+          page.page === page.totalPages
+            ? "disabled"
+            : `onclick="changeHistoryPage(${page.page + 1})"`
+        }>Next</button>
+      </div>`;
+    document.getElementById("history-list").append(pagination);
+  }
+}
+
+function changeHistoryPage(page) {
+  historyPage = page;
+  renderHistory();
 }
 
 function getHistoryFilters() {
@@ -1735,6 +1771,7 @@ function getHistoryFilters() {
 }
 
 function resetHistoryFilters() {
+  historyPage = 1;
   [
     "history-search-input",
     "history-category-filter",
@@ -2910,7 +2947,10 @@ function initSelects() {
   }
   document
     .getElementById("history-search-input")
-    ?.addEventListener("input", renderHistory);
+    ?.addEventListener("input", () => {
+      historyPage = 1;
+      renderHistory();
+    });
   [
     "history-category-filter",
     "history-tag-filter",
@@ -2920,7 +2960,12 @@ function initSelects() {
     "history-max-amount",
   ].forEach((id) => {
     const filter = document.getElementById(id);
-    if (filter) filter.addEventListener("input", renderHistory);
+    if (filter) {
+      filter.addEventListener("input", () => {
+        historyPage = 1;
+        renderHistory();
+      });
+    }
   });
   [
     ["f-note", "f-cat", "f-category-suggestion"],
