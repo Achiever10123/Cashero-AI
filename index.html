@@ -19,7 +19,7 @@
     <!-- Content Security Policy -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://ka-f.fontawesome.com; font-src 'self' https://fonts.gstatic.com https://ka-f.fontawesome.com; connect-src 'self' https://vercel-deploy-xptk.vercel.app https://zenquotes.io https://www.google-analytics.com https://region1.google-analytics.com https://ka-f.fontawesome.com; img-src 'self' data: blob: https://www.googletagmanager.com; worker-src 'self';" />
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://ka-f.fontawesome.com; font-src 'self' https://fonts.gstatic.com https://ka-f.fontawesome.com; connect-src 'self' https://*.supabase.co https://vercel-deploy-xptk.vercel.app https://zenquotes.io https://www.google-analytics.com https://region1.google-analytics.com https://ka-f.fontawesome.com; img-src 'self' data: blob: https://www.googletagmanager.com; worker-src 'self';" />
     <script
       src="https://kit.fontawesome.com/aea47affd4.js"
       crossorigin="anonymous"></script>
@@ -282,6 +282,10 @@
                 <label>Date</label><input type="date" id="qa-date" />
               </div>
             </div>
+            <div class="field">
+              <label for="qa-tags">Tags (comma-separated, optional)</label>
+              <input type="text" id="qa-tags" placeholder="work, travel, tax-deductible" />
+            </div>
             <button
               class="btn btn-primary"
               style="width: 100%; padding: 13px"
@@ -324,13 +328,20 @@
                 cursor: pointer;
               ">
               <input type="checkbox" id="csv-include-all-columns" checked />
-              Include all columns (Date, Category, Note, Amount, Recurring)
+              Include all columns (Date, Category, Note, Amount, Recurring, Tags)
             </label>
+          </div>
+          <div class="field">
+            <label for="csv-export-format">File format</label>
+            <select id="csv-export-format">
+              <option value="csv">CSV</option>
+              <option value="excel">Excel workbook (.xls)</option>
+            </select>
           </div>
         </div>
         <div style="display: flex; gap: 10px; margin-top: 20px">
-          <button class="btn btn-primary" style="flex: 1" onclick="exportCSV()">
-            Export CSV
+          <button class="btn btn-primary" style="flex: 1" onclick="exportTransactions()">
+            Export
           </button>
           <button
             class="btn btn-ghost"
@@ -599,10 +610,20 @@
           <button
             class="theme-toggle"
             onclick="openCSVExportModal()"
-            title="Export CSV">
+            title="Export CSV or Excel">
             <i class="nav-icon fa-solid fa-file-export"></i>
-            <span class="toggle-label">Export CSV</span>
+            <span class="toggle-label">Export CSV / Excel</span>
           </button>
+          <label class="theme-toggle" style="cursor: pointer" title="Import transactions from CSV">
+            <i class="nav-icon fa-solid fa-file-import"></i>
+            <span class="toggle-label">Import CSV</span>
+            <input
+              type="file"
+              id="csv-import-input"
+              accept=".csv,.txt,text/csv,text/plain"
+              style="display: none"
+              onchange="importCSV(event)" />
+          </label>
 
           <button
             class="theme-toggle"
@@ -1070,6 +1091,10 @@
                     placeholder="What was this for?" />
                 </div>
                 <div class="field">
+                  <label for="f-tags">Tags (comma-separated, optional)</label>
+                  <input type="text" id="f-tags" placeholder="work, travel, tax-deductible" />
+                </div>
+                <div class="field">
                   <label>Recurring?</label>
                   <select id="f-recur">
                     <option value="">One-time</option>
@@ -1163,6 +1188,35 @@
                 placeholder='Try "food last month" or "coffee over $5"'
                 autocomplete="off" />
               <div id="history-search-count" aria-live="polite"></div>
+            </div>
+            <div class="history-filters" aria-label="Transaction filters">
+              <div class="field">
+                <label for="history-category-filter">Category</label>
+                <select id="history-category-filter">
+                  <option value="">All categories</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="history-tag-filter">Tags</label>
+                <input id="history-tag-filter" type="search" placeholder="e.g. work, travel" />
+              </div>
+              <div class="field">
+                <label for="history-start-date">From</label>
+                <input id="history-start-date" type="date" />
+              </div>
+              <div class="field">
+                <label for="history-end-date">To</label>
+                <input id="history-end-date" type="date" />
+              </div>
+              <div class="field">
+                <label for="history-min-amount">Minimum amount</label>
+                <input id="history-min-amount" type="number" min="0" step="0.01" placeholder="Any" />
+              </div>
+              <div class="field">
+                <label for="history-max-amount">Maximum amount</label>
+                <input id="history-max-amount" type="number" min="0" step="0.01" placeholder="Any" />
+              </div>
+              <button class="btn btn-ghost history-filter-reset" type="button" onclick="resetHistoryFilters()">Clear filters</button>
             </div>
             <div id="history-list"></div>
           </div>
@@ -1408,6 +1462,49 @@
             </div>
           </div>
 
+          <div class="card" style="margin-top: 18px">
+            <div class="sec-label" style="margin-bottom: 8px">Encrypted Cloud Backup (Supabase)</div>
+            <p class="setting-desc" style="margin-bottom: 16px">
+              Optional manual backup. Your data is encrypted in this browser before upload. Configure a Supabase project and its row-level-security table using the setup SQL in README.md.
+            </p>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cloud-project-url">Supabase project URL</label>
+                <input id="cloud-project-url" type="url" placeholder="https://your-project.supabase.co" autocomplete="url" />
+              </div>
+              <div class="field">
+                <label for="cloud-anon-key">Supabase publishable / anon key</label>
+                <input id="cloud-anon-key" type="password" placeholder="sb_publishable_..." autocomplete="off" />
+              </div>
+              <button class="btn btn-ghost" type="button" onclick="saveCloudConfig()">Save project settings</button>
+              <div class="form-row">
+                <div class="field">
+                  <label for="cloud-email">Account email</label>
+                  <input id="cloud-email" type="email" autocomplete="email" />
+                </div>
+                <div class="field">
+                  <label for="cloud-password">Account password</label>
+                  <input id="cloud-password" type="password" autocomplete="current-password" />
+                </div>
+              </div>
+              <div class="form-row">
+                <button class="btn btn-primary" type="button" onclick="createCloudAccount()">Create account</button>
+                <button class="btn btn-ghost" type="button" onclick="signInToCloud()">Sign in</button>
+                <button class="btn btn-ghost" type="button" onclick="signOutOfCloud()">Sign out</button>
+              </div>
+              <div id="cloud-status" class="setting-desc" role="status" aria-live="polite">Not signed in. Cloud backup is optional.</div>
+              <div class="field">
+                <label for="cloud-backup-passphrase">Backup encryption passphrase (12+ characters)</label>
+                <input id="cloud-backup-passphrase" type="password" autocomplete="new-password" />
+              </div>
+              <div class="form-row">
+                <button class="btn btn-primary" type="button" onclick="uploadCloudBackup()">Upload encrypted backup</button>
+                <button class="btn btn-ghost" type="button" onclick="restoreCloudBackup()">Restore cloud backup</button>
+              </div>
+              <button class="btn btn-ghost" type="button" onclick="deleteCloudBackup()">Delete cloud backup</button>
+            </div>
+          </div>
+
           <!-- About & Support -->
           <div class="card" style="margin-top: 18px">
             <div class="sec-label" style="margin-bottom: 20px">
@@ -1500,8 +1597,9 @@
                 <div>
                   <div class="setting-title">Clear All Data</div>
                   <div class="setting-desc">
-                    Permanently delete all expenses, payouts, goals, recurring
-                    bills, and settings. This action cannot be undone.
+                    Permanently delete expenses, payouts, goals, recurring
+                    bills, and settings from this device. Existing Supabase
+                    backups are not deleted by this action.
                   </div>
                 </div>
               </div>

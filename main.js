@@ -142,6 +142,7 @@ const CURRENCY_CONTEXT = {
   },
 };
 const SK = "cashero_v2";
+const CLOUD_CONFIG_KEY = "cashero_supabase_config";
 
 // ═══════════════════════════════════════════
 //  SECURITY UTILITIES
@@ -413,6 +414,8 @@ let nlpParsed = null;
 let analysisLastRun = null;
 let analysisCountdownInterval = null;
 let notifications = [];
+let cloudSession = null;
+let cloudConfig = null;
 
 // ═══════════════════════════════════════════
 //  PERSISTENCE
@@ -1583,13 +1586,16 @@ function addExpense() {
   const amount = parseFloat(document.getElementById("f-amount").value);
   const cat = document.getElementById("f-cat").value;
   const note = document.getElementById("f-note").value.trim();
+  const tags = CasheroDataFeatures.normalizeTags(
+    document.getElementById("f-tags").value,
+  );
   const date = document.getElementById("f-date").value;
   const recur = document.getElementById("f-recur").value;
   if (!amount || amount <= 0 || !date) {
     toast("Enter a valid amount and date", "err");
     return;
   }
-  const exp = { id: Date.now(), amount, category: cat, note, date };
+  const exp = { id: Date.now(), amount, category: cat, note, date, tags };
   if (recur) {
     const recurringId = Date.now() + 1;
     S.recurring.push({
@@ -1607,6 +1613,7 @@ function addExpense() {
   notifyIfUnusualTransaction(exp);
   document.getElementById("f-amount").value = "";
   document.getElementById("f-note").value = "";
+  document.getElementById("f-tags").value = "";
   document.getElementById("f-recur").value = "";
   toast("Expense added");
   renderAll();
@@ -1669,25 +1676,78 @@ function renderPayoutHistory() {
 function renderHistory() {
   const searchInput = document.getElementById("history-search-input");
   const query = searchInput?.value.trim() || "";
-  const exps = [
-    ...(query ? searchTransactions(query) : monthExpenses(activeMonth)),
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const filters = getHistoryFilters();
+  const hasFilters = Object.values(filters).some((value) => value !== "");
+  const minimum = filters.minimumAmount === "" ? null : Number(filters.minimumAmount);
+  const maximum = filters.maximumAmount === "" ? null : Number(filters.maximumAmount);
+  const invalidFilter =
+    (filters.startDate && filters.endDate && filters.startDate > filters.endDate) ||
+    (minimum !== null && (!Number.isFinite(minimum) || minimum < 0)) ||
+    (maximum !== null && (!Number.isFinite(maximum) || maximum < 0)) ||
+    (minimum !== null && maximum !== null && minimum > maximum);
+  if (invalidFilter) {
+    document.getElementById("history-title").textContent =
+      "Filtered Transactions";
+    document.getElementById("history-total").textContent = fmt(0);
+    document.getElementById("history-search-count").textContent =
+      "Check the date range and non-negative amount limits.";
+    renderTxList("history-list", [], true, "Correct the invalid filter values");
+    return;
+  }
+  const candidates = query
+    ? searchTransactions(query)
+    : hasFilters
+      ? S.expenses
+      : monthExpenses(activeMonth);
+  const exps = CasheroDataFeatures.filterTransactions(candidates, filters).sort(
+    (a, b) => new Date(b.date) - new Date(a.date),
+  );
   const { m, y } = parseMK(activeMonth);
-  document.getElementById("history-title").textContent = query
-    ? "Search Results — All Expenses"
+  const isFiltered = Boolean(query || hasFilters);
+  document.getElementById("history-title").textContent = isFiltered
+    ? "Filtered Transactions"
     : `${MONTHS[m]} ${y} — All Expenses`;
   document.getElementById("history-total").textContent = fmt(
     exps.reduce((s, e) => s + e.amount, 0),
   );
-  document.getElementById("history-search-count").textContent = query
+  document.getElementById("history-search-count").textContent = isFiltered
     ? `${exps.length} matching transaction${exps.length === 1 ? "" : "s"}`
     : "";
   renderTxList(
     "history-list",
     exps,
     true,
-    query ? "No transactions match this search" : "Nothing here yet",
+    isFiltered ? "No transactions match these filters" : "Nothing here yet",
   );
+}
+
+function getHistoryFilters() {
+  return {
+    category: document.getElementById("history-category-filter")?.value || "",
+    tags: document.getElementById("history-tag-filter")?.value.trim() || "",
+    startDate: document.getElementById("history-start-date")?.value || "",
+    endDate: document.getElementById("history-end-date")?.value || "",
+    minimumAmount:
+      document.getElementById("history-min-amount")?.value.trim() || "",
+    maximumAmount:
+      document.getElementById("history-max-amount")?.value.trim() || "",
+  };
+}
+
+function resetHistoryFilters() {
+  [
+    "history-search-input",
+    "history-category-filter",
+    "history-tag-filter",
+    "history-start-date",
+    "history-end-date",
+    "history-min-amount",
+    "history-max-amount",
+  ].forEach((id) => {
+    const field = document.getElementById(id);
+    if (field) field.value = "";
+  });
+  renderHistory();
 }
 
 function searchTransactions(query) {
@@ -1934,7 +1994,7 @@ function searchTransactions(query) {
       return false;
     }
     const searchableText =
-      `${expense.note || ""} ${expense.category} ${expense.date}`.toLowerCase();
+      `${expense.note || ""} ${expense.category} ${expense.date} ${(expense.tags || []).join(" ")}`.toLowerCase();
     return terms.every((term) => searchableText.includes(term));
   });
 }
@@ -1944,6 +2004,12 @@ function searchTransactions(query) {
 // ═══════════════════════════════════════════
 function renderTxList(id, list, showDel, emptyMessage = "Nothing here yet") {
   const el = document.getElementById(id);
+  const renderTags = (expense) => {
+    const tags = CasheroDataFeatures.normalizeTags(expense.tags);
+    return tags.length
+      ? `<div class="tx-tags">${tags.map((tag) => `<span class="tx-tag">${escapeHtml(tag)}</span>`).join("")}</div>`
+      : "";
+  };
   // Clean up any previous observers/props
   if (el._observer) {
     try {
@@ -1988,7 +2054,7 @@ function renderTxList(id, list, showDel, emptyMessage = "Nothing here yet") {
           <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getFontAwesomeIcon(c.icon, 16)}</div>
           <div class="tx-info">
             <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
-            <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
+            <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>${renderTags(e)}
           </div>
           <div class="tx-right">
             ${e.recurringId ? `<span class="tx-recur" style="display:inline-flex;width:16px;height:16px">${getFontAwesomeIcon("RotateCw", 12)}</span>` : ""}
@@ -2048,7 +2114,7 @@ function renderTxList(id, list, showDel, emptyMessage = "Nothing here yet") {
       <div class="tx-icon" style="background:${c.color}22;display:flex;align-items:center;justify-content:center">${getFontAwesomeIcon(c.icon, 16)}</div>
       <div class="tx-info">
         <div class="tx-name">${escapeHtml(e.note || e.category)}</div>
-        <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>
+        <div class="tx-meta">${escapeHtml(e.date)} · ${escapeHtml(e.category)}</div>${renderTags(e)}
       </div>
       <div class="tx-right">
         ${recur}
@@ -2369,6 +2435,7 @@ function openQuickAdd() {
 function closeQuickAdd() {
   document.getElementById("quick-modal").classList.remove("open");
   document.getElementById("nlp-input").value = "";
+  document.getElementById("qa-tags").value = "";
   document.getElementById("nlp-parsed").classList.remove("show");
   document.getElementById("nlp-form").style.display = "none";
   nlpParsed = null;
@@ -2446,12 +2513,15 @@ function confirmQuickAdd() {
   const amount = parseFloat(document.getElementById("qa-amount").value);
   const cat = document.getElementById("qa-cat").value;
   const note = document.getElementById("qa-note").value.trim();
+  const tags = CasheroDataFeatures.normalizeTags(
+    document.getElementById("qa-tags").value,
+  );
   const date = document.getElementById("qa-date").value;
   if (!amount || amount <= 0 || !date) {
     toast("Enter amount and date", "err");
     return;
   }
-  const expense = { id: Date.now(), amount, category: cat, note, date };
+  const expense = { id: Date.now(), amount, category: cat, note, date, tags };
   S.expenses.push(expense);
   save();
   notifyIfUnusualTransaction(expense);
@@ -2524,13 +2594,15 @@ function openCSVExportModal() {
   // Set default date range (last 30 days)
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const toLocalDateInput = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
   document.getElementById("csv-start-date").value = thirtyDaysAgo
-    .toISOString()
-    .split("T")[0];
+    ? toLocalDateInput(thirtyDaysAgo)
+    : "";
   document.getElementById("csv-end-date").value = today
-    .toISOString()
-    .split("T")[0];
+    ? toLocalDateInput(today)
+    : "";
 
   modal.classList.add("open");
 }
@@ -2539,42 +2611,123 @@ function closeCSVExportModal() {
   document.getElementById("csv-export-modal").classList.remove("open");
 }
 
-function exportCSV() {
+function exportTransactions() {
   const startDateInput = document.getElementById("csv-start-date").value;
   const endDateInput = document.getElementById("csv-end-date").value;
+  if (startDateInput && endDateInput && startDateInput > endDateInput) {
+    toast("Start date must be on or before end date.", "err");
+    return;
+  }
 
-  // Parse dates
-  const startDate = startDateInput ? new Date(startDateInput) : new Date(0);
-  const endDate = endDateInput ? new Date(endDateInput) : new Date();
-
-  // Filter expenses by date range
-  const filteredExpenses = S.expenses.filter((e) => {
-    const expenseDate = new Date(e.date);
-    return expenseDate >= startDate && expenseDate <= endDate;
+  const filteredExpenses = S.expenses.filter(
+    (expense) =>
+      (!startDateInput || expense.date >= startDateInput) &&
+      (!endDateInput || expense.date <= endDateInput),
+  );
+  const includeAllColumns = document.getElementById(
+    "csv-include-all-columns",
+  ).checked;
+  const format = document.getElementById("csv-export-format").value;
+  const isExcel = format === "excel";
+  const content = isExcel
+    ? CasheroDataFeatures.transactionsToExcelXML(
+        filteredExpenses,
+        includeAllColumns,
+      )
+    : CasheroDataFeatures.transactionsToCSV(
+        filteredExpenses,
+        includeAllColumns,
+      );
+  const blob = new Blob([content], {
+    type: isExcel
+      ? "application/vnd.ms-excel;charset=utf-8"
+      : "text/csv;charset=utf-8",
   });
-
-  // Build CSV with headers including Category
-  const header = "Date,Category,Note,Amount,Recurring\n";
-  const rows = filteredExpenses
-    .map(
-      (e) =>
-        `"${e.date}","${e.category}","${(e.note || "").replace(/"/g, '""')}","${e.amount}","${e.recurringId ? "Yes" : "No"}"`,
-    )
-    .join("\n");
-
-  const blob = new Blob([header + rows], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-
-  // Create filename with date range
   const startStr = startDateInput || "start";
   const endStr = endDateInput || "end";
-  a.download = `cashero-export-${startStr}-to-${endStr}.csv`;
+  a.download = `cashero-export-${startStr}-to-${endStr}.${isExcel ? "xls" : "csv"}`;
   a.click();
-  URL.revokeObjectURL(url);
-  toast(`CSV exported (${filteredExpenses.length} records)`);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(
+    `${isExcel ? "Excel" : "CSV"} exported (${filteredExpenses.length} records)`,
+  );
   closeCSVExportModal();
+}
+
+async function importCSV(event) {
+  const input = event.target;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  try {
+    const result = CasheroDataFeatures.parseTransactionCSV(await file.text());
+    const existing = new Set(
+      S.expenses.map((expense) => transactionDuplicateKey(expense)),
+    );
+    const additions = [];
+    let duplicates = 0;
+    for (const transaction of result.transactions) {
+      const key = transactionDuplicateKey(transaction);
+      if (existing.has(key)) {
+        duplicates++;
+        continue;
+      }
+      existing.add(key);
+      additions.push(transaction);
+    }
+
+    if (!additions.length) {
+      toast(
+        `No new expenses to import (${duplicates} duplicates, ${result.errors.length} invalid rows, ${result.ignored} income/credit rows ignored).`,
+        "inf",
+      );
+      return;
+    }
+    const skipped = duplicates + result.errors.length;
+    const ignored = result.ignored;
+    if (
+      !confirm(
+        `Import ${additions.length} transaction${additions.length === 1 ? "" : "s"} from ${file.name}?\n\nA single Amount column is treated as expenses. Credit, deposit, refund, and income rows are skipped.${skipped || ignored ? `\n\n${duplicates} duplicates, ${result.errors.length} invalid rows, and ${ignored} income/credit rows will be skipped.` : ""}`,
+      )
+    ) {
+      return;
+    }
+
+    const ids = new Set(S.expenses.map((expense) => expense.id));
+    let nextId = Date.now();
+    for (const transaction of additions) {
+      while (ids.has(nextId)) nextId++;
+      S.expenses.push({ id: nextId, ...transaction });
+      ids.add(nextId++);
+    }
+    save();
+    renderAll();
+    renderMonthPills();
+    initYearPills();
+    toast(
+      `Imported ${additions.length} transactions; skipped ${skipped} duplicates or invalid rows and ignored ${ignored} income/credit rows.`,
+      skipped || ignored ? "inf" : "ok",
+    );
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not import CSV transactions", {
+      notify: false,
+    });
+    toast(error.message || "Could not read the selected CSV file.", "err");
+  } finally {
+    input.value = "";
+  }
+}
+
+function transactionDuplicateKey(transaction) {
+  return [
+    transaction.date,
+    Number(transaction.amount).toFixed(2),
+    (transaction.category || "Other").trim().toLowerCase(),
+    (transaction.note || "").trim().replace(/\s+/g, " ").toLowerCase(),
+  ].join("|");
 }
 
 // ═══════════════════════════════════════════
@@ -2749,9 +2902,26 @@ function initSelects() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = catOpts;
   });
+  const historyCategory = document.getElementById("history-category-filter");
+  if (historyCategory) {
+    historyCategory.innerHTML =
+      '<option value="">All categories</option>' +
+      CATS.map((category) => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join("");
+  }
   document
     .getElementById("history-search-input")
     ?.addEventListener("input", renderHistory);
+  [
+    "history-category-filter",
+    "history-tag-filter",
+    "history-start-date",
+    "history-end-date",
+    "history-min-amount",
+    "history-max-amount",
+  ].forEach((id) => {
+    const filter = document.getElementById(id);
+    if (filter) filter.addEventListener("input", renderHistory);
+  });
   [
     ["f-note", "f-cat", "f-category-suggestion"],
     ["qa-note", "qa-cat", "qa-category-suggestion"],
@@ -2783,6 +2953,7 @@ function renderSettings() {
   updatePinToggleButton();
   updateCurrencySelector();
   updateAutoLockSelector();
+  loadCloudConfigFields();
 }
 
 function updateAutoLockSelector() {
@@ -2812,7 +2983,7 @@ function changeAutoLockTimeout() {
 
 function clearAllData() {
   const confirmed = confirm(
-    "Delete ALL data?\n\nThis will permanently erase all expenses, payouts, goals, recurring bills, and settings. This cannot be undone.\n\nAre you absolutely sure?",
+    "Delete all data from this device?\n\nThis permanently erases local expenses, payouts, goals, recurring bills, and settings. Existing Supabase backups are not deleted; remove them separately from Settings.\n\nAre you absolutely sure?",
   );
   if (!confirmed) return;
   const doubleConfirm = confirm(
@@ -3711,6 +3882,7 @@ const BACKUP_SCHEMA = {
       note: { type: "string", required: false },
       date: { type: "string", required: true },
       recurringId: { type: "number", required: false },
+      tags: { type: "array", required: false },
     },
   },
   payouts: {
@@ -3830,6 +4002,18 @@ function validateBackupSchema(data) {
             };
           }
 
+          if (
+            field === "expenses" &&
+            "tags" in item &&
+            (!Array.isArray(item.tags) ||
+              item.tags.some((tag) => typeof tag !== "string"))
+          ) {
+            return {
+              valid: false,
+              error: `Item ${i} in "expenses": tags must be an array of strings`,
+            };
+          }
+
           // Validate each item field
           for (const [itemField, itemFieldSchema] of Object.entries(
             fieldSchema.itemSchema,
@@ -3920,8 +4104,8 @@ function validateBackupSchema(data) {
   return { valid: true };
 }
 
-function backupJSON() {
-  const backup = {
+function createBackupData() {
+  return {
     expenses: S.expenses,
     payouts: S.payouts,
     goals: S.goals,
@@ -3935,6 +4119,10 @@ function backupJSON() {
     currency: S.currency,
     autoLockTimeout: S.autoLockTimeout,
   };
+}
+
+function backupJSON() {
+  const backup = createBackupData();
   const blob = new Blob([JSON.stringify(backup, null, 2)], {
     type: "application/json",
   });
@@ -3943,70 +4131,395 @@ function backupJSON() {
   a.href = url;
   a.download = `cashero-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast("Backup downloaded");
 }
 
+function applyBackupData(parsed) {
+  const expCount = parsed.expenses.length;
+  const payCount = parsed.payouts.length;
+  S = {
+    expenses: parsed.expenses.map((expense) => ({
+      ...expense,
+      tags: CasheroDataFeatures.normalizeTags(expense.tags),
+    })),
+    payouts: parsed.payouts || [],
+    goals: parsed.goals || [],
+    recurring: parsed.recurring || [],
+    lastAnalysis: parsed.lastAnalysis || null,
+    lastAnalysisDate: parsed.lastAnalysisDate || null,
+    lastCheckin: parsed.lastCheckin || null,
+    lastCheckinDate: parsed.lastCheckinDate || null,
+    lastAnalysisMonthKey: parsed.lastAnalysisMonthKey || null,
+    theme: parsed.theme || "dark",
+    currency: parsed.currency || "USD",
+    autoLockTimeout: parsed.autoLockTimeout ?? 15,
+    pinEnabled: false,
+  };
+  CasheroStorage.removeItem("cashero_pin_hash");
+  CasheroStorage.removeItem("cashero_pin_salt");
+  CasheroStorage.removeItem("cashero_recovery_hash");
+  CasheroStorage.removeItem("cashero_recovery_salt");
+  save();
+  applyTheme();
+  renderMonthPills();
+  renderAll();
+  initYearPills();
+  return { expCount, payCount };
+}
+
 function restoreJSON(event) {
-  const file = event.target.files[0];
+  const input = event.target;
+  const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
+    let parsed;
     try {
-      const parsed = JSON.parse(e.target.result);
-
-      // Validate against schema
-      const validation = validateBackupSchema(parsed);
-      if (!validation.valid) {
-        toast(validation.error, "err");
-        event.target.value = "";
-        return;
-      }
-
-      const expCount = parsed.expenses.length;
-      const payCount = parsed.payouts.length;
-      const goalCount = (parsed.goals || []).length;
-      const recCount = (parsed.recurring || []).length;
-      if (
-        !confirm(
-          `Restore backup?\n\n• ${expCount} expenses\n• ${payCount} payouts\n• ${goalCount} goals\n• ${recCount} recurring\n\nThis will REPLACE your current data.`,
-        )
-      ) {
-        event.target.value = "";
-        return;
-      }
-      S = {
-        expenses: parsed.expenses || [],
-        payouts: parsed.payouts || [],
-        goals: parsed.goals || [],
-        recurring: parsed.recurring || [],
-        lastAnalysis: parsed.lastAnalysis || null,
-        lastAnalysisDate: parsed.lastAnalysisDate || null,
-        lastCheckin: parsed.lastCheckin || null,
-        lastCheckinDate: parsed.lastCheckinDate || null,
-        lastAnalysisMonthKey: parsed.lastAnalysisMonthKey || null,
-        theme: parsed.theme || "dark",
-        currency: parsed.currency || "USD",
-        autoLockTimeout: parsed.autoLockTimeout ?? 15,
-        pinEnabled: false, // never restore PIN state from backup — security risk
-      };
-      // Clear any PIN keys that might have been imported
-      CasheroStorage.removeItem("cashero_pin_hash");
-      CasheroStorage.removeItem("cashero_pin_salt");
-      CasheroStorage.removeItem("cashero_recovery_hash");
-      CasheroStorage.removeItem("cashero_recovery_salt");
-      save();
-      applyTheme();
-      renderMonthPills();
-      renderAll();
-      initYearPills();
-      toast(`Restored: ${expCount} expenses, ${payCount} payouts`);
-    } catch (err) {
+      parsed = JSON.parse(e.target.result);
+    } catch (error) {
+      CasheroErrors.reportError(error, "Could not parse JSON backup", {
+        notify: false,
+      });
       toast("Failed to parse backup file - invalid JSON", "err");
+      input.value = "";
+      return;
     }
-    event.target.value = "";
+
+    const validation = validateBackupSchema(parsed);
+    if (!validation.valid) {
+      toast(validation.error, "err");
+      input.value = "";
+      return;
+    }
+
+    const expCount = parsed.expenses.length;
+    const payCount = parsed.payouts.length;
+    const goalCount = (parsed.goals || []).length;
+    const recCount = (parsed.recurring || []).length;
+    if (
+      !confirm(
+        `Restore backup?\n\n• ${expCount} expenses\n• ${payCount} payouts\n• ${goalCount} goals\n• ${recCount} recurring\n\nThis will REPLACE your current data.`,
+      )
+    ) {
+      input.value = "";
+      return;
+    }
+    try {
+      applyBackupData(parsed);
+      toast(`Restored: ${expCount} expenses, ${payCount} payouts`);
+    } catch (error) {
+      CasheroErrors.reportError(error, "Could not restore JSON backup", {
+        notify: false,
+      });
+      toast(error.message || "Could not restore the backup.", "err");
+    } finally {
+      input.value = "";
+    }
+  };
+  reader.onerror = () => {
+    const error = reader.error || new Error("Could not read the backup file.");
+    CasheroErrors.reportError(error, "Could not read JSON backup", {
+      notify: false,
+    });
+    toast(error.message, "err");
+    input.value = "";
   };
   reader.readAsText(file);
+}
+
+function validSupabaseUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      url.hostname.endsWith(".supabase.co") &&
+      !url.username &&
+      !url.password &&
+      !url.port &&
+      url.pathname === "/" &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getCloudConfig() {
+  if (cloudConfig) return cloudConfig;
+  const stored = CasheroStorage.readJSON(CLOUD_CONFIG_KEY);
+  if (
+    !stored ||
+    typeof stored.url !== "string" ||
+    !validSupabaseUrl(stored.url) ||
+    typeof stored.anonKey !== "string" ||
+    !stored.anonKey.trim()
+  ) {
+    throw new Error("Enter and save a valid Supabase project URL and publishable key.");
+  }
+  cloudConfig = { url: stored.url.replace(/\/+$/, ""), anonKey: stored.anonKey };
+  return cloudConfig;
+}
+
+function loadCloudConfigFields() {
+  try {
+    const stored = CasheroStorage.readJSON(CLOUD_CONFIG_KEY);
+    if (!stored) return;
+    document.getElementById("cloud-project-url").value = stored.url || "";
+    document.getElementById("cloud-anon-key").value = stored.anonKey || "";
+    cloudConfig = null;
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not load cloud backup settings", {
+      notify: false,
+    });
+    setCloudStatus("Cloud settings are invalid. Save the project settings again.", true);
+  }
+}
+
+function setCloudStatus(message, isError = false) {
+  const status = document.getElementById("cloud-status");
+  if (!status) return;
+  status.textContent = message;
+  status.style.color = isError ? "var(--red)" : "var(--text2)";
+}
+
+function saveCloudConfig() {
+  const url = document.getElementById("cloud-project-url").value.trim();
+  const anonKey = document.getElementById("cloud-anon-key").value.trim();
+  if (!validSupabaseUrl(url) || !anonKey) {
+    setCloudStatus(
+      "Use an HTTPS *.supabase.co project URL and provide its publishable/anon key.",
+      true,
+    );
+    toast("Enter a valid Supabase URL and publishable key.", "err");
+    return;
+  }
+  cloudConfig = { url: url.replace(/\/+$/, ""), anonKey };
+  cloudSession = null;
+  CasheroStorage.writeJSON(CLOUD_CONFIG_KEY, cloudConfig);
+  setCloudStatus("Supabase project settings saved. Sign in to continue.");
+  toast("Cloud project settings saved");
+}
+
+async function supabaseRequest(path, { method = "GET", body, accessToken, prefer } = {}) {
+  const config = getCloudConfig();
+  const headers = {
+    apikey: config.anonKey,
+    Authorization: `Bearer ${accessToken || config.anonKey}`,
+  };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (prefer) headers.Prefer = prefer;
+
+  const response = await fetch(`${config.url}${path}`, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const responseText = await response.text();
+  let result = null;
+  if (responseText) {
+    try {
+      result = JSON.parse(responseText);
+    } catch (error) {
+      if (response.ok) throw error;
+      result = { message: response.statusText || `HTTP ${response.status}` };
+    }
+  }
+  if (!response.ok) {
+    throw new Error(
+      result?.msg ||
+        result?.message ||
+        result?.error_description ||
+        result?.error ||
+        `Supabase request failed (HTTP ${response.status}).`,
+    );
+  }
+  return result;
+}
+
+async function createCloudAccount() {
+  const email = document.getElementById("cloud-email").value.trim();
+  const password = document.getElementById("cloud-password").value;
+  if (!email || !password) {
+    toast("Enter an email and password to create an account.", "err");
+    return;
+  }
+
+  try {
+    const result = await supabaseRequest("/auth/v1/signup", {
+      method: "POST",
+      body: { email, password },
+    });
+    if (result?.access_token && result?.user) {
+      cloudSession = { accessToken: result.access_token, user: result.user };
+      setCloudStatus(`Signed in as ${result.user.email || email}.`);
+    } else {
+      setCloudStatus("Account created. Check your email to confirm, then sign in.");
+    }
+    document.getElementById("cloud-password").value = "";
+    toast("Supabase account request completed");
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not create Supabase account", {
+      notify: false,
+    });
+    setCloudStatus(error.message, true);
+    toast(error.message, "err");
+  }
+}
+
+async function signInToCloud() {
+  const email = document.getElementById("cloud-email").value.trim();
+  const password = document.getElementById("cloud-password").value;
+  if (!email || !password) {
+    toast("Enter your Supabase email and password to sign in.", "err");
+    return;
+  }
+
+  try {
+    const result = await supabaseRequest(
+      "/auth/v1/token?grant_type=password",
+      { method: "POST", body: { email, password } },
+    );
+    if (!result?.access_token || !result?.user?.id) {
+      throw new Error("Supabase did not return an authenticated user session.");
+    }
+    cloudSession = { accessToken: result.access_token, user: result.user };
+    document.getElementById("cloud-password").value = "";
+    setCloudStatus(`Signed in as ${result.user.email || email}.`);
+    toast("Signed in to Supabase");
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not sign in to Supabase", {
+      notify: false,
+    });
+    setCloudStatus(error.message, true);
+    toast(error.message, "err");
+  }
+}
+
+function signOutOfCloud() {
+  cloudSession = null;
+  document.getElementById("cloud-password").value = "";
+  setCloudStatus("Signed out. Cloud data remains encrypted in your Supabase account.");
+}
+
+function requireCloudSession() {
+  if (!cloudSession?.accessToken || !cloudSession?.user?.id) {
+    throw new Error("Sign in to Supabase before using cloud backup.");
+  }
+}
+
+async function uploadCloudBackup() {
+  const passphraseInput = document.getElementById("cloud-backup-passphrase");
+  const passphrase = passphraseInput.value;
+  try {
+    requireCloudSession();
+    if (!window.isSecureContext || !crypto.subtle) {
+      throw new Error("Encrypted cloud backup requires a secure HTTPS connection.");
+    }
+    const encryptedPayload = await CasheroDataFeatures.encryptBackup(
+      createBackupData(),
+      passphrase,
+    );
+    await supabaseRequest("/rest/v1/cashero_backups?on_conflict=user_id", {
+      method: "POST",
+      accessToken: cloudSession.accessToken,
+      prefer: "resolution=merge-duplicates,return=minimal",
+      body: {
+        user_id: cloudSession.user.id,
+        encrypted_payload: encryptedPayload,
+        updated_at: new Date().toISOString(),
+      },
+    });
+    setCloudStatus("Encrypted backup uploaded. Supabase stores only ciphertext.");
+    toast("Encrypted cloud backup uploaded");
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not upload encrypted cloud backup", {
+      notify: false,
+    });
+    setCloudStatus(error.message, true);
+    toast(error.message, "err");
+  } finally {
+    passphraseInput.value = "";
+  }
+}
+
+async function restoreCloudBackup() {
+  const passphraseInput = document.getElementById("cloud-backup-passphrase");
+  const passphrase = passphraseInput.value;
+  try {
+    requireCloudSession();
+    if (!window.isSecureContext || !crypto.subtle) {
+      throw new Error("Encrypted cloud backup requires a secure HTTPS connection.");
+    }
+    const userId = encodeURIComponent(cloudSession.user.id);
+    const rows = await supabaseRequest(
+      `/rest/v1/cashero_backups?user_id=eq.${userId}&select=encrypted_payload&limit=1`,
+      { accessToken: cloudSession.accessToken },
+    );
+    if (!Array.isArray(rows) || !rows.length) {
+      throw new Error("No cloud backup was found for this account.");
+    }
+    const backup = await CasheroDataFeatures.decryptBackup(
+      rows[0].encrypted_payload,
+      passphrase,
+    );
+    const validation = validateBackupSchema(backup);
+    if (!validation.valid) {
+      throw new Error(`Cloud backup is invalid: ${validation.error}`);
+    }
+    const counts = {
+      expenses: backup.expenses.length,
+      payouts: backup.payouts.length,
+      goals: (backup.goals || []).length,
+      recurring: (backup.recurring || []).length,
+    };
+    if (
+      !confirm(
+        `Restore encrypted cloud backup?\n\n• ${counts.expenses} expenses\n• ${counts.payouts} payouts\n• ${counts.goals} goals\n• ${counts.recurring} recurring\n\nThis will REPLACE your current data. PIN security credentials are not backed up and will be cleared.`,
+      )
+    ) {
+      return;
+    }
+    applyBackupData(backup);
+    setCloudStatus("Encrypted backup restored to this device.");
+    toast(`Restored ${counts.expenses} expenses from cloud backup`);
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not restore encrypted cloud backup", {
+      notify: false,
+    });
+    setCloudStatus(error.message, true);
+    toast(error.message, "err");
+  } finally {
+    passphraseInput.value = "";
+  }
+}
+
+async function deleteCloudBackup() {
+  try {
+    requireCloudSession();
+    if (
+      !confirm(
+        "Permanently delete your encrypted Supabase backup? This does not affect the data currently stored on this device.",
+      )
+    ) {
+      return;
+    }
+    const userId = encodeURIComponent(cloudSession.user.id);
+    await supabaseRequest(`/rest/v1/cashero_backups?user_id=eq.${userId}`, {
+      method: "DELETE",
+      accessToken: cloudSession.accessToken,
+      prefer: "return=minimal",
+    });
+    setCloudStatus("Encrypted cloud backup deleted.");
+    toast("Cloud backup deleted");
+  } catch (error) {
+    CasheroErrors.reportError(error, "Could not delete encrypted cloud backup", {
+      notify: false,
+    });
+    setCloudStatus(error.message, true);
+    toast(error.message, "err");
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -4239,19 +4752,19 @@ function renderYearly() {
 //  PDF REPORT (browser print)
 // ═══════════════════════════════════════════
 function printPDFReport() {
-  // Check if there are any transactions
-  if (!S.expenses || S.expenses.length === 0) {
-    toast("No transactions yet. Add expenses to generate a report.", "err");
+  if ((!S.expenses || S.expenses.length === 0) && S.payouts.length === 0) {
+    toast("No financial data yet. Add transactions or payouts to generate a report.", "err");
     return;
   }
 
-  // Check if there's data for the current year
-  const yearlyExpenses = S.expenses.filter((e) =>
-    e.date.startsWith(activeYear),
+  const yearlyExpenses = S.expenses.filter(
+    (expense) => new Date(expense.date).getFullYear() === activeYear,
   );
-  const payouts = S.payouts.filter((p) => p.date.startsWith(activeYear));
+  const yearlyPayouts = S.payouts.filter(
+    (payout) => payout.year === activeYear,
+  );
 
-  if (yearlyExpenses.length === 0 && payouts.length === 0) {
+  if (yearlyExpenses.length === 0 && yearlyPayouts.length === 0) {
     toast(
       `No transactions found for ${activeYear}. Add data to generate a report.`,
       "err",
@@ -4259,6 +4772,7 @@ function printPDFReport() {
     return;
   }
 
+  renderYearly();
   document
     .querySelectorAll(".page")
     .forEach((p) => p.classList.remove("active"));

@@ -8,6 +8,15 @@ import {
   writeJSON,
 } from "./storage.js";
 import { loadDailyQuote, scheduleDailyQuoteRefresh } from "./daily-quote.js";
+import {
+  decryptBackup,
+  encryptBackup,
+  filterTransactions,
+  normalizeTags,
+  parseTransactionCSV,
+  transactionsToCSV,
+  transactionsToExcelXML,
+} from "./data-features.mjs";
 
 installGlobalErrorHandlers();
 
@@ -20,6 +29,15 @@ Object.assign(window, {
     removeItem: removeStorageItem,
     setItem: setStorageItem,
     writeJSON,
+  },
+  CasheroDataFeatures: {
+    decryptBackup,
+    encryptBackup,
+    filterTransactions,
+    normalizeTags,
+    parseTransactionCSV,
+    transactionsToCSV,
+    transactionsToExcelXML,
   },
   loadDailyQuote,
   scheduleDailyQuoteRefresh,

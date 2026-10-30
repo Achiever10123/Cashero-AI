@@ -1,5 +1,5 @@
 import { reportError } from "./errors.js";
-import { readJSON, writeJSON } from "./storage.js";
+import { removeStorageItem } from "./storage.js";
 
 const DAILY_QUOTE_STORAGE_KEY = "cashero_daily_quote";
 const DAILY_QUOTE_FALLBACKS = [
@@ -34,28 +34,6 @@ function getDailyQuoteFallback(date = new Date()) {
     author: "Benjamin Franklin",
     date: dateKey,
   };
-}
-
-function readCachedDailyQuote() {
-  try {
-    const cached = readJSON(DAILY_QUOTE_STORAGE_KEY);
-    if (
-      cached &&
-      typeof cached.quote === "string" &&
-      cached.quote.trim() &&
-      typeof cached.author === "string" &&
-      cached.author.trim() &&
-      typeof cached.date === "string"
-    ) {
-      return cached;
-    }
-    return null;
-  } catch (error) {
-    reportError(error, "Could not read the cached daily quote", {
-      notify: false,
-    });
-    return null;
-  }
 }
 
 function renderDailyQuote(quote) {
@@ -120,25 +98,15 @@ function renderDailyQuote(quote) {
 
 async function loadDailyQuote() {
   const today = localDateKey();
-  const cached = readCachedDailyQuote();
-
-  if (cached?.date === today) {
-    renderDailyQuote(cached);
-  } else {
-    renderDailyQuote(getDailyQuoteFallback());
-  }
-  if (
-    cached?.date === today ||
-    dailyQuoteRequestDate === today ||
-    dailyQuoteAttemptDate === today
-  ) {
-    return;
-  }
+  if (dailyQuoteRequestDate === today || dailyQuoteAttemptDate === today) return;
 
   dailyQuoteRequestDate = today;
   dailyQuoteAttemptDate = today;
+  const fallback = getDailyQuoteFallback();
+  renderDailyQuote(fallback);
+
   try {
-    const response = await fetch("https://zenquotes.io/api/today", {
+    const response = await fetch("https://zenquotes.io/api/random", {
       cache: "no-store",
     });
     if (!response.ok) {
@@ -163,20 +131,22 @@ async function loadDailyQuote() {
       date: today,
     };
     renderDailyQuote(quote);
-    try {
-      writeJSON(DAILY_QUOTE_STORAGE_KEY, quote);
-    } catch (error) {
-      reportError(error, "Could not cache the daily quote", {
-        notify: false,
-      });
-    }
   } catch (error) {
+    renderDailyQuote(fallback);
     reportError(error, "Could not load the daily motivational quote", {
       notify: false,
     });
   } finally {
     if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
   }
+}
+
+try {
+  removeStorageItem(DAILY_QUOTE_STORAGE_KEY);
+} catch (error) {
+  reportError(error, "Could not clear the cached daily quote", {
+    notify: false,
+  });
 }
 
 function scheduleDailyQuoteRefresh() {

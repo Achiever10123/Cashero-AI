@@ -39,12 +39,12 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 ### Phase 4: Data & Export (Q4 2026)
 
-- [ ] CSV/Excel export
-- [ ] PDF report generation
-- [ ] Data import from other apps
-- [ ] Cloud backup (optional, encrypted)
-- [ ] Transaction tagging and filtering
-- [ ] Advanced search with filters
+- [x] CSV/Excel export
+- [x] PDF report generation
+- [x] Data import from other apps
+- [x] Cloud backup (optional, encrypted)
+- [x] Transaction tagging and filtering
+- [x] Advanced search with filters
 
 ### Phase 5: Assistant Features (2027)
 
@@ -215,7 +215,7 @@ We welcome user suggestions for:
 | Phase 1 | Q1 2026    | ✅ Complete    |
 | Phase 2 | Q2 2026    | 🔄 In Progress |
 | Phase 3 | Q3 2026    | 📅 Planned     |
-| Phase 4 | Q4 2026    | 📅 Planned     |
+| Phase 4 | Q4 2026 | ✅ Complete    |
 | Phase 5 | Q1 2027    | 📅 Planned     |
 | Phase 6 | Q2 2027    | 📅 Planned     |
 

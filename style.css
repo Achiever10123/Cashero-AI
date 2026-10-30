@@ -847,6 +847,53 @@ nav {
   color: var(--text3);
   font-size: 10px;
 }
+.history-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg2);
+}
+.history-filters .field {
+  min-width: 0;
+}
+.history-filters .field label {
+  color: var(--text2);
+  font-size: 10px;
+}
+.history-filters input,
+.history-filters select,
+#csv-export-format {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+}
+.history-filter-reset {
+  align-self: end;
+}
+.tx-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.tx-tag {
+  padding: 2px 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--accent2);
+  font-size: 9px;
+  line-height: 1.4;
+}
 .tx-right {
   display: flex;
   align-items: center;
@@ -1800,6 +1847,9 @@ nav {
 
 /* ── Tablet (≤768px) ── */
 @media (max-width: 768px) {
+  .history-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -1936,6 +1986,9 @@ nav {
 
 /* ── Mobile (≤480px) — PHONE OPTIMIZATION ── */
 @media (max-width: 480px) {
+  .history-filters {
+    grid-template-columns: 1fr;
+  }
   /* ═══ VIEWPORT & LAYOUT ═══ */
   html,
   body {
@@ -2388,6 +2441,7 @@ nav {
   #year-pills,
   #toast-container,
   #quick-modal,
+  #csv-export-modal,
   .del-btn,
   .btn-ghost,
   .btn-danger {
