@@ -214,15 +214,25 @@
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <div id="blob1" class="blob"></div>
     <div id="blob2" class="blob"></div>
 
     <!-- Quick-add Modal -->
-    <div id="quick-modal">
-      <div class="modal-box">
+    <div id="quick-modal" aria-hidden="true">
+      <div
+        class="modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-modal-title"
+        tabindex="-1">
         <div class="modal-title">
-          <span>Quick Add</span>
-          <button class="modal-close" onclick="closeQuickAdd()">
+          <span id="quick-modal-title">Quick Add</span>
+          <button
+            class="modal-close"
+            type="button"
+            aria-label="Close Quick Add"
+            onclick="closeQuickAdd()">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
@@ -230,9 +240,10 @@
           <input
             type="text"
             id="nlp-input"
+            aria-label="Describe an expense"
             placeholder='e.g. "spent $45 on lunch with client"'
             onkeydown="handleNlpKey(event)" />
-          <button class="btn btn-primary" onclick="parseNLP()">Parse</button>
+          <button class="btn btn-primary" type="button" onclick="parseNLP()">Parse</button>
         </div>
         <div class="nlp-hint">
           Or just type naturally - AI will extract the details (↵ Enter to
@@ -260,11 +271,11 @@
           <div class="form-grid">
             <div class="form-row">
               <div class="field">
-                <label>Amount ($)</label
+                <label for="qa-amount">Amount ($)</label
                 ><input type="number" id="qa-amount" placeholder="0.00" />
               </div>
               <div class="field">
-                <label>Category</label
+                <label for="qa-cat">Category</label
                 ><select id="qa-cat"></select>
                 <div
                 class="category-learning"
@@ -275,11 +286,11 @@
             </div>
             <div class="form-row">
               <div class="field">
-                <label>Note</label
+                <label for="qa-note">Note</label
                 ><input type="text" id="qa-note" placeholder="What was this?" />
               </div>
               <div class="field">
-                <label>Date</label><input type="date" id="qa-date" />
+                <label for="qa-date">Date</label><input type="date" id="qa-date" />
               </div>
             </div>
             <div class="field">
@@ -298,22 +309,31 @@
     </div>
 
     <!-- CSV Export Modal -->
-    <div id="csv-export-modal">
-      <div class="modal-box">
+    <div id="csv-export-modal" aria-hidden="true">
+      <div
+        class="modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="csv-modal-title"
+        tabindex="-1">
         <div class="modal-title">
-          <span>Export CSV</span>
-          <button class="modal-close" onclick="closeCSVExportModal()">
+          <span id="csv-modal-title">Export CSV</span>
+          <button
+            class="modal-close"
+            type="button"
+            aria-label="Close CSV export"
+            onclick="closeCSVExportModal()">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
         <div class="form-grid">
           <div class="form-row">
             <div class="field">
-              <label>Start Date</label>
+              <label for="csv-start-date">Start Date</label>
               <input type="date" id="csv-start-date" />
             </div>
             <div class="field">
-              <label>End Date</label>
+              <label for="csv-end-date">End Date</label>
               <input type="date" id="csv-end-date" />
             </div>
           </div>
@@ -356,10 +376,20 @@
       class="notif-backdrop"
       id="notif-backdrop"
       onclick="closeNotifPanel()"></div>
-    <div id="notif-panel">
+    <div
+      id="notif-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notif-title"
+      aria-hidden="true"
+      tabindex="-1">
       <div class="notif-header">
-        <div class="notif-title">Notifications</div>
-        <button class="notif-close" onclick="closeNotifPanel()">
+        <div class="notif-title" id="notif-title">Notifications</div>
+        <button
+          class="notif-close"
+          type="button"
+          aria-label="Close notifications"
+          onclick="closeNotifPanel()">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       </div>
@@ -391,10 +421,15 @@
     </div>
 
     <!-- PIN Modal -->
-    <div id="pin-overlay" class="pin-overlay">
-      <div class="pin-modal">
+    <div id="pin-overlay" class="pin-overlay" aria-hidden="true">
+      <div
+        class="pin-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pin-title"
+        tabindex="-1">
         <div class="pin-header">
-          <h1 class="pin-title">Cashero Secure</h1>
+          <h1 class="pin-title" id="pin-title">Cashero Secure</h1>
           <p class="pin-subtitle">Enter your 4-digit PIN</p>
         </div>
         <div class="pin-mode-label" id="pin-mode-label">Setup your PIN</div>
@@ -403,6 +438,7 @@
             type="password"
             id="pin-input"
             class="pin-input"
+            aria-label="Four-digit PIN"
             placeholder="••••"
             maxlength="4"
             inputmode="numeric"
@@ -415,7 +451,7 @@
             <span class="pin-dot"></span>
           </div>
         </div>
-        <div class="pin-message" id="pin-message"></div>
+        <div class="pin-message" id="pin-message" role="status" aria-live="polite"></div>
         <button class="btn btn-primary pin-submit-btn" onclick="submitPin()">
           Verify
         </button>
@@ -430,14 +466,21 @@
     </div>
 
     <!-- Recovery Phrase Modal -->
-    <div id="recovery-overlay" class="pin-overlay">
-      <div class="pin-modal" style="max-width: 500px">
+    <div id="recovery-overlay" class="pin-overlay" aria-hidden="true">
+      <div
+        class="pin-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recovery-title"
+        aria-describedby="recovery-description"
+        tabindex="-1"
+        style="max-width: 500px">
         <div class="pin-header">
-          <h1 class="pin-title">
+          <h1 class="pin-title" id="recovery-title">
             <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
             Recovery Phrase
           </h1>
-          <p class="pin-subtitle">
+          <p class="pin-subtitle" id="recovery-description">
             Save this safely. You cannot recover your PIN without it.
           </p>
         </div>
@@ -526,7 +569,14 @@
       <aside id="sidebar">
         <!-- Hamburger always at top -->
         <div class="logo-area">
-          <button id="hamburger" onclick="toggleSidebar()" title="Toggle menu">
+          <button
+            id="hamburger"
+            type="button"
+            onclick="toggleSidebar()"
+            title="Toggle menu"
+            aria-label="Toggle navigation menu"
+            aria-controls="sidebar"
+            aria-expanded="false">
             <div class="hb-lines">
               <div class="hb-line"></div>
               <div class="hb-line"></div>
@@ -536,11 +586,12 @@
           <div class="logo-wordmark">Cashero</div>
           <div class="logo-tag">Freelancer OS</div>
         </div>
-        <nav class="nav-container">
+        <nav class="nav-container" aria-label="Main navigation">
           <div class="nav-group">
             <button
               class="nav-item active"
               data-page="dashboard"
+              aria-current="page"
               title="Dashboard">
               <i class="nav-icon fa-solid fa-house"></i>
               <span class="nav-label">Dashboard</span>
@@ -614,16 +665,20 @@
             <i class="nav-icon fa-solid fa-file-export"></i>
             <span class="toggle-label">Export CSV / Excel</span>
           </button>
-          <label class="theme-toggle" style="cursor: pointer" title="Import transactions from CSV">
+          <button
+            class="theme-toggle"
+            type="button"
+            onclick="document.getElementById('csv-import-input').click()"
+            title="Import transactions from CSV">
             <i class="nav-icon fa-solid fa-file-import"></i>
             <span class="toggle-label">Import CSV</span>
-            <input
-              type="file"
-              id="csv-import-input"
-              accept=".csv,.txt,text/csv,text/plain"
-              style="display: none"
-              onchange="importCSV(event)" />
-          </label>
+          </button>
+          <input
+            type="file"
+            id="csv-import-input"
+            accept=".csv,.txt,text/csv,text/plain"
+            style="display: none"
+            onchange="importCSV(event)" />
 
           <button
             class="theme-toggle"
@@ -632,19 +687,20 @@
             <i class="nav-icon fa-solid fa-file-medical"></i>
             <span class="toggle-label">Backup JSON</span>
           </button>
-          <label
+          <button
             class="theme-toggle"
-            style="cursor: pointer"
+            type="button"
+            onclick="document.getElementById('restore-input').click()"
             title="Restore JSON">
             <i class="nav-icon fa-solid fa-file-import"></i>
             <span class="toggle-label">Restore JSON</span>
-            <input
-              type="file"
-              id="restore-input"
-              accept=".json"
-              style="display: none"
-              onchange="restoreJSON(event)" />
-          </label>
+          </button>
+          <input
+            type="file"
+            id="restore-input"
+            accept=".json"
+            style="display: none"
+            onchange="restoreJSON(event)" />
           <div class="sidebar-version">
             v1.0 · <span id="online-status" class="online-status"></span>
           </div>
@@ -652,15 +708,18 @@
       </aside>
 
       <!-- Main -->
-      <div id="main">
-        <div id="topbar">
+      <main id="main" tabindex="-1">
+        <header id="topbar">
           <div class="topbar-left">
             <button
               id="mobile-nav-toggle"
               class="mobile-nav-toggle"
+              type="button"
               onclick="toggleSidebar()"
               title="Menu"
-              aria-label="Toggle navigation menu">
+              aria-label="Toggle navigation menu"
+              aria-controls="sidebar"
+              aria-expanded="false">
               <div class="hb-lines">
                 <div class="hb-line"></div>
                 <div class="hb-line"></div>
@@ -668,25 +727,30 @@
               </div>
             </button>
             <div>
-              <div class="page-title" id="topbar-title">Dashboard</div>
+              <h1 class="page-title" id="topbar-title" tabindex="-1">Dashboard</h1>
               <div class="page-sub" id="topbar-sub">Overview</div>
             </div>
           </div>
           <div class="topbar-right">
             <div class="month-pills" id="month-pills"></div>
             <button
+              id="theme-toggle"
               class="topbar-theme-toggle"
+              type="button"
               onclick="toggleTheme()"
-              title="Toggle theme">
-              <i class="nav-icon fa-solid fa-moon"></i>
+              title="Toggle theme"
+              aria-label="Switch to light mode">
+              <i class="nav-icon fa-solid fa-moon" aria-hidden="true"></i>
               <span id="theme-label" style="display: none">Light Mode</span>
             </button>
             <button
               class="topbar-theme-toggle"
+              type="button"
               onclick="openNotifPanel()"
               id="notif-bell-btn"
-              title="Notifications">
-              <i class="nav-icon fa-solid fa-bell"></i>
+              title="Notifications"
+              aria-label="Open notifications">
+              <i class="nav-icon fa-solid fa-bell" aria-hidden="true"></i>
               <span class="notif-count" id="notif-count" style="display: none"
                 >0</span
               >
@@ -699,7 +763,7 @@
               Quick Add
             </button>
           </div>
-        </div>
+        </header>
 
         <!-- DASHBOARD -->
         <div class="page active" id="page-dashboard">
@@ -730,8 +794,8 @@
                     font-size: 10px;
                     color: var(--text3);
                   ">
-                  <span id="budget-left">$0 spent</span
-                  ><span id="budget-right">of $—</span>
+                  <span id="budget-left">— spent</span
+                  ><span id="budget-right">of —</span>
                 </div>
               </div>
               <div class="sec-label" style="margin-bottom: 10px">
@@ -881,7 +945,7 @@
               </div>
               <div class="form-grid">
                 <div class="field">
-                  <label>Goal Name</label
+                  <label for="g-name">Goal Name</label
                   ><input
                     type="text"
                     id="g-name"
@@ -889,16 +953,16 @@
                 </div>
                 <div class="form-row">
                   <div class="field">
-                    <label>Target ($)</label
+                    <label for="g-target">Target ($)</label
                     ><input type="number" id="g-target" placeholder="5000" />
                   </div>
                   <div class="field">
-                    <label>Already Saved ($)</label
+                    <label for="g-saved">Already Saved ($)</label
                     ><input type="number" id="g-saved" placeholder="0" />
                   </div>
                 </div>
                 <div class="field">
-                  <label>Deadline</label><input type="date" id="g-deadline" />
+                  <label for="g-deadline">Deadline</label><input type="date" id="g-deadline" />
                 </div>
                 <div class="form-row">
                   <button class="btn btn-primary" onclick="addGoal()">
@@ -937,7 +1001,7 @@
                 <span
                   id="recur-total"
                   style="font-weight: 700; color: var(--teal)"
-                  >$0.00</span
+                  >—</span
                 >
               </div>
             </div>
@@ -947,7 +1011,7 @@
               </div>
               <div class="form-grid">
                 <div class="field">
-                  <label>Name</label
+                  <label for="r-name">Name</label
                   ><input
                     type="text"
                     id="r-name"
@@ -955,16 +1019,16 @@
                 </div>
                 <div class="form-row">
                   <div class="field">
-                    <label>Amount ($)</label
+                    <label for="r-amount">Amount ($)</label
                     ><input type="number" id="r-amount" placeholder="0.00" />
                   </div>
                   <div class="field">
-                    <label>Category</label
+                    <label for="r-cat">Category</label
                     ><select id="r-cat"></select>
                   </div>
                 </div>
                 <div class="field">
-                  <label>Frequency</label>
+                  <label for="r-freq">Frequency</label>
                   <select id="r-freq">
                     <option value="monthly">Monthly</option>
                     <option value="weekly">Weekly</option>
@@ -972,7 +1036,7 @@
                   </select>
                 </div>
                 <div class="field">
-                  <label>Day of month (for auto-log)</label
+                  <label for="r-day">Day of month (for auto-log)</label
                   ><input
                     type="number"
                     id="r-day"
@@ -1060,7 +1124,7 @@
               </div>
               <div class="form-grid">
                 <div class="field">
-                  <label>Amount ($)</label
+                  <label for="f-amount">Amount ($)</label
                   ><input
                     class="big"
                     type="number"
@@ -1071,7 +1135,7 @@
                 </div>
                 <div class="form-row">
                   <div class="field">
-                    <label>Category</label
+                    <label for="f-cat">Category</label
                     ><select id="f-cat"></select>
                     <div
                       class="category-learning"
@@ -1080,11 +1144,11 @@
                       hidden></div>
                   </div>
                   <div class="field">
-                    <label>Date</label><input type="date" id="f-date" />
+                    <label for="f-date">Date</label><input type="date" id="f-date" />
                   </div>
                 </div>
                 <div class="field">
-                  <label>Note (optional)</label
+                  <label for="f-note">Note (optional)</label
                   ><input
                     type="text"
                     id="f-note"
@@ -1095,7 +1159,7 @@
                   <input type="text" id="f-tags" placeholder="work, travel, tax-deductible" />
                 </div>
                 <div class="field">
-                  <label>Recurring?</label>
+                  <label for="f-recur">Recurring?</label>
                   <select id="f-recur">
                     <option value="">One-time</option>
                     <option value="monthly">Monthly</option>
@@ -1124,15 +1188,15 @@
               <div class="form-grid">
                 <div class="form-row">
                   <div class="field">
-                    <label>Month</label
+                    <label for="p-month">Month</label
                     ><select id="p-month"></select>
                   </div>
                   <div class="field">
-                    <label>Year</label><input type="number" id="p-year" />
+                    <label for="p-year">Year</label><input type="number" id="p-year" />
                   </div>
                 </div>
                 <div class="field">
-                  <label>Payout ($)</label
+                  <label for="p-amount">Payout ($)</label
                   ><input
                     class="big"
                     type="number"
@@ -1140,7 +1204,7 @@
                     placeholder="0.00" />
                 </div>
                 <div class="field">
-                  <label>Note (optional)</label
+                  <label for="p-note">Note (optional)</label
                   ><input
                     type="text"
                     id="p-note"
@@ -1308,6 +1372,7 @@
                   </div>
                 </div>
               </div>
+              <label class="sr-only" for="currency-selector">Preferred currency</label>
               <select
                 id="currency-selector"
                 onchange="changeCurrency()"
@@ -1333,6 +1398,43 @@
                 <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
                 <option value="AED">🇦🇪 AED - UAE Dirham</option>
                 <option value="NGN">🇳🇬 NGN - Nigerian Naira</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <div>
+                  <label class="setting-title" for="high-contrast-toggle">High contrast mode</label>
+                  <p class="setting-desc" id="high-contrast-description">
+                    Use stronger colors and borders throughout the app.
+                  </p>
+                </div>
+                <input
+                  id="high-contrast-toggle"
+                  type="checkbox"
+                  aria-describedby="high-contrast-description"
+                  onchange="changeHighContrast()" />
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <div>
+                  <label class="setting-title" for="text-size-selector">Text size</label>
+                  <p class="setting-desc" id="text-size-description">
+                    Enlarge the interface and text. Your choice is saved on this device.
+                  </p>
+                </div>
+              </div>
+              <select
+                id="text-size-selector"
+                aria-describedby="text-size-description"
+                onchange="changeTextSize()">
+                <option value="1">Default (100%)</option>
+                <option value="1.15">Large (115%)</option>
+                <option value="1.3">Larger (130%)</option>
+                <option value="1.5">Largest (150%)</option>
+                <option value="2">Extra large (200%)</option>
               </select>
             </div>
 
@@ -1441,6 +1543,7 @@
               </div>
               <select
                 id="auto-lock-selector"
+                aria-label="Auto-lock timeout"
                 onchange="changeAutoLockTimeout()"
                 style="
                   width: 100%;
@@ -1633,8 +1736,7 @@
               <div class="sec-label" style="margin-bottom: 14px">
                 Welcome to Cashero
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p>
                   <strong>Cashero</strong> is your personal finance OS for
                   freelancers. Track expenses, analyze spending patterns, set
@@ -1651,8 +1753,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Dashboard
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Your financial overview at a glance.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1685,8 +1786,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Charts
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p>
                   <strong>Visual breakdowns of your financial data.</strong>
                 </p>
@@ -1714,8 +1814,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Compare
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Analyze month-over-month trends.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1737,8 +1836,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Goals
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Set and track financial goals.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1759,8 +1857,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Recurring
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Manage recurring expenses.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1789,8 +1886,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >AI Analysis
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Let AI analyze your finances.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1820,8 +1916,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Add Expense
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Manually log a new expense.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li><strong>Amount:</strong> How much did you spend?</li>
@@ -1849,8 +1944,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Payouts
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Track your income payouts.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>Record monthly payout amounts</li>
@@ -1868,8 +1962,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >History
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Complete transaction log.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>View all expenses with dates, amounts, and categories</li>
@@ -1891,8 +1984,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Yearly Report
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Comprehensive annual financial summary.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1925,8 +2017,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Quick Add
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Add expenses using natural language.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>Type naturally: "spent $45 on lunch with client"</li>
@@ -1949,8 +2040,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Sidebar Features
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <p><strong>Navigation and tools at a glance.</strong></p>
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
@@ -1988,8 +2078,7 @@
                   style="margin-right: 8px; color: var(--accent)"></i
                 >Pro Tips
               </div>
-              <div
-                style="font-size: 12px; line-height: 1.8; color: var(--text)">
+              <div class="help-copy">
                 <ul style="margin-left: 16px; margin-top: 8px">
                   <li>
                     Use <strong>Quick Add</strong> for fast data entry on the go
@@ -2018,7 +2107,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
     <div id="toast-container"></div>
     <div

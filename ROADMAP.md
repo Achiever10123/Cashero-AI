@@ -174,10 +174,10 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 ### Accessibility
 
 - [ ] WCAG 2.1 AA compliance
-- [ ] Screen reader support
-- [ ] Keyboard navigation
-- [ ] High contrast mode
-- [ ] Text size adjustment
+- [x] Screen reader support (semantic landmarks, named controls, and announcements)
+- [x] Keyboard navigation (skip link, visible focus, and dialog focus management)
+- [x] High contrast mode (Settings)
+- [x] Text size adjustment (100%-200% in Settings)
 
 ## Known Limitations & TODOs
 
@@ -210,14 +210,14 @@ We welcome user suggestions for:
 
 ## Timeline
 
-| Phase   | Completion | Status         |
-| ------- | ---------- | -------------- |
-| Phase 1 | Q1 2026    | ✅ Complete    |
-| Phase 2 | Q2 2026    | 🔄 In Progress |
-| Phase 3 | Q3 2026    | 📅 Planned     |
-| Phase 4 | Q4 2026 | ✅ Complete    |
-| Phase 5 | Q1 2027    | 📅 Planned     |
-| Phase 6 | Q2 2027    | 📅 Planned     |
+| Phase   | Completion | Status      |
+| ------- | ---------- | ----------- |
+| Phase 1 | Q1 2026    | ✅ Complete |
+| Phase 2 | Q2 2026    | ✅ Complete |
+| Phase 3 | Q3 2026    | ✅ Complete |
+| Phase 4 | Q4 2026    | ✅ Complete |
+| Phase 5 | Q1 2027    | 📅 Planned  |
+| Phase 6 | Q2 2027    | 📅 Planned  |
 
 ## How to Contribute
 
@@ -235,4 +235,4 @@ We welcome user suggestions for:
 
 ---
 
-Last Updated: April 7, 2026
+Last Updated: November 1, 2026

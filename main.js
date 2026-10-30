@@ -399,6 +399,8 @@ let S = {
   lastCheckinDate: null,
   lastAnalysisMonthKey: null,
   theme: "dark",
+  highContrast: false,
+  textScale: "1",
   pinEnabled: false,
   currency: "USD",
   autoLockTimeout: 15,
@@ -442,6 +444,13 @@ function load() {
         }
       }
       S = { ...S, ...storedState };
+      if (!Object.hasOwn(CURRENCIES, S.currency)) S.currency = "USD";
+      S.highContrast = storedState.highContrast === true;
+      if (!["1", "1.15", "1.3", "1.5", "2"].includes(String(S.textScale))) {
+        S.textScale = "1";
+      } else {
+        S.textScale = String(S.textScale);
+      }
     }
 
     // Restore cooldown timestamp from localStorage
@@ -486,10 +495,15 @@ function monthPayout(mk2) {
   const { y, m } = parseMK(mk2);
   return S.payouts.find((p) => p.year == y && p.month == m);
 }
+function currencySymbol() {
+  return (CURRENCIES[S.currency] || CURRENCIES.USD).symbol;
+}
+function fmtPlaceholder() {
+  return `${currencySymbol()}—`;
+}
 function fmt(n) {
-  const curr = CURRENCIES[S.currency] || CURRENCIES.USD;
   return (
-    curr.symbol +
+    currencySymbol() +
     Number(n).toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -510,13 +524,20 @@ function navigate(page) {
     .forEach((p) => p.classList.remove("active"));
   document
     .querySelectorAll(".nav-item")
-    .forEach((n) => n.classList.remove("active"));
+    .forEach((n) => {
+      n.classList.remove("active");
+      n.removeAttribute("aria-current");
+    });
   document.getElementById("page-" + page).classList.add("active");
   const sEl = document.querySelector(`.nav-item[data-page="${page}"]`);
-  if (sEl) sEl.classList.add("active");
+  if (sEl) {
+    sEl.classList.add("active");
+    sEl.setAttribute("aria-current", "page");
+  }
   const m = PAGE_META[page] || { title: page, sub: "" };
   document.getElementById("topbar-title").textContent = m.title;
   document.getElementById("topbar-sub").textContent = m.sub;
+  document.getElementById("topbar-title").focus();
   renderPage(page);
 }
 document.querySelectorAll(".nav-item").forEach((btn) => {
@@ -592,7 +613,7 @@ function renderDashboard() {
   document.getElementById("stat-grid").innerHTML = `
     <div class="stat-card c-purple">
       <div class="stat-label">Monthly Income</div>
-      <div class="stat-val" style="color:var(--accent2)">${payout > 0 ? fmt(payout) : "$—"}</div>
+      <div class="stat-val" style="color:var(--accent2)">${payout > 0 ? fmt(payout) : fmtPlaceholder()}</div>
       <div class="stat-sub">this month</div>
     </div>
     <div class="stat-card c-red">
@@ -602,7 +623,7 @@ function renderDashboard() {
     </div>
     <div class="stat-card c-green">
       <div class="stat-label">Saved</div>
-      <div class="stat-val" style="color:${saved >= 0 ? "var(--green)" : "var(--red)"}">${payout > 0 ? fmt(saved) : "$—"}</div>
+      <div class="stat-val" style="color:${saved >= 0 ? "var(--green)" : "var(--red)"}">${payout > 0 ? fmt(saved) : fmtPlaceholder()}</div>
       <div class="stat-sub">${payout > 0 ? savePct + "% rate" : "—"}</div>
     </div>
     <div class="stat-card c-teal">
@@ -631,7 +652,7 @@ function renderDashboard() {
   document.getElementById("budget-left").textContent =
     payout > 0 ? fmt(spent) + " spent" : "Set payout";
   document.getElementById("budget-right").textContent =
-    "of " + (payout > 0 ? fmt(payout) : "$—");
+    "of " + (payout > 0 ? fmt(payout) : fmtPlaceholder());
 
   // Categories
   const byCat = CATS.map((c) => ({
@@ -1272,7 +1293,7 @@ function renderHeatmap() {
     else if (intensity > 0.4) bg = "#6c47ff88";
     else if (intensity > 0.1) bg = "#6c47ff44";
     const title =
-      amt > 0 ? `${MONTHS[m]} ${d}: ${fmt(amt)}` : `${MONTHS[m]} ${d}: $0`;
+      amt > 0 ? `${MONTHS[m]} ${d}: ${fmt(amt)}` : `${MONTHS[m]} ${d}: ${fmt(0)}`;
     cells += `<div class="heatmap-day" style="background:${bg};" title="${title}"></div>`;
   }
   document.getElementById("heatmap-grid").innerHTML = cells;
@@ -1494,7 +1515,7 @@ function renderRecurring() {
   if (!S.recurring.length) {
     el.innerHTML =
       '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></div>No recurring expenses</div>';
-    document.getElementById("recur-total").textContent = "$0.00";
+    document.getElementById("recur-total").textContent = fmt(0);
     return;
   }
   let totalMonthly = 0;
@@ -2195,7 +2216,7 @@ function renderCatDeep() {
         <div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div><div style="font-size:9px;color:var(--text3)">${c.count} txn${c.count !== 1 ? "s" : ""}</div></div>
       </div>
       <div class="prog-wrap" style="height:5px"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
-      <div style="font-size:9px;color:var(--text3);margin-top:3px">${pct}% of income · avg ${c.count > 0 ? fmt(c.total / c.count) : "$0"}/txn</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:3px">${pct}% of income · avg ${c.count > 0 ? fmt(c.total / c.count) : fmt(0)}/txn</div>
     </div>`;
     })
     .join("");
@@ -2465,12 +2486,37 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
 // ═══════════════════════════════════════════
 //  QUICK-ADD & NLP
 // ═══════════════════════════════════════════
+let modalReturnFocus = null;
+
+function openAccessibleModal(overlay, focusTarget, openClass = "open") {
+  const activeElement = document.activeElement;
+  modalReturnFocus =
+    activeElement instanceof HTMLElement && activeElement !== document.body
+      && activeElement.getClientRects().length > 0
+      && !activeElement.closest('[aria-hidden="true"]')
+      ? activeElement
+      : null;
+  overlay.classList.add(openClass);
+  overlay.setAttribute("aria-hidden", "false");
+  const dialog = overlay.querySelector('[role="dialog"]');
+  (focusTarget || dialog)?.focus();
+}
+
+function closeAccessibleModal(overlay, openClass = "open") {
+  overlay.classList.remove(openClass);
+  overlay.setAttribute("aria-hidden", "true");
+  if (modalReturnFocus?.isConnected) modalReturnFocus.focus();
+  modalReturnFocus = null;
+}
+
 function openQuickAdd() {
-  document.getElementById("quick-modal").classList.add("open");
-  setTimeout(() => document.getElementById("nlp-input").focus(), 100);
+  openAccessibleModal(
+    document.getElementById("quick-modal"),
+    document.getElementById("nlp-input"),
+  );
 }
 function closeQuickAdd() {
-  document.getElementById("quick-modal").classList.remove("open");
+  closeAccessibleModal(document.getElementById("quick-modal"));
   document.getElementById("nlp-input").value = "";
   document.getElementById("qa-tags").value = "";
   document.getElementById("nlp-parsed").classList.remove("show");
@@ -2576,9 +2622,13 @@ function setSidebarExpanded(expand) {
   if (!sidebar) return;
   const backdrop = document.getElementById("sidebar-backdrop");
   const toggleBtn = document.getElementById("mobile-nav-toggle");
+  const hamburger = document.getElementById("hamburger");
   sidebar.classList.toggle("expanded", expand);
   if (backdrop) backdrop.classList.toggle("active", expand);
   if (toggleBtn) toggleBtn.classList.toggle("active", expand);
+  [toggleBtn, hamburger].forEach((button) => {
+    if (button) button.setAttribute("aria-expanded", String(expand));
+  });
   if (window.innerWidth <= 480) {
     document.body.style.overflow = expand ? "hidden" : "";
   }
@@ -2605,9 +2655,9 @@ function toggleTheme() {
 }
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", S.theme);
+  applyAccessibilityPreferences();
 
-  // Update theme icon SVG
-  const themeIcon = document.querySelector(".topbar-theme-toggle .nav-icon");
+  const themeIcon = document.querySelector("#theme-toggle .nav-icon");
   if (themeIcon) {
     if (S.theme === "dark") {
       themeIcon.className = "nav-icon fa-solid fa-moon";
@@ -2616,10 +2666,27 @@ function applyTheme() {
     }
   }
 
-  document.getElementById("theme-label").textContent =
-    S.theme === "dark" ? "Light Mode" : "Dark Mode";
-  document.getElementById("theme-meta").content =
-    S.theme === "dark" ? "#080810" : "#f4f3ff";
+  const themeLabel =
+    S.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  document.getElementById("theme-label").textContent = themeLabel;
+  document.getElementById("theme-toggle").setAttribute("aria-label", themeLabel);
+  document.getElementById("theme-toggle").title = themeLabel;
+}
+
+function applyAccessibilityPreferences() {
+  const root = document.documentElement;
+  root.dataset.highContrast = String(Boolean(S.highContrast));
+  const allowedScales = ["1", "1.15", "1.3", "1.5", "2"];
+  const textScale = allowedScales.includes(String(S.textScale))
+    ? String(S.textScale)
+    : "1";
+  root.dataset.textScale = textScale;
+  root.style.setProperty("--text-scale", textScale);
+  document.getElementById("theme-meta").content = S.highContrast
+    ? "#000000"
+    : S.theme === "dark"
+      ? "#080810"
+      : "#f4f3ff";
 }
 
 // ═══════════════════════════════════════════
@@ -2641,11 +2708,11 @@ function openCSVExportModal() {
     ? toLocalDateInput(today)
     : "";
 
-  modal.classList.add("open");
+  openAccessibleModal(modal, document.getElementById("csv-start-date"));
 }
 
 function closeCSVExportModal() {
-  document.getElementById("csv-export-modal").classList.remove("open");
+  closeAccessibleModal(document.getElementById("csv-export-modal"));
 }
 
 function exportTransactions() {
@@ -2770,11 +2837,33 @@ function transactionDuplicateKey(transaction) {
 // ═══════════════════════════════════════════
 //  KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════
+function getActiveDialog() {
+  for (const id of [
+    "recovery-overlay",
+    "quick-modal",
+    "csv-export-modal",
+    "notif-panel",
+    "pin-overlay",
+  ]) {
+    const overlay = document.getElementById(id);
+    const isOpen =
+      overlay?.classList.contains("open") ||
+      overlay?.classList.contains("active");
+    if (isOpen) {
+      return overlay.matches('[role="dialog"]')
+        ? overlay
+        : overlay.querySelector('[role="dialog"]');
+    }
+  }
+  return null;
+}
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     const quickModal = document.getElementById("quick-modal");
     const csvModal = document.getElementById("csv-export-modal");
     const recoveryOverlay = document.getElementById("recovery-overlay");
+    const notifPanel = document.getElementById("notif-panel");
 
     if (quickModal && quickModal.classList.contains("open")) {
       closeQuickAdd();
@@ -2788,14 +2877,49 @@ document.addEventListener("keydown", (e) => {
       hideRecoveryPhrase();
       return;
     }
+    if (notifPanel && notifPanel.classList.contains("open")) {
+      closeNotifPanel();
+      return;
+    }
   }
 
+  const activeDialog = getActiveDialog();
+  if (activeDialog && e.key === "Tab") {
+    const focusable = Array.from(
+      activeDialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((element) => element.getClientRects().length > 0);
+    const first = focusable[0] || activeDialog;
+    const last = focusable[focusable.length - 1] || activeDialog;
+    if (
+      !activeDialog.contains(document.activeElement) ||
+      document.activeElement === activeDialog
+    ) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+    } else if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+  if (activeDialog) return;
   if (
-    e.target.tagName === "INPUT" ||
-    e.target.tagName === "TEXTAREA" ||
-    e.target.tagName === "SELECT"
-  )
+    e.defaultPrevented ||
+    e.altKey ||
+    e.ctrlKey ||
+    e.metaKey ||
+    (e.target instanceof HTMLElement &&
+      (e.target.isContentEditable ||
+        e.target.matches(
+          "input, textarea, select, [role='textbox'], [role='combobox']",
+        )))
+  ) {
     return;
+  }
   if (e.key === "q" || e.key === "Q") openQuickAdd();
   if (e.key === "1") navigate("dashboard");
   if (e.key === "2") navigate("charts");
@@ -2813,6 +2937,7 @@ function toast(msg, type = "ok") {
   if (!container) return;
   const el = document.createElement("div");
   el.className = `toast ${type}`;
+  el.setAttribute("role", type === "err" ? "alert" : "status");
 
   const txt = document.createElement("span");
   txt.className = "toast-msg";
@@ -2822,7 +2947,8 @@ function toast(msg, type = "ok") {
   const close = document.createElement("button");
   close.className = "toast-close";
   close.type = "button";
-  close.title = "Dismiss";
+  close.setAttribute("aria-label", "Dismiss notification");
+  close.title = "Dismiss notification";
   close.innerHTML = getFontAwesomeIcon("X", 16);
   close.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -2998,7 +3124,29 @@ function renderSettings() {
   updatePinToggleButton();
   updateCurrencySelector();
   updateAutoLockSelector();
+  document.getElementById("high-contrast-toggle").checked =
+    Boolean(S.highContrast);
+  document.getElementById("text-size-selector").value =
+    String(S.textScale || "1");
   loadCloudConfigFields();
+}
+
+function changeHighContrast() {
+  S.highContrast = document.getElementById("high-contrast-toggle").checked;
+  applyAccessibilityPreferences();
+  save();
+  toast(`High contrast mode ${S.highContrast ? "on" : "off"}`);
+}
+
+function changeTextSize() {
+  const scale = document.getElementById("text-size-selector").value;
+  if (!["1", "1.15", "1.3", "1.5", "2"].includes(scale)) {
+    throw new Error("The selected text size is not supported.");
+  }
+  S.textScale = scale;
+  applyAccessibilityPreferences();
+  save();
+  toast(`Text size set to ${Math.round(Number(scale) * 100)}%`);
 }
 
 function updateAutoLockSelector() {
@@ -3054,11 +3202,14 @@ function clearAllData() {
     lastCheckinDate: null,
     lastAnalysisMonthKey: null,
     theme: "dark",
+    highContrast: false,
+    textScale: "1",
     pinEnabled: false,
     currency: "USD",
     autoLockTimeout: 15,
   };
   save();
+  applyTheme();
   toast("All data cleared", "ok");
   setTimeout(() => {
     renderAll();
@@ -3069,6 +3220,12 @@ function clearAllData() {
 function updateCurrencySelector() {
   const selector = document.getElementById("currency-selector");
   if (!selector) return;
+  selector.innerHTML = Object.entries(CURRENCIES)
+    .map(
+      ([code, currency]) =>
+        `<option value="${code}">${code} (${currency.symbol}) - ${currency.name}</option>`,
+    )
+    .join("");
   selector.value = S.currency;
 }
 
@@ -3078,11 +3235,8 @@ function changeCurrency() {
     S.currency = newCurrency;
     save();
     toast(`Currency changed to ${CURRENCIES[newCurrency].name}`);
-    // Redraw all pages that display currency
-    setTimeout(() => {
-      renderAll();
-      renderMonthPills();
-    }, 100);
+    renderAll();
+    renderMonthPills();
   }
 }
 
@@ -3225,6 +3379,7 @@ function showPinOverlay(mode = "verify") {
   const msg = document.getElementById("pin-message");
 
   overlay.classList.add("active");
+  overlay.setAttribute("aria-hidden", "false");
   input.value = "";
   msg.textContent = "";
   msg.classList.remove("error", "success");
@@ -3248,6 +3403,7 @@ function showPinOverlay(mode = "verify") {
 function hidePinOverlay() {
   const overlay = document.getElementById("pin-overlay");
   overlay.classList.remove("active");
+  overlay.setAttribute("aria-hidden", "true");
   pinMode = "verify";
 }
 
@@ -3584,13 +3740,14 @@ function showRecoveryPhrase(phrase) {
   continueBtn.disabled = true;
 
   // Show overlay
-  overlay.classList.add("active");
+  openAccessibleModal(overlay, null, "active");
 }
 
 // Hide recovery phrase modal
 function hideRecoveryPhrase() {
   const overlay = document.getElementById("recovery-overlay");
-  overlay.classList.remove("active");
+  closeAccessibleModal(overlay, "active");
+  document.getElementById("pin-toggle-btn").focus();
 }
 
 // Copy recovery phrase to clipboard
@@ -4619,9 +4776,9 @@ function renderYearly() {
 
   // Stats
   document.getElementById("yr-stats").innerHTML = `
-    <div class="stat-card c-purple"><div class="stat-label">Total Income ${activeYear}</div><div class="stat-val" style="color:var(--accent2)">${totalIncome > 0 ? fmt(totalIncome) : "$—"}</div><div class="stat-sub">${mData.filter((d) => d.payout > 0).length} paid months</div></div>
+    <div class="stat-card c-purple"><div class="stat-label">Total Income ${activeYear}</div><div class="stat-val" style="color:var(--accent2)">${totalIncome > 0 ? fmt(totalIncome) : fmtPlaceholder()}</div><div class="stat-sub">${mData.filter((d) => d.payout > 0).length} paid months</div></div>
     <div class="stat-card c-red"><div class="stat-label">Total Spent</div><div class="stat-val" style="color:var(--red)">${fmt(totalSpent)}</div><div class="stat-sub">${txnCount} transactions</div></div>
-    <div class="stat-card c-green"><div class="stat-label">Total Saved</div><div class="stat-val" style="color:${totalSaved >= 0 ? "var(--green)" : "var(--red)"}">${totalIncome > 0 ? fmt(totalSaved) : "$—"}</div><div class="stat-sub">${avgRate}% avg rate</div></div>
+    <div class="stat-card c-green"><div class="stat-label">Total Saved</div><div class="stat-val" style="color:${totalSaved >= 0 ? "var(--green)" : "var(--red)"}">${totalIncome > 0 ? fmt(totalSaved) : fmtPlaceholder()}</div><div class="stat-sub">${avgRate}% avg rate</div></div>
     <div class="stat-card c-teal"><div class="stat-label">Avg Monthly Spend</div><div class="stat-val" style="color:var(--teal)">${fmt(totalSpent / 12)}</div><div class="stat-sub">across 12 months</div></div>`;
 
   // Highlights
@@ -4924,7 +5081,10 @@ function clearNotifs() {
 }
 
 function openNotifPanel() {
-  document.getElementById("notif-panel")?.classList.add("open");
+  openAccessibleModal(
+    document.getElementById("notif-panel"),
+    document.querySelector("#notif-panel .notif-close"),
+  );
   document.getElementById("notif-backdrop")?.classList.add("show");
   notifications.forEach((n) => (n.read = true));
   saveNotifications();
@@ -4933,7 +5093,7 @@ function openNotifPanel() {
 }
 
 function closeNotifPanel() {
-  document.getElementById("notif-panel")?.classList.remove("open");
+  closeAccessibleModal(document.getElementById("notif-panel"));
   document.getElementById("notif-backdrop")?.classList.remove("show");
 }
 
