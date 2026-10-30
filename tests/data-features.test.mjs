@@ -50,6 +50,38 @@ test("imports debit columns and ignores deposits", () => {
   assert.equal(result.ignored, 1);
 });
 
+test("imports common Chase and Amex CSV headers", () => {
+  const chase = parseTransactionCSV(
+    "Transaction Date,Post Date,Description,Category,Type,Amount,Memo\n" +
+      '10/30/2026,10/31/2026,"Grocery Store",Groceries,Sale,"$42.75",',
+  );
+  assert.deepEqual(chase.transactions, [
+    {
+      amount: 42.75,
+      category: "Groceries",
+      date: "2026-10-30",
+      note: "Grocery Store",
+      tags: [],
+    },
+  ]);
+  assert.deepEqual(chase.errors, []);
+
+  const amex = parseTransactionCSV(
+    "Date,Description,Amount,Category,Card Member,Account #\n" +
+      '2026-10-29,"Coffee Shop",8.5,Restaurant,Alex,1234',
+  );
+  assert.deepEqual(amex.transactions, [
+    {
+      amount: 8.5,
+      category: "Restaurant",
+      date: "2026-10-29",
+      note: "Coffee Shop",
+      tags: [],
+    },
+  ]);
+  assert.deepEqual(amex.errors, []);
+});
+
 test("keeps credit-card purchases while ignoring income transaction types", () => {
   const result = parseTransactionCSV(
     "Date,Description,Amount,Type\n" +

@@ -100,13 +100,16 @@ async function loadDailyQuote() {
   const today = localDateKey();
   if (dailyQuoteRequestDate === today || dailyQuoteAttemptDate === today) return;
 
-  dailyQuoteRequestDate = today;
   dailyQuoteAttemptDate = today;
   const fallback = getDailyQuoteFallback();
-  renderDailyQuote(fallback);
+  if (!navigator.onLine) {
+    renderDailyQuote(fallback);
+    return;
+  }
 
+  dailyQuoteRequestDate = today;
   try {
-    const response = await fetch("https://zenquotes.io/api/random", {
+    const response = await fetch("/api/random-quote", {
       cache: "no-store",
     });
     if (!response.ok) {
@@ -132,9 +135,9 @@ async function loadDailyQuote() {
     };
     renderDailyQuote(quote);
   } catch (error) {
-    renderDailyQuote(fallback);
+    if (!navigator.onLine) renderDailyQuote(fallback);
     reportError(error, "Could not load the daily motivational quote", {
-      notify: false,
+      notify: true,
     });
   } finally {
     if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
@@ -164,6 +167,9 @@ function scheduleDailyQuoteRefresh() {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") loadDailyQuote();
+});
+window.addEventListener("offline", () => {
+  if (dailyQuoteRequestDate) renderDailyQuote(getDailyQuoteFallback());
 });
 window.addEventListener("online", () => {
   if (!dailyQuoteRequestDate) dailyQuoteAttemptDate = null;

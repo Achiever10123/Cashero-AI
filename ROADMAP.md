@@ -115,10 +115,10 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 #### Import Features
 
-- Import from CSV files
-- Support common formats (Chase, Amex, Banks)
-- Duplicate handling
-- Data validation
+- [x] Import from CSV files
+- [x] Support common formats (Chase, Amex, Banks)
+- [x] Duplicate handling
+- [x] Data validation
 
 ### Phase 5: AI Assistant
 

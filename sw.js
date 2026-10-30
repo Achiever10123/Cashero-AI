@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.5";
+const CACHE_NAME = "cashero-static-v1.1.1";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -101,6 +101,9 @@ self.addEventListener("fetch", (event) => {
   // Runtime caching for API / JSON requests (network-first fallback to cache)
   const url = new URL(req.url);
   const isSameOrigin = url.origin === self.location.origin;
+  if (isSameOrigin && url.pathname === "/api/random-quote") {
+    return;
+  }
   const acceptsJSON = req.headers.get("accept")?.includes("application/json");
   const isApi = isSameOrigin && url.pathname.startsWith("/api");
   const isExternalRuntime = EXTERNAL_RUNTIME_ORIGINS.has(url.origin);
