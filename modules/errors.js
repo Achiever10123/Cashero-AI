@@ -12,7 +12,7 @@ function normalizeError(error) {
   }
 }
 
-function showErrorNotice(message) {
+function showErrorNotice(message, appendAvailability = true) {
   if (!document.body) return;
 
   const now = Date.now();
@@ -41,7 +41,9 @@ function showErrorNotice(message) {
   }
 
   notice.querySelector(".cashero-error-message").textContent =
-    `${message} Some features may be unavailable.`;
+    appendAvailability
+      ? `${message} Some features may be unavailable.`
+      : message;
   if (!notice.isConnected) document.body.append(notice);
   clearTimeout(notice.dismissTimer);
   notice.dismissTimer = setTimeout(() => notice.remove(), 10000);
@@ -52,7 +54,9 @@ export function reportError(error, context = "Application error", options = {}) 
   const message = `${context}: ${normalized.message}`;
   console.error(`[Cashero] ${message}`, normalized);
 
-  if (options.notify !== false) showErrorNotice(message);
+  if (options.notify !== false) {
+    showErrorNotice(options.userMessage || message, !options.userMessage);
+  }
 }
 
 export function installGlobalErrorHandlers() {

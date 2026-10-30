@@ -138,6 +138,8 @@ async function loadDailyQuote() {
     if (!navigator.onLine) renderDailyQuote(fallback);
     reportError(error, "Could not load the daily motivational quote", {
       notify: true,
+      userMessage:
+        "Hey, you're clicking faster than the quote machine! Give it a breather and try again in a moment.",
     });
   } finally {
     if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
