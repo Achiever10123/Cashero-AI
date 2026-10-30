@@ -2,6 +2,7 @@ import { APILogger, fetchAPI } from "./api.js";
 import { installGlobalErrorHandlers, reportError } from "./errors.js";
 import {
   getStorageItem,
+  initializeStorage,
   readJSON,
   removeStorageItem,
   setStorageItem,
@@ -26,6 +27,7 @@ Object.assign(window, {
   CasheroErrors: { reportError },
   CasheroStorage: {
     getItem: getStorageItem,
+    initialize: initializeStorage,
     readJSON,
     removeItem: removeStorageItem,
     setItem: setStorageItem,
@@ -49,8 +51,16 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
   window.APILogger = APILogger;
 }
 
-const appScript = document.createElement("script");
-appScript.src = new URL("../main.js", import.meta.url).href;
-appScript.onerror = () =>
-  reportError(new Error("Could not load main.js"), "App startup failed");
-document.head.append(appScript);
+(async () => {
+  try {
+    await initializeStorage();
+  } catch (error) {
+    reportError(error, "Could not initialize encrypted local storage");
+  }
+
+  const appScript = document.createElement("script");
+  appScript.src = new URL("../main.js", import.meta.url).href;
+  appScript.onerror = () =>
+    reportError(new Error("Could not load main.js"), "App startup failed");
+  document.head.append(appScript);
+})();

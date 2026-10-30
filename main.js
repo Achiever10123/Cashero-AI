@@ -2348,27 +2348,32 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 }
 function buildAnalysisHTML(a) {
   const esc = escapeHtml;
+  const verdict = esc(String(a?.verdict || ""));
+  const danger = esc(String(a?.danger || ""));
+  const projectionNote = esc(String(a?.projectionNote || ""));
+  const goal = esc(String(a?.goal || ""));
+
   return `
-    <div class="verdict-box"><div class="verdict-label">VERDICT</div><div class="verdict-text">"${a.verdict}"</div></div>
-    ${a.danger ? `<div class="danger-box"><div class="danger-label"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> DANGER ZONE</div><div style="font-size:12px;color:#ffa0b4;line-height:1.5">${a.danger}</div></div>` : ""}
-    ${a.projectionNote ? `<div class="warn-box"><div class="warn-label"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> PROJECTION</div><div style="font-size:12px;color:#ffd980;line-height:1.5">${a.projectionNote}</div></div>` : ""}
-    ${a.goal ? `<div class="goal-box"><div class="goal-label">NEXT MONTH GOAL</div><div style="font-size:12px;color:#7eebd3;line-height:1.5">${a.goal}</div></div>` : ""}
+    <div class="verdict-box"><div class="verdict-label">VERDICT</div><div class="verdict-text">"${verdict}"</div></div>
+    ${danger ? `<div class="danger-box"><div class="danger-label"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> DANGER ZONE</div><div style="font-size:12px;color:#ffa0b4;line-height:1.5">${danger}</div></div>` : ""}
+    ${projectionNote ? `<div class="warn-box"><div class="warn-label"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> PROJECTION</div><div style="font-size:12px;color:#ffd980;line-height:1.5">${projectionNote}</div></div>` : ""}
+    ${goal ? `<div class="goal-box"><div class="goal-label">NEXT MONTH GOAL</div><div style="font-size:12px;color:#7eebd3;line-height:1.5">${goal}</div></div>` : ""}
     <div style="margin-bottom:14px">
       <div class="sec-label" style="margin-bottom:8px">CUT BACK ON</div>
-      ${(a.cutbacks || [])
+      ${(a?.cutbacks || [])
         .map(
           (c) => `<div class="cutback-item">
         <div style="color:var(--red);font-size:13px;margin-top:2px">↓</div>
-        <div><div style="font-size:12px;color:var(--yellow);font-weight:500">${c.category}</div><div style="font-size:11px;color:var(--text2)">${c.reason}</div>${c.target ? `<div style="font-size:10px;color:var(--green);margin-top:2px">Target: ${c.target}</div>` : ""}</div>
+        <div><div style="font-size:12px;color:var(--yellow);font-weight:500">${esc(String(c?.category || ""))}</div><div style="font-size:11px;color:var(--text2)">${esc(String(c?.reason || ""))}</div>${c?.target ? `<div style="font-size:10px;color:var(--green);margin-top:2px">Target: ${esc(String(c.target))}</div>` : ""}</div>
       </div>`,
         )
         .join("")}
     </div>
     <div>
       <div class="sec-label" style="margin-bottom:8px">STOP BUYING</div>
-      ${(a.quickWins || []).map((w) => `<div class="wins-item"><span style="color:var(--red)">×</span>${w}</div>`).join("")}
+      ${(a?.quickWins || []).map((w) => `<div class="wins-item"><span style="color:var(--red)">×</span>${esc(String(w || ""))}</div>`).join("")}
     </div>
-    <div style="font-size:9px;color:var(--text3);margin-top:14px;letter-spacing:1px">Last updated ${S.lastAnalysisDate || ""}</div>`;
+    <div style="font-size:9px;color:var(--text3);margin-top:14px;letter-spacing:1px">Last updated ${esc(String(S.lastAnalysisDate || ""))}</div>`;
 }
 
 // ═══════════════════════════════════════════
