@@ -1,73 +1,45 @@
-import { createElement, Fragment } from "react";
-import { createBoundaryRoot } from "./create-boundary-root.js";
-
-let root = null;
+let container = null;
 let nextToastId = 0;
-let activeToasts = [];
 const toastTimers = new Map();
 
-function ToastContainer({ toasts, onDismiss }) {
-  return createElement(
-    Fragment,
-    null,
-    ...toasts.map((toast) =>
-      createElement(
-        "div",
-        {
-          className: `toast ${toast.type}`,
-          role: toast.type === "err" ? "alert" : "status",
-          key: toast.id,
-        },
-        createElement("span", { className: "toast-msg" }, toast.message),
-        createElement(
-          "button",
-          {
-            className: "toast-close",
-            type: "button",
-            "aria-label": "Dismiss notification",
-            title: "Dismiss notification",
-            onClick: () => onDismiss(toast.id),
-          },
-          createElement("i", {
-            className: "fa-solid fa-xmark",
-            style: { fontSize: "16px" },
-            "aria-hidden": true,
-          }),
-        ),
-      ),
-    ),
-  );
-}
-
-function renderToasts() {
-  root.render(
-    createElement(ToastContainer, {
-      toasts: activeToasts,
-      onDismiss: dismissToast,
-    }),
-  );
-}
-
 function dismissToast(id) {
-  const timer = toastTimers.get(id);
-  if (timer) clearTimeout(timer);
+  clearTimeout(toastTimers.get(id));
   toastTimers.delete(id);
-  activeToasts = activeToasts.filter((toast) => toast.id !== id);
-  renderToasts();
+  const toast = container?.querySelector(`[data-toast-id="${id}"]`);
+  toast?.remove();
 }
 
 export function mountToastContainer() {
-  const container = document.getElementById("toast-container");
+  container = document.getElementById("toast-container");
   if (!container) throw new Error("Missing #toast-container mount point");
-  if (root) return;
-  root = createBoundaryRoot(container, "Could not render notifications");
 }
 
 export function showToast(message, type = "ok") {
-  if (!root) throw new Error("Toast components have not been mounted");
+  if (!container) throw new Error("Toast components have not been mounted");
 
   const id = nextToastId++;
-  activeToasts = [...activeToasts, { id, message: String(message), type }];
-  renderToasts();
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.dataset.toastId = String(id);
+  toast.setAttribute("role", type === "err" ? "alert" : "status");
+
+  const text = document.createElement("span");
+  text.className = "toast-msg";
+  text.textContent = String(message);
+
+  const close = document.createElement("button");
+  close.className = "toast-close";
+  close.type = "button";
+  close.setAttribute("aria-label", "Dismiss notification");
+  close.title = "Dismiss notification";
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-xmark";
+  icon.style.fontSize = "16px";
+  icon.setAttribute("aria-hidden", "true");
+  close.append(icon);
+  close.addEventListener("click", () => dismissToast(id));
+
+  toast.append(text, close);
+  container.append(toast);
   toastTimers.set(id, setTimeout(() => dismissToast(id), 3000));
 }

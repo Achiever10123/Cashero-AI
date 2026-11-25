@@ -41,11 +41,11 @@ A modern web application for tracking and managing personal finances with intell
 
 ## Technology Stack
 
-- **Frontend**: React, HTML5, CSS3, and JavaScript (ES modules)
-- **Frontend modules**: React UI components live in `modules/components/`;
-  shared UI state lives in `modules/app-state.js`, while feature modules handle
-  API access, persistence, daily quotes, and error reporting. React roots use
-  recoverable error boundaries, and JSON requests share the logged API client.
+- **Frontend**: HTML5, CSS3, and vanilla JavaScript (ES modules)
+- **Frontend modules**: DOM-based UI components live in `modules/components/`;
+  feature modules handle API access, persistence, daily quotes, and error
+  reporting. JSON requests share the logged API client.
+- **Android packaging**: Capacitor uses the production web build in `dist/`.
 - **Storage**: Browser LocalStorage with JSON serialization
 - **Deployment**: Vercel
 - **Icons**: Font Awesome via the project kit
@@ -55,6 +55,14 @@ A modern web application for tracking and managing personal finances with intell
 ## Quick Start
 
 See [SETUP.md](SETUP.md) for detailed installation and development instructions.
+
+### Android shell
+
+Use Node.js 22 or newer for Capacitor 8. The `android/` platform project is
+scaffolded; run `npm run android:sync` after web changes. Open the project in
+Android Studio with `npm run android:open`. See the
+[Android APK guide](./ANDROID_APP_ROADMAP.md) for prerequisites and debug/release
+build steps.
 
 ## API Error Logging
 

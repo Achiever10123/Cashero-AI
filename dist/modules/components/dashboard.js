@@ -1,20 +1,8 @@
-import {
-  createElement,
-  Fragment,
-  useSyncExternalStore,
-} from "react";
-import { getAppState, setDashboardState, subscribeToAppState } from "../app-state.js";
-import { createBoundaryRoot } from "./create-boundary-root.js";
-
-const roots = new Map();
-
-function DashboardSlot({ name }) {
-  const { dashboard } = useSyncExternalStore(subscribeToAppState, getAppState);
-  if (!dashboard) return null;
-
-  if (name === "stats") return renderStats(dashboard);
-  if (name === "categories") return renderCategories(dashboard);
-  return renderProjection(dashboard);
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 }
 
 function renderStats(data) {
@@ -36,10 +24,7 @@ function renderStats(data) {
     {
       className: "c-green",
       label: "Saved",
-      value:
-        data.payout > 0
-          ? data.savedLabel
-          : data.placeholder,
+      value: data.payout > 0 ? data.savedLabel : data.placeholder,
       sub: data.payout > 0 ? `${data.savePct}% rate` : "—",
       color: data.saved >= 0 ? "var(--green)" : "var(--red)",
     },
@@ -59,119 +44,68 @@ function renderStats(data) {
     },
   ];
 
-  return createElement(
-    Fragment,
-    null,
-    ...stats.map((stat) =>
-      createElement(
-        "div",
-        { className: `stat-card ${stat.className}`, key: stat.className },
-        createElement("div", { className: "stat-label" }, stat.label),
-        createElement(
-          "div",
-          { className: "stat-val", style: { color: stat.color } },
-          stat.value,
-        ),
-        createElement("div", { className: "stat-sub" }, stat.sub),
-      ),
-    ),
-  );
+  return stats.map((stat) => {
+    const card = element("div", `stat-card ${stat.className}`);
+    card.append(
+      element("div", "stat-label", stat.label),
+      element("div", "stat-val", stat.value),
+      element("div", "stat-sub", stat.sub),
+    );
+    card.querySelector(".stat-val").style.color = stat.color;
+    return card;
+  });
 }
 
 function renderCategories(data) {
   if (!data.categories.length) {
-    return createElement(
-      "div",
-      { className: "empty" },
-      createElement(
-        "div",
-        { className: "empty-icon" },
-        createElement("i", {
-          className: "fa-solid fa-box-open",
-          "aria-hidden": true,
-        }),
-      ),
-      "No expenses yet",
-    );
+    const empty = element("div", "empty");
+    const icon = element("div", "empty-icon");
+    const iconElement = element("i", "fa-solid fa-box-open");
+    iconElement.setAttribute("aria-hidden", "true");
+    icon.append(iconElement);
+    empty.append(icon, document.createTextNode("No expenses yet"));
+    return [empty];
   }
 
-  return createElement(
-    Fragment,
-    null,
-    ...data.categories.map((category) =>
-      createElement(
-        "div",
-        { className: "cat-row", key: category.name },
-        createElement(
-          "div",
-          { className: "cat-header" },
-          createElement(
-            "div",
-            { className: "cat-name" },
-            createElement("span", {
-              style: {
-                display: "inline-block",
-                width: "16px",
-                height: "16px",
-                marginRight: "6px",
-              },
-              dangerouslySetInnerHTML: { __html: category.iconHtml },
-            }),
-            createElement(
-              "span",
-              { style: { color: category.color } },
-              category.name,
-            ),
-            category.pct > 30
-              ? createElement("span", { className: "cat-badge" }, "HIGH")
-              : null,
-          ),
-          createElement(
-            "div",
-            {
-              style: {
-                fontSize: "12px",
-                fontWeight: 700,
-                color: category.color,
-              },
-            },
-            category.totalLabel,
-          ),
-        ),
-        createElement(
-          "div",
-          { className: "prog-wrap", style: { height: "5px" } },
-          createElement("div", {
-            className: "prog-fill",
-            style: {
-              width: `${Math.min(100, category.width)}%`,
-              background: category.color,
-            },
-          }),
-        ),
-        createElement(
-          "div",
-          {
-            style: {
-              fontSize: "9px",
-              color: "var(--text3)",
-              marginTop: "3px",
-            },
-          },
-          `${category.pct}% of income`,
-        ),
-      ),
-    ),
-  );
+  return data.categories.map((category) => {
+    const row = element("div", "cat-row");
+    const header = element("div", "cat-header");
+    const name = element("div", "cat-name");
+    const icon = element("span");
+    icon.style.cssText =
+      "display:inline-block;width:16px;height:16px;margin-right:6px";
+    const iconTemplate = document.createElement("template");
+    iconTemplate.innerHTML = category.iconHtml;
+    icon.append(iconTemplate.content);
+
+    const categoryName = element("span", "", category.name);
+    categoryName.style.color = category.color;
+    name.append(icon, categoryName);
+    if (category.pct > 30) name.append(element("span", "cat-badge", "HIGH"));
+
+    const total = element("div", "", category.totalLabel);
+    total.style.cssText =
+      `font-size:12px;font-weight:700;color:${category.color}`;
+    header.append(name, total);
+
+    const progress = element("div", "prog-wrap");
+    progress.style.height = "5px";
+    const fill = element("div", "prog-fill");
+    fill.style.width = `${Math.min(100, category.width)}%`;
+    fill.style.background = category.color;
+    progress.append(fill);
+
+    const percent = element("div", "", `${category.pct}% of income`);
+    percent.style.cssText =
+      "font-size:9px;color:var(--text3);margin-top:3px";
+    row.append(header, progress, percent);
+    return row;
+  });
 }
 
 function renderProjection(data) {
   const rows = [
-    [
-      "Avg daily spend",
-      data.dailyRateLabel,
-      "var(--yellow)",
-    ],
+    ["Avg daily spend", data.dailyRateLabel, "var(--yellow)"],
     [
       "Projected month total",
       data.projectedLabel,
@@ -187,51 +121,42 @@ function renderProjection(data) {
         ]
       : null,
     data.safeDaily
-      ? [
-          "Safe to spend/day",
-          data.safeDailyLabel,
-          "var(--green)",
-        ]
+      ? ["Safe to spend/day", data.safeDailyLabel, "var(--green)"]
       : null,
     ["Days remaining", String(data.daysLeft), "var(--text)"],
   ].filter(Boolean);
 
-  return createElement(
-    "div",
-    { className: "projection-box" },
-    ...rows.map(([label, value, color]) =>
-      createElement(
-        "div",
-        { className: "proj-row", key: label },
-        createElement("span", { className: "proj-key" }, label),
-        createElement(
-          "span",
-          { className: "proj-val", style: { color } },
-          value,
-        ),
-      ),
-    ),
-  );
+  const box = element("div", "projection-box");
+  for (const [label, value, color] of rows) {
+    const row = element("div", "proj-row");
+    row.append(
+      element("span", "proj-key", label),
+      element("span", "proj-val", value),
+    );
+    row.querySelector(".proj-val").style.color = color;
+    box.append(row);
+  }
+  return box;
 }
 
-function mountSlot(containerId, name) {
+function renderSlot(containerId, render) {
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`Missing #${containerId} mount point`);
-
-  let root = roots.get(containerId);
-  if (!root) {
-    root = createBoundaryRoot(container, `Could not render ${containerId}`);
-    roots.set(containerId, root);
-  }
-  root.render(createElement(DashboardSlot, { name }));
+  container.replaceChildren(...render());
 }
 
 export function mountDashboardComponents() {
-  mountSlot("stat-grid", "stats");
-  mountSlot("dash-cats", "categories");
-  mountSlot("proj-box", "projection");
+  for (const containerId of ["stat-grid", "dash-cats", "proj-box"]) {
+    if (!document.getElementById(containerId)) {
+      throw new Error(`Missing #${containerId} mount point`);
+    }
+  }
 }
 
 export function renderDashboardComponents(data) {
-  setDashboardState(data);
+  renderSlot("stat-grid", () => renderStats(data));
+  renderSlot("dash-cats", () => renderCategories(data));
+  const projection = document.getElementById("proj-box");
+  if (!projection) throw new Error("Missing #proj-box mount point");
+  projection.replaceChildren(renderProjection(data));
 }

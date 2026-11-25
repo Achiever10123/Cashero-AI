@@ -1,17 +1,3 @@
-import {
-  createElement,
-  Fragment,
-  useSyncExternalStore,
-} from "react";
-import {
-  getAppState,
-  setNotificationState,
-  subscribeToAppState,
-} from "../app-state.js";
-import { createBoundaryRoot } from "./create-boundary-root.js";
-
-let root = null;
-
 const notificationTypes = {
   budget: { color: "var(--red)", icon: "fa-money-bill-transfer" },
   recurring: { color: "var(--yellow)", icon: "fa-rotate" },
@@ -20,121 +6,95 @@ const notificationTypes = {
   system: { color: "var(--teal)", icon: "fa-wand-magic-sparkles" },
 };
 
-function NotificationPanel({
-  onClose,
-  onClear,
-  onMarkRead,
-  onRequestPermission,
-  timeAgo,
-  permissionLabel,
-  permissionGranted,
-}) {
-  const { notifications } = useSyncExternalStore(
-    subscribeToAppState,
-    getAppState,
-  );
+let panel = null;
 
-  return createElement(
-    Fragment,
-    null,
-    createElement(
-      "div",
-      { className: "notif-header" },
-      createElement("div", { className: "notif-title", id: "notif-title" }, "Notifications"),
-      createElement(
-        "button",
-        {
-          className: "notif-close",
-          type: "button",
-          "aria-label": "Close notifications",
-          onClick: onClose,
-        },
-        createElement("i", {
-          className: "fa-solid fa-xmark",
-          "aria-hidden": true,
-        }),
-      ),
-    ),
-    createElement(
-      "div",
-      { className: "notif-list", id: "notif-list" },
-      notifications.length
-        ? notifications.map((notification) => {
-            const type = notificationTypes[notification.type];
-            return createElement(
-              "div",
-              {
-                className: `notif-item ${notification.read ? "" : "unread"}`,
-                onClick: () => onMarkRead(notification.id),
-                key: notification.id,
-              },
-              createElement(
-                "div",
-                {
-                  className: "notif-type",
-                  style: { color: type?.color || "var(--text3)" },
-                },
-                createElement("i", {
-                  className: `fa-solid ${type?.icon || "fa-circle-info"}`,
-                  "aria-hidden": true,
-                }),
-                ` ${notification.type}`,
-              ),
-              createElement("div", { className: "notif-msg" }, notification.msg),
-              createElement(
-                "div",
-                { className: "notif-time" },
-                timeAgo(notification.time),
-              ),
-            );
-          })
-        : createElement(
-            "div",
-            {
-              style: {
-                color: "var(--text3)",
-                fontSize: "12px",
-                textAlign: "center",
-                padding: "30px 0",
-              },
-            },
-            "No notifications yet",
-          ),
-    ),
-    createElement(
-      "div",
-      { className: "notif-footer" },
-      createElement(
-        "button",
-        {
-          className: `notif-perm-btn${permissionGranted ? " granted" : ""}`,
-          id: "notif-perm-btn",
-          onClick: onRequestPermission,
-        },
-        permissionLabel,
-      ),
-      createElement(
-        "button",
-        {
-          className: "btn btn-ghost",
-          onClick: onClear,
-          style: { flexShrink: 0 },
-        },
-        "Clear all",
-      ),
-    ),
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function createIcon(className) {
+  const icon = element("i", `fa-solid ${className}`);
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
+}
+
+function renderNotificationItem(notification, props) {
+  const type = notificationTypes[notification.type];
+  const item = element(
+    "div",
+    `notif-item ${notification.read ? "" : "unread"}`,
   );
+  item.tabIndex = 0;
+  item.setAttribute("role", "button");
+  item.addEventListener("click", () => props.onMarkRead(notification.id));
+  item.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      props.onMarkRead(notification.id);
+    }
+  });
+
+  const typeLabel = element("div", "notif-type");
+  typeLabel.style.color = type?.color || "var(--text3)";
+  typeLabel.append(
+    createIcon(type?.icon || "fa-circle-info"),
+    document.createTextNode(` ${notification.type}`),
+  );
+  item.append(
+    typeLabel,
+    element("div", "notif-msg", notification.msg),
+    element("div", "notif-time", props.timeAgo(notification.time)),
+  );
+  return item;
 }
 
 export function mountNotificationPanel() {
-  const panel = document.getElementById("notif-panel");
+  panel = document.getElementById("notif-panel");
   if (!panel) throw new Error("Missing #notif-panel mount point");
-  if (root) return;
-  root = createBoundaryRoot(panel, "Could not render notifications");
 }
 
 export function renderNotificationPanel(props) {
-  if (!root) throw new Error("Notification panel has not been mounted");
-  setNotificationState(props.notifications);
-  root.render(createElement(NotificationPanel, props));
+  if (!panel) throw new Error("Notification panel has not been mounted");
+
+  const header = element("div", "notif-header");
+  header.append(element("div", "notif-title", "Notifications"));
+  header.firstElementChild.id = "notif-title";
+  const close = element("button", "notif-close");
+  close.type = "button";
+  close.setAttribute("aria-label", "Close notifications");
+  close.append(createIcon("fa-xmark"));
+  close.addEventListener("click", props.onClose);
+  header.append(close);
+
+  const list = element("div", "notif-list");
+  list.id = "notif-list";
+  if (props.notifications.length) {
+    list.append(
+      ...props.notifications.map((notification) =>
+        renderNotificationItem(notification, props),
+      ),
+    );
+  } else {
+    const empty = element("div", "", "No notifications yet");
+    empty.style.cssText =
+      "color:var(--text3);font-size:12px;text-align:center;padding:30px 0";
+    list.append(empty);
+  }
+
+  const footer = element("div", "notif-footer");
+  const permissionButton = element(
+    "button",
+    `notif-perm-btn${props.permissionGranted ? " granted" : ""}`,
+    props.permissionLabel,
+  );
+  permissionButton.id = "notif-perm-btn";
+  permissionButton.addEventListener("click", props.onRequestPermission);
+  const clearButton = element("button", "btn btn-ghost", "Clear all");
+  clearButton.style.flexShrink = "0";
+  clearButton.addEventListener("click", props.onClear);
+  footer.append(permissionButton, clearButton);
+  panel.replaceChildren(header, list, footer);
 }

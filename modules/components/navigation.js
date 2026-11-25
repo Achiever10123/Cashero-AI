@@ -1,13 +1,3 @@
-import { createElement, useSyncExternalStore } from "react";
-import {
-  getAppState,
-  setActivePage,
-  subscribeToAppState,
-} from "../app-state.js";
-import { createBoundaryRoot } from "./create-boundary-root.js";
-
-let root = null;
-
 const NAV_ITEMS = [
   ["dashboard", "fa-house", "Dashboard"],
   ["charts", "fa-chart-pie", "Charts"],
@@ -24,44 +14,40 @@ const NAV_ITEMS = [
   ["help", "fa-circle-info", "Help"],
 ];
 
-function Navigation() {
-  const { activePage } = useSyncExternalStore(
-    subscribeToAppState,
-    getAppState,
-  );
-
-  return createElement(
-    "div",
-    { className: "nav-group" },
-    ...NAV_ITEMS.map(([page, icon, label]) =>
-      createElement(
-        "button",
-        {
-          className: `nav-item${activePage === page ? " active" : ""}`,
-          "data-page": page,
-          "aria-current": activePage === page ? "page" : undefined,
-          title: label,
-          key: page,
-          onClick: () => window.navigate(page),
-        },
-        createElement("i", {
-          className: `nav-icon fa-solid ${icon}`,
-          "aria-hidden": true,
-        }),
-        createElement("span", { className: "nav-label" }, label),
-      ),
-    ),
-  );
-}
+let container = null;
 
 export function mountNavigation(activePage = "dashboard") {
-  const container = document.querySelector(".nav-container");
+  container = document.querySelector(".nav-container");
   if (!container) throw new Error("Missing navigation mount point");
-  setActivePage(activePage);
-  if (!root) root = createBoundaryRoot(container, "Could not render navigation");
-  root.render(createElement(Navigation));
+
+  const group = document.createElement("div");
+  group.className = "nav-group";
+  for (const [page, icon, label] of NAV_ITEMS) {
+    const button = document.createElement("button");
+    button.className = "nav-item";
+    button.dataset.page = page;
+    button.title = label;
+    button.addEventListener("click", () => window.navigate(page));
+
+    const iconElement = document.createElement("i");
+    iconElement.className = `nav-icon fa-solid ${icon}`;
+    iconElement.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.className = "nav-label";
+    text.textContent = label;
+    button.append(iconElement, text);
+    group.append(button);
+  }
+  container.replaceChildren(group);
+  renderNavigation(activePage);
 }
 
 export function renderNavigation(activePage) {
-  setActivePage(activePage);
+  if (!container) return;
+  for (const button of container.querySelectorAll(".nav-item")) {
+    const active = button.dataset.page === activePage;
+    button.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  }
 }

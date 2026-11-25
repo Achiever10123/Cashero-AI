@@ -1,147 +1,232 @@
-# Cashero Android App Roadmap
+# Cashero Android APK Roadmap
 
 ## Goal
 
-Ship Cashero as an installable Android app while keeping its expense-tracking
-features, offline behavior, and existing data model.
+Build and test Cashero as an Android app using the existing web app and
+Capacitor. Keep the expense-tracking features, offline behavior, and JSON
+backup/restore flow.
 
-## Recommendation: reuse the web app with Capacitor
+## Current project status
 
-The easiest route is to package the existing app with **Capacitor** and build
-the Android project from the current web app. Capacitor hosts the app in a
-native Android shell and lets the project add native features when needed.
-It works with both React and vanilla JavaScript; choosing vanilla JavaScript
-does not, by itself, make an Android app or remove the need for Android
-packaging.
+- The web UI uses vanilla JavaScript; React and its dependencies have been
+  removed.
+- Capacitor 8 and the Android platform project are set up in this repository.
+- The application ID is `org.cashero.ai`; the display name is `Cashero AI`.
+- Capacitor packages the web build from `dist/`. Run `npm run android:sync`
+  after web changes.
+- Web build, unit/API tests, browser tests, and Capacitor asset sync have passed.
+- A native APK has not been built on this machine yet; Android Studio and the
+  Android SDK still need to be installed.
 
-Avoid a ground-up rewrite for the first Android release. The current project
-already has a responsive web app, offline support, and React-related code and
-dependencies. Reuse and stabilize what is there first; decide separately
-whether to finish the existing React migration or keep the current mix. If a
-new repository is required, bring over the working app and its tests rather
-than rebuilding the features in vanilla JavaScript.
+## What to install
 
-**In short:** Capacitor + the existing app is the smallest change. React Native
-would mean a larger UI rewrite and is not the easiest way to get this app onto
-Android.
+1. **Node.js 22 or newer** — required by Capacitor 8. Install from
+   [nodejs.org](https://nodejs.org/). This project currently uses Node 26.
+2. **Android Studio 2025.2.1 or newer** — install the latest stable version
+   from the [Android Studio download page](https://developer.android.com/studio).
+   Capacitor 8 requires this minimum version.
+3. **Android SDK Platform API 36** — the current project is configured with
+   `compileSdkVersion` and `targetSdkVersion` 36. Install it through Android
+   Studio's **Tools → SDK Manager → SDK Platforms**.
+4. In Android Studio's **SDK Manager → SDK Tools**, install/keep current:
+   **Android SDK Build-Tools**, **Android SDK Platform-Tools** (includes
+   `adb`), **Android SDK Command-line Tools**, and **Android Emulator** if
+   you want to test on an emulator.
+5. **Choose one test device:** create an emulator in **Tools → Device
+   Manager**, or use a physical Android phone with Developer options and USB
+   debugging enabled.
 
-## Roadmap
+Android Studio installs the JDK it needs; a separate JDK and a separate Gradle
+installation are not required. The Android project includes the Gradle wrapper
+(`android/gradlew.bat`), which downloads and uses the configured Gradle version.
+See Capacitor's [environment setup](https://capacitorjs.com/docs/getting-started/environment-setup)
+and [Android guide](https://capacitorjs.com/docs/android).
 
-### Phase 1 — Confirm the baseline
+### About `node_modules`
 
-- [ ] Inventory current screens, app flows, data formats, and existing tests.
-- [ ] Verify the production web build and the current offline experience.
-- [ ] Identify any browser-only APIs, external links, and backend requirements.
-- [ ] Decide whether Android development stays in this repository or moves to a
-      new one; keep one source of truth for app behavior.
-- [ ] Record the current JSON backup format as the initial data migration path.
+`node_modules/` is the local folder where npm installs this project's
+JavaScript dependencies (including Vite, Playwright, and Capacitor). It is
+ignored by Git and should not be committed or downloaded separately. It is
+needed to build, test, and sync the app. If it is removed, run `npm ci` from
+the repository root to recreate it from `package-lock.json`.
 
-**Exit check:** The existing app builds, its key flows work, and the Android
-project can consume a known build output.
+## Build and install a debug APK
 
-### Phase 2 — Make the web app comfortable on a phone
+Run these steps in order from the repository root.
 
-- [ ] Check every primary screen at common Android phone sizes and orientations.
-- [ ] Improve touch target sizes, form input types, keyboard behavior, and
-      scrolling around dialogs and bottom navigation.
-- [ ] Check charts, tables, imports, and exports on a narrow screen.
-- [ ] Handle Android back navigation consistently in dialogs and app screens.
-- [ ] Add clear loading, empty, error, and offline states.
+### 1. Check Node.js and install project dependencies
 
-**Exit check:** A user can add, edit, find, and review transactions using a
-phone-sized browser without layout or keyboard blockers.
+Open PowerShell or a terminal in the repository and verify Node.js:
 
-### Phase 3 — Add the Android shell
+```powershell
+node --version
+npm --version
+```
 
-- [ ] Add Capacitor and configure the built web output as the app's web assets.
-- [ ] Create the Android platform project and open it in Android Studio.
-- [ ] Set the application ID, display name, app icon, and launch screen.
-- [ ] Configure development and release builds; keep signing credentials out of
-      source control.
-- [ ] Verify navigation, status/navigation bars, links, and network error
-      behavior on an emulator and a physical device.
+The Node version must be 22 or newer. Install exactly the dependencies recorded
+in the lockfile:
 
-**Exit check:** A debug APK installs and launches the app on a real Android
-device.
+```powershell
+npm ci
+```
 
-### Phase 4 — Review storage, privacy, and native behavior
+Do not run `npm ci` while another npm install is running. It will recreate
+`node_modules/` if needed.
+
+If npm reports that it blocked a dependency install script and a build later
+fails, run `npx cap doctor` and follow its package-specific instructions. For
+example, approve a listed `esbuild` script with `npm install-scripts approve
+esbuild`, then run `npm rebuild`.
+
+### 2. Verify the web app
+
+```powershell
+npm test
+npm run build
+```
+
+The production files must be generated in `dist/` before Capacitor copies them
+into the Android project.
+
+### 3. Sync the web app into Android
+
+```powershell
+npm run android:sync
+```
+
+This runs the web production build and then `cap sync android`. Repeat it after
+changing web code so the Android project receives the latest version. Do not
+edit files under `android/app/src/main/assets/public` by hand; Capacitor
+regenerates that folder.
+
+### 4. Open and sync the Android project
+
+```powershell
+npm run android:open
+```
+
+In Android Studio, allow the initial Gradle sync and any SDK/license prompts to
+finish. If Android Studio reports a missing SDK, install API 36 using SDK
+Manager. If Gradle asks for a JDK, select Android Studio's bundled JDK in
+**Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**.
+
+The current app ID is configured in `capacitor.config.json`,
+`android/app/build.gradle`, the Android strings, and the Java activity package.
+Keep these values aligned. Choose the final app ID before publishing: changing
+it after distribution creates a different Android app and prevents in-place
+updates.
+
+To replace the starter launcher icon, right-click `android/app/src/main/res` in
+Android Studio and choose **New → Image Asset**. Select the app icon source,
+preview the adaptive icon, and finish the wizard.
+
+### 5. Select an emulator or device
+
+- **Emulator:** in Android Studio open **Tools → Device Manager**, create a
+  phone device, download a compatible system image, and start it.
+- **Physical phone:** enable Developer options and USB debugging, connect it
+  over USB, and approve the computer authorization prompt.
+
+Capacitor supports Android API 24 and newer. The project builds against API
+36; test on the emulator/device versions you intend to support. See Android's
+[AVD guide](https://developer.android.com/studio/run/managing-avds).
+
+### 6. Run the app from Android Studio
+
+Choose the `app` run configuration and the emulator/device in Android Studio,
+then click **Run**. Confirm that the app launches and exercise the main flows:
+
+- Add an expense and confirm it is still present after closing and reopening.
+- Navigate between dashboard, add-expense, and history screens.
+- Test export/restore and offline behavior.
+- Check layout, keyboard, Android back navigation, and network error behavior.
+
+### 7. Build a debug APK
+
+For a command-line build, open PowerShell in the repository root:
+
+```powershell
+Set-Location android
+.\gradlew.bat assembleDebug
+```
+
+The debug APK is written to:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+The debug APK is automatically signed with a development key and is suitable
+for testing or personal installation, not store release.
+
+### 8. Install the debug APK
+
+With an emulator or USB-debugging-enabled phone connected, either click **Run**
+in Android Studio or install from the `android/` directory:
+
+```powershell
+.\gradlew.bat installDebug
+```
+
+Alternatively, install the built APK with `adb`:
+
+```powershell
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
+
+On Windows, if `adb` is not on `PATH`, run it from the Android SDK's
+`platform-tools` directory or add that directory to `PATH`.
+
+## Make a release build
+
+For a signed APK to distribute directly, use Android Studio's
+**Build → Generate Signed Bundle / APK → APK** wizard. Create/select a release
+keystore and key, then select the `release` build variant. Store the keystore
+and passwords securely outside the repository; never commit them. Keep secure
+backups because updates must use a compatible signing identity. Increase
+`versionCode` in `android/app/build.gradle` for each release.
+
+For Google Play, create a signed **Android App Bundle (AAB)** instead. Google
+Play uses Play App Signing for store delivery; a debug APK is not a Play Store
+release. Read Android's official [app signing guide](https://developer.android.com/studio/publish/app-signing)
+and [command-line build guide](https://developer.android.com/build/building-cmdline).
+Follow current Play Console target API, privacy, and listing requirements when
+publishing, since these change over time.
+
+## Routine after making web changes
+
+From the repository root:
+
+```powershell
+npm test
+npm run android:sync
+npm run android:open
+```
+
+Then run the app again in Android Studio or rebuild with
+`.\gradlew.bat assembleDebug` from `android/`.
+
+## Remaining roadmap
+
+### Before first APK
+
+- [ ] Install Android Studio and API 36 SDK packages.
+- [ ] Open the project in Android Studio and complete Gradle sync.
+- [ ] Select the final app icon and verify the display name.
+- [ ] Run on an emulator and a physical device.
+- [ ] Build, install, and test the debug APK using the steps above.
+
+### Before public release
 
 - [ ] Test persistence across app restarts, upgrades, and device reboots.
-- [ ] Decide whether sensitive values need encrypted storage and use an
-      appropriate native secure-storage solution for secrets or keys.
-- [ ] Keep transaction data private; do not log personal financial details.
-- [ ] Preserve JSON backup and restore, and clearly explain how existing browser
-      data can be moved to the Android app.
-- [ ] Request only Android permissions required by a feature; defer camera,
-      microphone, or notification permissions until those features are included.
-- [ ] Test offline use, interrupted requests, and recovery from storage errors.
+- [ ] Verify backup/restore and explain how browser data can be moved to Android.
+- [ ] Review privacy disclosures, permissions, and storage security.
+- [ ] Test supported screen sizes, Android versions, back navigation, keyboard,
+      accessibility, file import/export, and offline behavior.
+- [ ] Create a signed release APK for direct distribution or a signed AAB for
+      Google Play; keep signing credentials out of source control.
+- [ ] Prepare store listing, screenshots, support contact, and release process.
 
-**Exit check:** Data survives normal app lifecycle events, and backup, restore,
-and privacy behavior are understood and tested.
-
-### Phase 5 — Android-specific polish and testing
-
-- [ ] Test on supported Android versions, screen sizes, and at least one
-      physical device.
-- [ ] Verify system back, app pause/resume, keyboard, accessibility, and
-      deep-link behavior where applicable.
-- [ ] Add automated tests for critical calculations and data migration, plus
-      end-to-end checks for the core transaction flow.
-- [ ] Verify the release build has no debug configuration or secrets.
-- [ ] Prepare store listing text, screenshots, privacy disclosures, and support
-      contact details.
-
-**Exit check:** A release candidate passes the core-flow checklist on emulator
-and physical hardware.
-
-### Phase 6 — Release and maintain
-
-- [ ] Create a signed Android App Bundle (AAB) using a securely managed signing
-      key.
-- [ ] Publish to an internal or closed testing track and collect feedback.
-- [ ] Fix launch-blocking issues, data-loss risks, and device-specific bugs.
-- [ ] Roll out gradually and monitor crashes and user reports.
-- [ ] Document the repeatable build, signing, and release process.
-
-**Exit check:** The tested Android build is available through the chosen
-distribution channel and can be updated reliably.
-
-## Keep the first release focused
-
-Include the existing core expense, history, and analytics flows; local/offline
-use; and a clear way to back up or restore data. Defer push notifications,
-receipt scanning, voice input, widgets, and other native-only features until
-the packaged app is stable.
-
-## React vs. vanilla JavaScript
-
-| Choice                         | When it makes sense                                                         | Recommendation for Cashero                                                              |
-| ------------------------------ | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Existing app + Capacitor       | Fastest route; preserves current features and web code                      | **Recommended**                                                                         |
-| React + Capacitor              | Useful if continuing the current component-based UI and adding more screens | Prefer this over rewriting existing features if the React migration is already underway |
-| Vanilla JavaScript + Capacitor | Suitable for a small, deliberately simple UI with few shared components     | Not a reason on its own to create a new repo or rebuild Cashero                         |
-| React Native                   | Best considered when a fully native UI is a firm requirement                | Not the easiest migration; expect a substantial rewrite                                 |
-
-Capacitor does not require React. Choose the UI framework based on the code
-being reused and maintained, not as an Android packaging requirement.
-
-## Main risks to resolve early
-
-- **Existing data:** Browser storage does not automatically transfer to an
-  installed Android app. Keep export/import available and test the migration
-  instructions.
-- **Storage security:** A PIN screen is not the same as encrypting stored
-  transaction data. Assess the current storage design before release.
-- **Web-to-app differences:** File pickers, downloads, browser dialogs, and
-  service-worker behavior may differ inside the Android shell.
-- **Backend configuration:** Verify API URLs, CORS assumptions, and network
-  failure handling in the packaged build.
-- **Store requirements:** Check current Google Play target API, privacy, and
-  signing requirements when preparing the release; these can change.
-
-## Suggested first milestone
-
-Build a debug Capacitor APK from the existing app, install it on one Android
-device, and verify that a transaction can be added, remains after restarting
-the app, and can be backed up and restored. Use that result to decide whether
-any UI framework changes are actually necessary.
+**First milestone:** install a debug APK on one real Android device, add a
+transaction, restart the app, and verify that the transaction and backup/restore
+flow still work.
