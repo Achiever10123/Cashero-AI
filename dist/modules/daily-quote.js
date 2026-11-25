@@ -1,0 +1,138 @@
+import { reportError } from "./errors.js";
+import { renderDailyQuote } from "./components/daily-quote.js";
+import { fetchAPI } from "./api.js";
+import { removeStorageItem } from "./storage.js";
+
+const DAILY_QUOTE_STORAGE_KEY = "cashero_daily_quote";
+const DAILY_QUOTE_FALLBACKS = [
+  "Well done is better than well said.",
+  "Energy and persistence conquer all things.",
+  "Diligence is the mother of good luck.",
+  "Never leave that till tomorrow which you can do today.",
+  "Lost time is never found again.",
+];
+let dailyQuoteRequestDate = null;
+let dailyQuoteAttemptDate = null;
+let dailyQuoteRefreshTimer = null;
+let dailyQuoteToastTimer = null;
+let dailyQuoteToastShown = false;
+
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDailyQuoteFallback(date = new Date()) {
+  const dateKey = localDateKey(date);
+  const dayNumber = Math.floor(
+    (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+      Date.UTC(date.getFullYear(), 0, 0)) /
+      86_400_000,
+  );
+  return {
+    quote: DAILY_QUOTE_FALLBACKS[dayNumber % DAILY_QUOTE_FALLBACKS.length],
+    author: "Benjamin Franklin",
+    date: dateKey,
+  };
+}
+
+function displayDailyQuote(quote) {
+  const area = document.getElementById("daily-quote-toast");
+  if (!area || (area.hidden && dailyQuoteToastShown)) return;
+
+  renderDailyQuote(quote, () => {
+    clearTimeout(dailyQuoteToastTimer);
+    area.hidden = true;
+    renderDailyQuote(null);
+  });
+  area.hidden = false;
+  if (!dailyQuoteToastShown) {
+    dailyQuoteToastShown = true;
+    dailyQuoteToastTimer = setTimeout(() => {
+      area.hidden = true;
+      renderDailyQuote(null);
+    }, 60_000);
+  }
+}
+
+async function loadDailyQuote() {
+  const today = localDateKey();
+  if (dailyQuoteRequestDate === today || dailyQuoteAttemptDate === today) return;
+
+  dailyQuoteAttemptDate = today;
+  const fallback = getDailyQuoteFallback();
+  if (!navigator.onLine) {
+    displayDailyQuote(fallback);
+    return;
+  }
+
+  dailyQuoteRequestDate = today;
+  try {
+    const data = await fetchAPI("/api/random-quote", {
+      cache: "no-store",
+    });
+    const result = Array.isArray(data) ? data[0] : null;
+    if (
+      !result ||
+      typeof result.q !== "string" ||
+      !result.q.trim() ||
+      typeof result.a !== "string"
+    ) {
+      throw new Error("Quote API returned an invalid response");
+    }
+
+    if (today !== localDateKey()) return;
+    const quote = {
+      quote: result.q.trim(),
+      author: result.a.trim() || "Unknown",
+      date: today,
+    };
+    displayDailyQuote(quote);
+  } catch (error) {
+    if (!navigator.onLine) displayDailyQuote(fallback);
+    reportError(error, "Could not load the daily motivational quote", {
+      notify: true,
+      userMessage:
+        "Hey, you're clicking faster than the quote machine! Give it a breather and try again in a moment.",
+    });
+  } finally {
+    if (dailyQuoteRequestDate === today) dailyQuoteRequestDate = null;
+  }
+}
+
+try {
+  removeStorageItem(DAILY_QUOTE_STORAGE_KEY);
+} catch (error) {
+  reportError(error, "Could not clear the cached daily quote", {
+    notify: false,
+  });
+}
+
+function scheduleDailyQuoteRefresh() {
+  clearTimeout(dailyQuoteRefreshTimer);
+  const nextMidnight = new Date();
+  nextMidnight.setHours(24, 0, 0, 0);
+  dailyQuoteRefreshTimer = setTimeout(
+    () => {
+      loadDailyQuote();
+      scheduleDailyQuoteRefresh();
+    },
+    Math.max(1000, nextMidnight.getTime() - Date.now()),
+  );
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") loadDailyQuote();
+});
+window.addEventListener("offline", () => {
+  if (dailyQuoteRequestDate) displayDailyQuote(getDailyQuoteFallback());
+});
+window.addEventListener("online", () => {
+  if (!dailyQuoteRequestDate) dailyQuoteAttemptDate = null;
+  loadDailyQuote();
+});
+
+
+export { loadDailyQuote, scheduleDailyQuoteRefresh };
