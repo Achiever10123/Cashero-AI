@@ -55,7 +55,6 @@ export async function fetchAPI(endpoint, options = {}) {
 
   try {
     const response = await fetch(endpoint, options);
-    const duration = Math.round(performance.now() - startTime);
     const responseText = await response.text();
     let data = null;
 
@@ -63,7 +62,11 @@ export async function fetchAPI(endpoint, options = {}) {
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        if (response.ok) throw parseError;
+        if (response.ok) {
+          parseError.status = response.status;
+          parseError.data = { message: "The server returned invalid JSON." };
+          throw parseError;
+        }
         data = {
           message: response.statusText || `HTTP ${response.status}`,
         };
@@ -71,33 +74,48 @@ export async function fetchAPI(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const error = new Error(
-        data?.error?.message || data?.message || `HTTP ${response.status}`,
-      );
+      const error = new Error(getErrorMessage(data, response.status));
       error.status = response.status;
       error.data = data;
-
-      APILogger.log(endpoint, response.status, duration, error, {
-        method,
-        errorDetails: data,
-      });
       throw error;
     }
 
-    APILogger.log(endpoint, response.status, duration, null, { method });
+    APILogger.log(
+      endpoint,
+      response.status,
+      Math.round(performance.now() - startTime),
+      null,
+      { method },
+    );
     return data;
   } catch (error) {
     const duration = Math.round(performance.now() - startTime);
 
     const requestError =
       error instanceof Error ? error : new Error(String(error));
-    if (!requestError.status) {
-      APILogger.log(endpoint, 0, duration, requestError, {
-        method,
-        isNetworkError: requestError instanceof TypeError,
-      });
-    }
-
+    const status = Number.isInteger(requestError.status)
+      ? requestError.status
+      : 0;
+    APILogger.log(endpoint, status, duration, requestError, {
+      method,
+      ...(requestError.data ? { errorDetails: requestError.data } : {}),
+      ...(status === 0
+        ? { isNetworkError: requestError instanceof TypeError }
+        : {}),
+    });
     throw requestError;
   }
+}
+
+function getErrorMessage(data, status) {
+  const error = data?.error;
+  if (typeof error === "string" && error) return error;
+
+  return (
+    error?.message ||
+    data?.message ||
+    data?.msg ||
+    data?.error_description ||
+    `HTTP ${status}`
+  );
 }
