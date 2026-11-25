@@ -1,4 +1,21 @@
 import { APILogger, fetchAPI } from "./api.js";
+import {
+  mountNotificationPanel,
+  renderNotificationPanel,
+} from "./components/notification-panel.js";
+import {
+  mountDashboardComponents,
+  renderDashboardComponents,
+} from "./components/dashboard.js";
+import {
+  mountNavigation,
+  renderNavigation,
+} from "./components/navigation.js";
+import {
+  mountToastContainer,
+  showToast,
+} from "./components/toast.js";
+import { mountDailyQuote } from "./components/daily-quote.js";
 import { installGlobalErrorHandlers, reportError } from "./errors.js";
 import {
   getStorageItem,
@@ -21,9 +38,20 @@ import {
 } from "./data-features.mjs";
 
 installGlobalErrorHandlers();
+mountToastContainer();
+mountDailyQuote();
+mountNotificationPanel();
+mountDashboardComponents();
+mountNavigation();
 
 Object.assign(window, {
   fetchAPI,
+  CasheroComponents: {
+    renderDashboard: renderDashboardComponents,
+    renderNotifications: renderNotificationPanel,
+    renderNavigation,
+    toast: showToast,
+  },
   CasheroErrors: { reportError },
   CasheroStorage: {
     getItem: getStorageItem,

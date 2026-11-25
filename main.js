@@ -522,22 +522,12 @@ function navigate(page) {
   document
     .querySelectorAll(".page")
     .forEach((p) => p.classList.remove("active"));
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((n) => {
-      n.classList.remove("active");
-      n.removeAttribute("aria-current");
-    });
   document.getElementById("page-" + page).classList.add("active");
-  const sEl = document.querySelector(`.nav-item[data-page="${page}"]`);
-  if (sEl) {
-    sEl.classList.add("active");
-    sEl.setAttribute("aria-current", "page");
-  }
   const m = PAGE_META[page] || { title: page, sub: "" };
   document.getElementById("topbar-title").textContent = m.title;
   document.getElementById("topbar-sub").textContent = m.sub;
   document.getElementById("topbar-title").focus();
+  window.CasheroComponents?.renderNavigation(page);
   renderPage(page);
 }
 document.querySelectorAll(".nav-item").forEach((btn) => {
@@ -609,34 +599,6 @@ function renderDashboard() {
         ? "var(--yellow)"
         : "var(--red)";
 
-  // Stats
-  document.getElementById("stat-grid").innerHTML = `
-    <div class="stat-card c-purple">
-      <div class="stat-label">Monthly Income</div>
-      <div class="stat-val" style="color:var(--accent2)">${payout > 0 ? fmt(payout) : fmtPlaceholder()}</div>
-      <div class="stat-sub">this month</div>
-    </div>
-    <div class="stat-card c-red">
-      <div class="stat-label">Total Spent</div>
-      <div class="stat-val" style="color:var(--red)">${fmt(spent)}</div>
-      <div class="stat-sub">${payout > 0 ? spentPct + "% of income" : "set payout first"}</div>
-    </div>
-    <div class="stat-card c-green">
-      <div class="stat-label">Saved</div>
-      <div class="stat-val" style="color:${saved >= 0 ? "var(--green)" : "var(--red)"}">${payout > 0 ? fmt(saved) : fmtPlaceholder()}</div>
-      <div class="stat-sub">${payout > 0 ? savePct + "% rate" : "—"}</div>
-    </div>
-    <div class="stat-card c-teal">
-      <div class="stat-label">Transactions</div>
-      <div class="stat-val" style="color:var(--teal)">${exps.length}</div>
-      <div class="stat-sub">this month</div>
-    </div>
-    <div class="stat-card c-olive">
-      <div class="stat-label">Health Score</div>
-      <div class="stat-val" style="color:${healthColor}">${healthScore}</div>
-      <div class="stat-sub">0-100 (higher is better)</div>
-    </div>`;
-
   // Budget bar
   const barPct = payout > 0 ? Math.min(100, (spent / payout) * 100) : 0;
   const bar = document.getElementById("budget-bar");
@@ -664,29 +626,52 @@ function renderDashboard() {
     .filter((c) => c.total > 0)
     .sort((a, b) => b.total - a.total);
 
-  const dashCats = document.getElementById("dash-cats");
-  if (!byCat.length) {
-    dashCats.innerHTML =
-      '<div class="empty"><div class="empty-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></div>No expenses yet</div>';
-  } else {
-    dashCats.innerHTML = byCat
-      .map((c) => {
-        const pct = payout > 0 ? ((c.total / payout) * 100).toFixed(1) : 0;
-        const warn = pct > 30 ? '<span class="cat-badge">HIGH</span>' : "";
-        return `<div class="cat-row">
-        <div class="cat-header">
-          <div class="cat-name"><span style="display:inline-block;width:16px;height:16px;margin-right:6px">${getFontAwesomeIcon(c.icon, 16)}</span><span style="color:${c.color}">${c.name}</span>${warn}</div>
-          <div style="font-size:12px;font-weight:700;color:${c.color}">${fmt(c.total)}</div>
-        </div>
-        <div class="prog-wrap" style="height:5px;"><div class="prog-fill" style="width:${Math.min(100, payout > 0 ? (c.total / payout) * 100 : 0)}%;background:${c.color}"></div></div>
-        <div style="font-size:9px;color:var(--text3);margin-top:3px">${pct}% of income</div>
-      </div>`;
-      })
-      .join("");
-  }
+  const now = new Date();
+  const { y, m } = parseMK(activeMonth);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const today = activeMonth === mkNow() ? now.getDate() : daysInMonth;
+  const dailyRate =
+    today > 0 ? exps.reduce((s, e) => s + e.amount, 0) / today : 0;
+  const projected = dailyRate * daysInMonth;
+  const daysLeft = daysInMonth - today;
+  const remaining = payout > 0 ? payout - spent : null;
+  const safeDaily = remaining !== null && daysLeft > 0 ? remaining / daysLeft : null;
 
-  // Projection
-  renderProjection(exps, payout);
+  window.CasheroComponents.renderDashboard({
+    payout,
+    payoutLabel: fmt(payout),
+    spent,
+    spentLabel: fmt(spent),
+    saved,
+    savedLabel: fmt(saved),
+    savePct,
+    spentPct,
+    transactionCount: exps.length,
+    healthScore,
+    healthColor,
+    placeholder: fmtPlaceholder(),
+    categories: byCat.map((category) => {
+      const pct =
+        payout > 0 ? Number(((category.total / payout) * 100).toFixed(1)) : 0;
+      return {
+        ...category,
+        totalLabel: fmt(category.total),
+        pct,
+        width:
+          payout > 0 ? Math.min(100, (category.total / payout) * 100) : 0,
+        iconHtml: getFontAwesomeIcon(category.icon, 16),
+      };
+    }),
+    dailyRate,
+    dailyRateLabel: `${fmt(dailyRate)}/day`,
+    projected,
+    projectedLabel: fmt(projected),
+    remaining,
+    remainingLabel: remaining === null ? null : fmt(remaining),
+    safeDaily,
+    safeDailyLabel: safeDaily ? fmt(safeDaily) : null,
+    daysLeft,
+  });
 
   // Recent
   const recent = [...exps]
@@ -699,32 +684,6 @@ function renderDashboard() {
   renderSpendingBehavior();
   // Weekly checkin banner
   renderCheckinBanner();
-}
-
-// ═══════════════════════════════════════════
-//  PROJECTION
-// ═══════════════════════════════════════════
-function renderProjection(exps, payout) {
-  const now = new Date();
-  const { y, m } = parseMK(activeMonth);
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const today = activeMonth === mkNow() ? now.getDate() : daysInMonth;
-  const dailyRate =
-    today > 0 ? exps.reduce((s, e) => s + e.amount, 0) / today : 0;
-  const projected = dailyRate * daysInMonth;
-  const daysLeft = daysInMonth - today;
-  const remaining =
-    payout > 0 ? payout - exps.reduce((s, e) => s + e.amount, 0) : null;
-  const safeDaily = remaining && daysLeft > 0 ? remaining / daysLeft : null;
-
-  document.getElementById("proj-box").innerHTML = `
-    <div class="projection-box">
-      <div class="proj-row"><span class="proj-key">Avg daily spend</span><span class="proj-val" style="color:var(--yellow)">${fmt(dailyRate)}/day</span></div>
-      <div class="proj-row"><span class="proj-key">Projected month total</span><span class="proj-val" style="color:${projected > payout && payout > 0 ? "var(--red)" : "var(--text)"}">${fmt(projected)}</span></div>
-      ${remaining !== null ? `<div class="proj-row"><span class="proj-key">Budget remaining</span><span class="proj-val" style="color:${remaining < 0 ? "var(--red)" : "var(--green)"}">${fmt(remaining)}</span></div>` : ""}
-      ${safeDaily ? `<div class="proj-row"><span class="proj-key">Safe to spend/day</span><span class="proj-val" style="color:var(--green)">${fmt(safeDaily)}</span></div>` : ""}
-      <div class="proj-row"><span class="proj-key">Days remaining</span><span class="proj-val">${daysLeft}</span></div>
-    </div>`;
 }
 
 // ═══════════════════════════════════════════
@@ -2938,34 +2897,7 @@ document.addEventListener("keydown", (e) => {
 //  TOAST
 // ═══════════════════════════════════════════
 function toast(msg, type = "ok") {
-  const container = document.getElementById("toast-container");
-  if (!container) return;
-  const el = document.createElement("div");
-  el.className = `toast ${type}`;
-  el.setAttribute("role", type === "err" ? "alert" : "status");
-
-  const txt = document.createElement("span");
-  txt.className = "toast-msg";
-  txt.textContent = msg;
-  el.appendChild(txt);
-
-  const close = document.createElement("button");
-  close.className = "toast-close";
-  close.type = "button";
-  close.setAttribute("aria-label", "Dismiss notification");
-  close.title = "Dismiss notification";
-  close.innerHTML = getFontAwesomeIcon("X", 16);
-  close.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (el._timeout) clearTimeout(el._timeout);
-    el.remove();
-  });
-  el.appendChild(close);
-
-  container.appendChild(el);
-
-  // Auto-remove after 3s unless dismissed
-  el._timeout = setTimeout(() => el.remove(), 3000);
+  window.CasheroComponents.toast(msg, type);
 }
 
 // ═══════════════════════════════════════════
@@ -4518,31 +4450,11 @@ async function supabaseRequest(path, { method = "GET", body, accessToken, prefer
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (prefer) headers.Prefer = prefer;
 
-  const response = await fetch(`${config.url}${path}`, {
+  return fetchAPI(`${config.url}${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const responseText = await response.text();
-  let result = null;
-  if (responseText) {
-    try {
-      result = JSON.parse(responseText);
-    } catch (error) {
-      if (response.ok) throw error;
-      result = { message: response.statusText || `HTTP ${response.status}` };
-    }
-  }
-  if (!response.ok) {
-    throw new Error(
-      result?.msg ||
-        result?.message ||
-        result?.error_description ||
-        result?.error ||
-        `Supabase request failed (HTTP ${response.status}).`,
-    );
-  }
-  return result;
 }
 
 async function createCloudAccount() {
@@ -5011,6 +4923,7 @@ function saveNotifications() {
   CasheroStorage.writeJSON("cashero_notifs", notifications.slice(0, 50));
 }
 loadNotifications();
+renderNotifList();
 
 function addNotification(type, msg, pushAlso = true) {
   const n = {
@@ -5036,37 +4949,25 @@ function renderNotifBadge() {
 }
 
 function renderNotifList() {
-  const el = document.getElementById("notif-list");
-  if (!el) return;
-  if (!notifications.length) {
-    el.innerHTML =
-      '<div style="color:var(--text3);font-size:12px;text-align:center;padding:30px 0;">No notifications yet</div>';
-    return;
-  }
-  const typeIcon = {
-    budget: "fa-money-bill-transfer",
-    recurring: "fa-rotate",
-    goal: "fa-bullseye",
-    suspicious: "fa-triangle-exclamation",
-    system: "fa-wand-magic-sparkles",
-  };
-  const typeColor = {
-    budget: "var(--red)",
-    recurring: "var(--yellow)",
-    goal: "var(--green)",
-    suspicious: "var(--yellow)",
-    system: "var(--teal)",
-  };
-  el.innerHTML = notifications
-    .map(
-      (n) => `
-    <div class="notif-item ${n.read ? "" : "unread"}" onclick="markRead('${n.id}')">
-      <div class="notif-type" style="color:${typeColor[n.type] || "var(--text3)"};"><i class="fa-solid ${typeIcon[n.type] || "fa-circle-info"}" aria-hidden="true"></i> ${n.type}</div>
-      <div class="notif-msg">${n.msg}</div>
-      <div class="notif-time">${timeAgo(n.time)}</div>
-    </div>`,
-    )
-    .join("");
+  window.CasheroComponents.renderNotifications({
+    notifications,
+    onClose: closeNotifPanel,
+    onClear: clearNotifs,
+    onMarkRead: markRead,
+    onRequestPermission: requestNotifPermission,
+    timeAgo,
+    permissionGranted:
+      "Notification" in window && Notification.permission === "granted",
+    permissionLabel: getNotificationPermissionLabel(),
+  });
+}
+
+function getNotificationPermissionLabel() {
+  if (!("Notification" in window)) return "Push alerts unavailable";
+  if (location.protocol === "file:") return "Host app to enable push";
+  if (Notification.permission === "granted") return "Push Alerts Enabled";
+  if (Notification.permission === "denied") return "Permission Denied";
+  return "Enable Push Alerts";
 }
 
 function markRead(id) {
@@ -5091,7 +4992,10 @@ function openNotifPanel() {
     document.querySelector("#notif-panel .notif-close"),
   );
   document.getElementById("notif-backdrop")?.classList.add("show");
-  notifications.forEach((n) => (n.read = true));
+  notifications = notifications.map((notification) => ({
+    ...notification,
+    read: true,
+  }));
   saveNotifications();
   renderNotifBadge();
   renderNotifList();
@@ -5126,19 +5030,16 @@ async function requestNotifPermission() {
   }
   try {
     const perm = await Notification.requestPermission();
-    const btn = document.getElementById("notif-perm-btn");
     if (perm === "granted") {
-      if (btn) {
-        btn.textContent = "Push Alerts Enabled";
-        btn.classList.add("granted");
-      }
+      renderNotifList();
       toast("Push alerts enabled");
     } else {
-      if (btn) btn.textContent = "Permission Denied";
+      renderNotifList();
       toast("Permission denied — in-app alerts still work", "err");
     }
   } catch (error) {
     CasheroErrors.reportError(error, "Could not request notification permission");
+    renderNotifList();
     toast("Could not enable push alerts — in-app alerts still work", "err");
   }
 }
@@ -5165,25 +5066,6 @@ function sendPushNotification(type, body) {
     });
   }
 }
-
-(function syncNotifBtn() {
-  const btn = document.getElementById("notif-perm-btn");
-  if (!btn) return;
-  if (!("Notification" in window)) {
-    btn.textContent = "Push alerts unavailable";
-    return;
-  }
-  if (location.protocol === "file:") {
-    btn.textContent = "Host app to enable push";
-    return;
-  }
-  if (Notification.permission === "granted") {
-    btn.textContent = "Push Alerts Enabled";
-    btn.classList.add("granted");
-  } else if (Notification.permission === "denied") {
-    btn.textContent = "Permission Denied";
-  }
-})();
 
 // ─── Init notif badge on load ───
 renderNotifBadge();

@@ -1,4 +1,6 @@
 import { reportError } from "./errors.js";
+import { renderDailyQuote } from "./components/daily-quote.js";
+import { fetchAPI } from "./api.js";
 import { removeStorageItem } from "./storage.js";
 
 const DAILY_QUOTE_STORAGE_KEY = "cashero_daily_quote";
@@ -36,62 +38,21 @@ function getDailyQuoteFallback(date = new Date()) {
   };
 }
 
-function renderDailyQuote(quote) {
+function displayDailyQuote(quote) {
   const area = document.getElementById("daily-quote-toast");
-  if (!area) return;
-  if (area.hidden && dailyQuoteToastShown) return;
+  if (!area || (area.hidden && dailyQuoteToastShown)) return;
 
-  const banner = document.createElement("aside");
-  banner.className = "daily-quote-banner";
-  banner.setAttribute("aria-label", "Daily motivational quote");
-  banner.setAttribute("role", "status");
-
-  const mark = document.createElement("span");
-  mark.className = "daily-quote-mark";
-  mark.setAttribute("aria-hidden", "true");
-  mark.textContent = "“";
-
-  const content = document.createElement("div");
-  content.className = "daily-quote-content";
-
-  const label = document.createElement("div");
-  label.className = "daily-quote-label";
-  label.textContent = "Daily inspiration";
-
-  const text = document.createElement("blockquote");
-  text.className = "daily-quote-text";
-  text.textContent = quote.quote;
-
-  if (quote.author) {
-    const attribution = document.createElement("div");
-    attribution.className = "daily-quote-attribution";
-
-    const author = document.createElement("cite");
-    author.textContent = quote.author;
-    attribution.append(author);
-    content.append(attribution);
-  }
-
-  const closeButton = document.createElement("button");
-  closeButton.className = "daily-quote-close";
-  closeButton.type = "button";
-  closeButton.setAttribute("aria-label", "Dismiss daily quote");
-  closeButton.textContent = "×";
-  closeButton.addEventListener("click", () => {
+  renderDailyQuote(quote, () => {
     clearTimeout(dailyQuoteToastTimer);
     area.hidden = true;
-    area.replaceChildren();
+    renderDailyQuote(null);
   });
-
-  content.prepend(label, text);
-  banner.append(mark, content, closeButton);
-  area.replaceChildren(banner);
   area.hidden = false;
   if (!dailyQuoteToastShown) {
     dailyQuoteToastShown = true;
     dailyQuoteToastTimer = setTimeout(() => {
       area.hidden = true;
-      area.replaceChildren();
+      renderDailyQuote(null);
     }, 60_000);
   }
 }
@@ -103,20 +64,15 @@ async function loadDailyQuote() {
   dailyQuoteAttemptDate = today;
   const fallback = getDailyQuoteFallback();
   if (!navigator.onLine) {
-    renderDailyQuote(fallback);
+    displayDailyQuote(fallback);
     return;
   }
 
   dailyQuoteRequestDate = today;
   try {
-    const response = await fetch("/api/random-quote", {
+    const data = await fetchAPI("/api/random-quote", {
       cache: "no-store",
     });
-    if (!response.ok) {
-      throw new Error(`Quote API returned HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
     const result = Array.isArray(data) ? data[0] : null;
     if (
       !result ||
@@ -133,9 +89,9 @@ async function loadDailyQuote() {
       author: result.a.trim() || "Unknown",
       date: today,
     };
-    renderDailyQuote(quote);
+    displayDailyQuote(quote);
   } catch (error) {
-    if (!navigator.onLine) renderDailyQuote(fallback);
+    if (!navigator.onLine) displayDailyQuote(fallback);
     reportError(error, "Could not load the daily motivational quote", {
       notify: true,
       userMessage:
@@ -171,7 +127,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") loadDailyQuote();
 });
 window.addEventListener("offline", () => {
-  if (dailyQuoteRequestDate) renderDailyQuote(getDailyQuoteFallback());
+  if (dailyQuoteRequestDate) displayDailyQuote(getDailyQuoteFallback());
 });
 window.addEventListener("online", () => {
   if (!dailyQuoteRequestDate) dailyQuoteAttemptDate = null;

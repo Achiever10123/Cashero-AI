@@ -1698,6 +1698,7 @@ nav {
   width: min(560px, calc(100vw - 32px));
   transform: translateX(-50%);
   animation: dailyQuoteIn 0.25s ease-out;
+  pointer-events: none;
 }
 .daily-quote-banner {
   display: flex;
@@ -1726,6 +1727,7 @@ nav {
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  pointer-events: auto;
 }
 .daily-quote-close:hover,
 .daily-quote-close:focus-visible {
@@ -2213,6 +2215,7 @@ nav {
   .btn-ghost,
   .btn-danger,
   .btn-green,
+  .daily-quote-close,
   .notif-bell,
   .del-btn {
     min-height: 44px; /* iOS touch target minimum */
@@ -2701,6 +2704,14 @@ nav {
 }
 
 /* ═══ NOTIFICATION PANEL ═══ */
+.component-error {
+  padding: 12px;
+  color: var(--text2);
+  font-size: 12px;
+}
+.component-error p {
+  margin: 0 0 8px;
+}
 #notif-panel {
   position: fixed;
   top: 0;

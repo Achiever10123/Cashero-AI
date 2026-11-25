@@ -41,10 +41,11 @@ A modern web application for tracking and managing personal finances with intell
 
 ## Technology Stack
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Frontend modules**: API handling, persistence, daily quotes, and global
-  error reporting live in `modules/`; `main.js` retains the classic-script UI
-  bridge for existing inline handlers
+- **Frontend**: React, HTML5, CSS3, and JavaScript (ES modules)
+- **Frontend modules**: React UI components live in `modules/components/`;
+  shared UI state lives in `modules/app-state.js`, while feature modules handle
+  API access, persistence, daily quotes, and error reporting. React roots use
+  recoverable error boundaries, and JSON requests share the logged API client.
 - **Storage**: Browser LocalStorage with JSON serialization
 - **Deployment**: Vercel
 - **Icons**: Font Awesome via the project kit
@@ -145,10 +146,23 @@ clearing local app data does not delete the cloud copy.
 
 ## Development
 
-- No build process required - pure HTML/CSS/JS
-- Open `index.html` in browser or use local dev server
-- Check browser console for API error logs
-- LocalStorage is cleared with browser data
+Install dependencies and run the Vite development server:
+
+```sh
+npm install
+npm run dev
+```
+
+Create and preview a production build with `npm run build` and
+`npm run preview`. Run browser end-to-end tests with:
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+Check the browser console for API error logs. LocalStorage is cleared with
+browser data.
 
 ## Future Enhancements
 

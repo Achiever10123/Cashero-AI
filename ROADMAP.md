@@ -150,17 +150,17 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 
 - [ ] Add unit tests (Jest/Vitest)
 - [ ] Add integration tests
-- [ ] Implement E2E tests (Cypress/Playwright)
+- [x] Implement E2E tests (Playwright core expense flow)
 - [ ] Add code linting (ESLint)
-- [ ] Set up continuous integration
+- [x] Set up continuous integration
 
 ### Architecture
 
-- [ ] Migrate to modular component structure
-- [ ] Consider framework upgrade (React/Vue)
-- [ ] Implement proper error boundaries
-- [ ] Add state management (if needed)
-- [ ] Improve API abstraction layer
+- [x] Migrate to modular component structure
+- [x] Select React as the component framework
+- [x] Implement proper error boundaries
+- [x] Add state management (if needed)
+- [x] Improve API abstraction layer
 
 ### Security Enhancements
 
