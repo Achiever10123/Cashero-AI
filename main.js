@@ -143,6 +143,8 @@ const CURRENCY_CONTEXT = {
 };
 const SK = "cashero_v2";
 const CLOUD_CONFIG_KEY = "cashero_supabase_config";
+const AI_ANALYSIS_COOLDOWN_MS = 5 * 60 * 1000;
+const AI_ANALYSIS_TIMESTAMP_KEY = "cashero_last_analysis";
 
 // ═══════════════════════════════════════════
 //  SECURITY UTILITIES
@@ -417,6 +419,7 @@ let chartJsPromise = null;
 let nlpParsed = null;
 let analysisLastRun = null;
 let analysisCountdownInterval = null;
+let activeAiAnalysis = null;
 let notifications = [];
 let cloudSession = null;
 let cloudConfig = null;
@@ -454,10 +457,14 @@ function load() {
     }
 
     // Restore cooldown timestamp from localStorage
-    const lastAnalysisTime = CasheroStorage.getItem("cashero_last_analysis");
+    const lastAnalysisTime = CasheroStorage.getItem(
+      AI_ANALYSIS_TIMESTAMP_KEY,
+    );
     if (lastAnalysisTime) {
       const parsedTime = Number.parseInt(lastAnalysisTime, 10);
-      if (Number.isFinite(parsedTime)) analysisLastRun = parsedTime;
+      if (Number.isFinite(parsedTime) && parsedTime > 0) {
+        analysisLastRun = parsedTime;
+      }
     }
   } catch (error) {
     CasheroErrors.reportError(error, "Could not restore saved application data");
@@ -2185,20 +2192,9 @@ function renderCatDeep() {
 //  AI ANALYSIS
 // ═══════════════════════════════════════════
 async function runAnalysis() {
-  const btn = document.getElementById("analysis-btn");
   const out = document.getElementById("analysis-output");
 
-  // ═══ COOLDOWN CHECK ═══
-  const now = Date.now();
-  const timeSinceLastRun = analysisLastRun ? now - analysisLastRun : Infinity;
-  const cooldownMs = 60000; // 60 seconds
-
-  if (timeSinceLastRun < cooldownMs) {
-    const secondsLeft = Math.ceil((cooldownMs - timeSinceLastRun) / 1000);
-    toast(`Wait ${secondsLeft}s before analyzing again`, "err");
-    startCooldownTimer(btn, secondsLeft);
-    return;
-  }
+  if (!canStartAiAnalysis()) return;
 
   const exps = monthExpenses(activeMonth);
   const po = monthPayout(activeMonth);
@@ -2209,8 +2205,6 @@ async function runAnalysis() {
     toast("Add expenses and set payout first", "err");
     return;
   }
-  btn.disabled = true;
-  btn.textContent = "Analyzing…";
   out.innerHTML = `<div style="color:var(--accent2);font-size:12px;text-align:center;padding:36px 0;animation:blink 1.5s infinite"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Crunching your numbers…</div>`;
 
   const byCat = CATS.map((c) => ({
@@ -2268,6 +2262,7 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
 {"verdict":"one brutal sentence on their financial health in context of their regional economy","cutbacks":[{"category":"...","reason":"...","target":"specific % or $ reduction"}],"goal":"specific dollar savings goal for next month","danger":"warning if any cat >30% of income or null","quickWins":["stop buying X","cancel Y","reduce Z"],"projectionNote":"one sentence on whether they're on track or heading for trouble this month, considering economic factors"}`;
 
   try {
+    beginAiAnalysis("analysis");
     const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2287,10 +2282,6 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
     out.innerHTML = buildAnalysisHTML(a);
     toast("Analysis complete");
 
-    // ═══ SET COOLDOWN TIMESTAMP ═══
-    analysisLastRun = Date.now();
-    CasheroStorage.setItem("cashero_last_analysis", analysisLastRun.toString());
-    startCooldownTimer(btn, 60);
   } catch (e) {
     console.error("[ANALYSIS ERROR]", e);
     const errMsg =
@@ -2301,8 +2292,9 @@ Respond ONLY with valid JSON (no markdown). Be brutally honest but with dark hum
           : "Analysis failed — try again";
     out.innerHTML = `<div style="color:var(--red);font-size:12px">${errMsg}</div>`;
     toast(errMsg, "err");
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyze Now';
+  } finally {
+    activeAiAnalysis = null;
+    startAnalysisCooldown();
   }
 }
 function buildAnalysisHTML(a) {
@@ -2336,30 +2328,91 @@ function buildAnalysisHTML(a) {
 }
 
 // ═══════════════════════════════════════════
-//  ANALYSIS COOLDOWN TIMER
+//  AI ANALYSIS COOLDOWN
 // ═══════════════════════════════════════════
-function startCooldownTimer(btn, secondsLeft) {
-  // Clear any existing interval
-  if (analysisCountdownInterval) {
-    clearInterval(analysisCountdownInterval);
+function getAnalysisCooldownSecondsLeft() {
+  if (!analysisLastRun) return 0;
+  const elapsed = Math.max(0, Date.now() - analysisLastRun);
+  return Math.max(
+    0,
+    Math.ceil((AI_ANALYSIS_COOLDOWN_MS - elapsed) / 1000),
+  );
+}
+
+function updateAnalysisButtons() {
+  const secondsLeft = getAnalysisCooldownSecondsLeft();
+  const analysisBtn = document.getElementById("analysis-btn");
+  const checkinBtn = document.getElementById("checkin-btn");
+
+  if (analysisBtn) {
+    analysisBtn.disabled = Boolean(activeAiAnalysis) || secondsLeft > 0;
+    if (activeAiAnalysis === "analysis") {
+      analysisBtn.textContent = "Analyzing…";
+    } else if (activeAiAnalysis) {
+      analysisBtn.textContent = "Please wait…";
+    } else if (secondsLeft > 0) {
+      analysisBtn.textContent = `Analyze (${secondsLeft}s)`;
+    } else {
+      analysisBtn.innerHTML =
+        '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyze Now';
+    }
   }
 
-  btn.disabled = true;
-
-  const updateButton = () => {
-    if (secondsLeft > 0) {
-      btn.textContent = `Analyze (${secondsLeft}s)`;
-      secondsLeft--;
+  if (checkinBtn) {
+    checkinBtn.disabled = Boolean(activeAiAnalysis) || secondsLeft > 0;
+    if (activeAiAnalysis === "checkin") {
+      checkinBtn.textContent = "Checking…";
+    } else if (activeAiAnalysis) {
+      checkinBtn.textContent = "Please wait…";
+    } else if (secondsLeft > 0) {
+      checkinBtn.textContent = `Check-In (${secondsLeft}s)`;
     } else {
-      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyze Now';
-      btn.disabled = false;
-      clearInterval(analysisCountdownInterval);
-      analysisCountdownInterval = null;
+      checkinBtn.textContent = "Run Check-In";
     }
-  };
+  }
 
-  updateButton(); // Show initial countdown immediately
-  analysisCountdownInterval = setInterval(updateButton, 1000);
+  if (!secondsLeft && !activeAiAnalysis && analysisCountdownInterval) {
+    clearInterval(analysisCountdownInterval);
+    analysisCountdownInterval = null;
+  }
+}
+
+function startAnalysisCooldown() {
+  if (analysisCountdownInterval) {
+    clearInterval(analysisCountdownInterval);
+    analysisCountdownInterval = null;
+  }
+
+  updateAnalysisButtons();
+  if (getAnalysisCooldownSecondsLeft() > 0) {
+    analysisCountdownInterval = setInterval(updateAnalysisButtons, 1000);
+  }
+}
+
+function canStartAiAnalysis() {
+  if (activeAiAnalysis) {
+    toast("An AI request is already running", "err");
+    return false;
+  }
+
+  const secondsLeft = getAnalysisCooldownSecondsLeft();
+  if (secondsLeft > 0) {
+    toast(`Wait ${secondsLeft}s before using AI analysis again`, "err");
+    startAnalysisCooldown();
+    return false;
+  }
+
+  return true;
+}
+
+function beginAiAnalysis(action) {
+  activeAiAnalysis = action;
+  analysisLastRun = Date.now();
+  CasheroStorage.setItem(
+    AI_ANALYSIS_TIMESTAMP_KEY,
+    analysisLastRun.toString(),
+  );
+  startAnalysisCooldown();
 }
 
 // ═══════════════════════════════════════════
@@ -2387,6 +2440,8 @@ function isOlderThan(dateStr, days) {
 }
 async function runCheckin() {
   const out = document.getElementById("checkin-output");
+  if (!canStartAiAnalysis()) return;
+
   const exps = monthExpenses(activeMonth);
   const po = monthPayout(activeMonth);
   if (!exps.length || !po) {
@@ -2403,6 +2458,7 @@ async function runCheckin() {
 Payout: ${fmt(payout)} | Spent so far: ${fmt(spent)} | Days into month: ${daysIn} | Daily rate: ${fmt(dailyRate)}
 Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actionable thing to do today. No JSON, just plain text.`;
   try {
+  beginAiAnalysis("checkin");
     const json = await fetchAPI(`${BACKEND_URL}api/chat`, {
       method: "POST",
       headers: {
@@ -2444,6 +2500,9 @@ Give them: 1) quick verdict on their week, 2) one thing to watch, 3) one actiona
           : "Failed — try again";
     out.innerHTML = `<div style="color:var(--red);font-size:12px">${errMsg}</div>`;
     toast(errMsg, "err");
+  } finally {
+    activeAiAnalysis = null;
+    startAnalysisCooldown();
   }
 }
 
@@ -3126,7 +3185,6 @@ function clearAllData() {
   CasheroStorage.removeItem("cashero_pin_salt");
   CasheroStorage.removeItem("cashero_recovery_hash");
   CasheroStorage.removeItem("cashero_recovery_salt");
-  CasheroStorage.removeItem("cashero_last_analysis");
   // Reset S to defaults and save
   S = {
     expenses: [],
@@ -3788,6 +3846,7 @@ async function initPin() {
 // (debug reset function removed for production security)
 
 load();
+startAnalysisCooldown();
 applyTheme();
 initPin().then(() => {
   initSelects();
@@ -4925,7 +4984,7 @@ function saveNotifications() {
 loadNotifications();
 renderNotifList();
 
-function addNotification(type, msg, pushAlso = true) {
+function addNotification(type, msg, notifySystem = true) {
   const n = {
     id: Date.now() + Math.random(),
     type,
@@ -4937,7 +4996,7 @@ function addNotification(type, msg, pushAlso = true) {
   saveNotifications();
   renderNotifBadge();
   renderNotifList();
-  if (pushAlso) sendPushNotification(type, msg);
+  if (notifySystem) showSystemNotification(type, msg);
 }
 
 function renderNotifBadge() {
@@ -4963,11 +5022,28 @@ function renderNotifList() {
 }
 
 function getNotificationPermissionLabel() {
-  if (!("Notification" in window)) return "Push alerts unavailable";
-  if (location.protocol === "file:") return "Host app to enable push";
-  if (Notification.permission === "granted") return "Push Alerts Enabled";
+  if (!("Notification" in window)) return "Notifications unavailable";
+  if (location.protocol === "file:") return "Host app to enable notifications";
+  if (isIOSDevice() && !isStandaloneApp()) {
+    return "Install app to enable notifications";
+  }
+  if (Notification.permission === "granted") return "Notifications Enabled";
   if (Notification.permission === "denied") return "Permission Denied";
-  return "Enable Push Alerts";
+  return "Enable Notifications";
+}
+
+function isIOSDevice() {
+  return (
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+function isStandaloneApp() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    navigator.standalone === true
+  );
 }
 
 function markRead(id) {
@@ -5021,18 +5097,25 @@ async function requestNotifPermission() {
   }
   if (location.protocol === "file:") {
     toast(
-      "Push alerts require the app to be hosted - in-app alerts still work",
+      "Notifications require the hosted app - in-app alerts still work",
       "err",
     );
     const btn = document.getElementById("notif-perm-btn");
-    if (btn) btn.textContent = "Host app to enable push";
+    if (btn) btn.textContent = "Host app to enable notifications";
+    return;
+  }
+  if (isIOSDevice() && !isStandaloneApp()) {
+    toast(
+      "Install Cashero on your Home Screen to enable system notifications — in-app alerts still work",
+      "err",
+    );
     return;
   }
   try {
     const perm = await Notification.requestPermission();
     if (perm === "granted") {
       renderNotifList();
-      toast("Push alerts enabled");
+      toast("Notifications enabled");
     } else {
       renderNotifList();
       toast("Permission denied — in-app alerts still work", "err");
@@ -5040,11 +5123,11 @@ async function requestNotifPermission() {
   } catch (error) {
     CasheroErrors.reportError(error, "Could not request notification permission");
     renderNotifList();
-    toast("Could not enable push alerts — in-app alerts still work", "err");
+    toast("Could not enable notifications — in-app alerts still work", "err");
   }
 }
 
-function sendPushNotification(type, body) {
+async function showSystemNotification(type, body) {
   if (location.protocol === "file:") return;
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
@@ -5055,13 +5138,29 @@ function sendPushNotification(type, body) {
     suspicious: "Spending Alert",
     system: "Cashero",
   };
+  const title = titles[type] || "Cashero";
+  const options = {
+    body,
+    tag: `cashero-${type}`,
+    icon: "/android-chrome-192x192.png",
+    badge: "/android-chrome-192x192.png",
+  };
   try {
-    new Notification(titles[type] || "Cashero", {
-      body,
-      tag: `cashero-${type}`,
-    });
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      if (typeof registration.showNotification === "function") {
+        await registration.showNotification(title, options);
+        return;
+      }
+    }
+
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      throw new Error("Service worker notifications are unavailable.");
+    }
+
+    new Notification(title, options);
   } catch (error) {
-    CasheroErrors.reportError(error, "Could not display a push notification", {
+    CasheroErrors.reportError(error, "Could not display a system notification", {
       notify: false,
     });
   }
@@ -5138,25 +5237,6 @@ document.addEventListener("visibilitychange", () => {
 
 // Run on load
 checkAllNotifications();
-
-// ═══════════════════════════════════════════
-//  RESTORE COOLDOWN ON PAGE LOAD
-// ═══════════════════════════════════════════
-(function () {
-  const lastAnalysisTime = CasheroStorage.getItem("cashero_last_analysis");
-  if (!lastAnalysisTime) return;
-
-  analysisLastRun = parseInt(lastAnalysisTime);
-  const elapsed = Date.now() - analysisLastRun;
-  const remaining = Math.max(0, 60 - Math.floor(elapsed / 1000));
-
-  if (remaining > 0) {
-    document.addEventListener("DOMContentLoaded", function () {
-      const btn = document.getElementById("analysis-btn");
-      if (btn) startCooldownTimer(btn, remaining);
-    });
-  }
-})();
 
 // ═══════════════════════════════════════════
 //  MOBILE OPTIMIZATION & TOUCH HANDLING

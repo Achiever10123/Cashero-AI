@@ -12,6 +12,7 @@ for (const viewport of viewports) {
       width: viewport.width,
       height: viewport.height,
     });
+    await page.route("https://**/*", (route) => route.abort());
     await page.route("**/api/random-quote", (route) =>
       route.fulfill({
         status: 200,
@@ -19,7 +20,7 @@ for (const viewport of viewports) {
         body: JSON.stringify([{ q: "Keep going.", a: "Cashero test" }]),
       }),
     );
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#stat-grid .stat-card")).toHaveCount(5);
 
     if (viewport.width <= 480) {

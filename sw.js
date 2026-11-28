@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashero-static-v1.1.7";
+const CACHE_NAME = "cashero-static-v1.1.9";
 const RUNTIME_CACHE = "cashero-runtime-v1.1.0";
 // External origin lists for runtime caching
 // NOTE: AI API origins (openrouter.ai, api.openai.com) are intentionally excluded.
@@ -28,12 +28,14 @@ const CORE_ASSETS = [
   "/modules/daily-quote.js",
   "/modules/data-features.mjs",
   "/modules/errors.js",
+  "/modules/pwa-install.js",
   "/modules/storage.js",
   "/favicon.ico",
   "/apple-touch-icon.png",
   "/android-chrome-192x192.png",
   "/android-chrome-512x512.png",
   "/assets/site.webmanifest",
+  "/asset-manifest.json",
   "/assets/favicon/favicon.ico",
   "/assets/favicon/favicon-16x16.png",
   "/assets/favicon/favicon-32x32.png",
@@ -52,12 +54,40 @@ function fetchAndCache(request) {
   });
 }
 
+function matchStatic(request) {
+  return caches.open(CACHE_NAME).then((cache) =>
+    cache.match(request, { ignoreVary: true }),
+  );
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_ASSETS).catch(() => {
-        // ignore individual failures
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(CORE_ASSETS);
+
+      const manifestResponse = await cache.match("/asset-manifest.json");
+      if (!manifestResponse) {
+        throw new Error("The production asset manifest was not cached.");
+      }
+
+      const manifest = await manifestResponse.json();
+      const buildAssets = new Set();
+      for (const entry of Object.values(manifest)) {
+        for (const asset of [
+          entry.file,
+          ...(entry.css || []),
+          ...(entry.assets || []),
+        ]) {
+          if (typeof asset === "string") {
+            const url = new URL(asset, self.location.origin);
+            if (url.origin === self.location.origin) {
+              buildAssets.add(url.href);
+            }
+          }
+        }
+      }
+
+      await cache.addAll([...buildAssets]);
     }),
   );
   self.skipWaiting();
@@ -83,27 +113,17 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests in SW caching logic
   if (req.method !== "GET") return;
 
-  // Return cached documents immediately while refreshing them in the background.
+  // Serve cached documents immediately; the worker version controls updates.
   if (
     req.mode === "navigate" ||
     req.headers.get("accept")?.includes("text/html")
   ) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const networkUpdate = fetchAndCache(req);
+      matchStatic(req).then((cached) => {
+        if (cached) return cached;
 
-        if (cached) {
-          event.waitUntil(
-            networkUpdate.then(
-              () => undefined,
-              () => undefined,
-            ),
-          );
-          return cached;
-        }
-
-        return networkUpdate.catch(async (error) => {
-          const fallback = await caches.match("/index.html");
+        return fetchAndCache(req).catch(async (error) => {
+          const fallback = await matchStatic("/index.html");
           if (fallback) return fallback;
           throw error;
         });
@@ -157,23 +177,9 @@ self.addEventListener("fetch", (event) => {
 
   if (!isSameOrigin) return;
 
-  // Serve cached same-origin assets immediately and refresh them in background.
+  // Serve cached same-origin assets immediately.
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const networkUpdate = fetchAndCache(req);
-
-      if (cached) {
-        event.waitUntil(
-          networkUpdate.then(
-            () => undefined,
-            () => undefined,
-          ),
-        );
-        return cached;
-      }
-
-      return networkUpdate;
-    }),
+    matchStatic(req).then((cached) => cached || fetchAndCache(req)),
   );
 });
 

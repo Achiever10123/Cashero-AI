@@ -43,6 +43,9 @@ function copyStaticAppFiles() {
 
 module.exports = defineConfig({
   plugins: [copyStaticAppFiles()],
+  build: {
+    manifest: "asset-manifest.json",
+  },
   server: {
     watch: {
       ignored: ["**/android/**"],

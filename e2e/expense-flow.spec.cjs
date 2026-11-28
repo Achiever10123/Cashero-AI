@@ -10,7 +10,8 @@ test("adds an expense and restores it from local storage after reload", async ({
       body: JSON.stringify([{ q: "Keep going.", a: "Cashero test" }]),
     }),
   );
-  await page.goto("/");
+  await page.route("https://**/*", (route) => route.abort());
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#stat-grid .stat-card")).toHaveCount(5);
 
   await page.getByRole("button", { name: "Add Expense", exact: true }).click();
@@ -46,7 +47,7 @@ test("adds an expense and restores it from local storage after reload", async ({
     "lunch",
   ]);
 
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("#stat-grid .stat-card")).toHaveCount(5);
   await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.locator("#history-list .tx-name")).toHaveText("E2E lunch");

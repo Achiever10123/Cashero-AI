@@ -11,7 +11,8 @@
     "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "test:e2e": "playwright test --workers=1",
+    "test:e2e": "npm run build && playwright test --workers=1",
+    "test:e2e:smoke": "npm run build && playwright test --workers=1 --project=chromium e2e/offline-flow.spec.cjs e2e/notification-flow.spec.cjs e2e/ai-cooldown.spec.cjs",
     "test": "node --test tests/api.test.mjs tests/data-features.test.mjs tests/random-quote.test.cjs"
   },
   "dependencies": {

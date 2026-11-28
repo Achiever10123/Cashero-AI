@@ -6,7 +6,6 @@ module.exports = defineConfig({
   reporter: "list",
   use: {
     ...devices["Desktop Chrome"],
-    channel: "chromium",
     baseURL: "http://127.0.0.1:4176",
     reducedMotion: "reduce",
     serviceWorkers: "block",
@@ -15,12 +14,24 @@ module.exports = defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        browserName: "chromium",
+        channel: "chromium",
+      },
+    },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], browserName: "firefox" },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"], browserName: "webkit" },
     },
   ],
   webServer: {
     command:
-      "npm run dev -- --host 127.0.0.1 --port 4176 --strictPort",
+      "npm run preview -- --host 127.0.0.1 --port 4176 --strictPort",
     url: "http://127.0.0.1:4176",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
