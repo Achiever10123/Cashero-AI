@@ -519,7 +519,6 @@ function fmtShort(n) {
 //  NAVIGATION
 // ═══════════════════════════════════════════
 function navigate(page) {
-  if (window.innerWidth <= 480) setSidebarExpanded(false);
   document
     .querySelectorAll(".page")
     .forEach((p) => p.classList.remove("active"));
@@ -5217,6 +5216,18 @@ checkAllNotifications();
   const hamburger = document.getElementById("hamburger");
 
   if (sidebar) {
+    // Close sidebar when nav item is clicked on mobile
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        if (
+          window.innerWidth <= 480 &&
+          sidebar.classList.contains("expanded")
+        ) {
+          setSidebarExpanded(false);
+        }
+      });
+    });
+
     // Close sidebar when clicking outside (backdrop, or anywhere off the drawer/trigger)
     document.addEventListener("click", (e) => {
       const mobileToggle = document.getElementById("mobile-nav-toggle");

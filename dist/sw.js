@@ -19,12 +19,9 @@ const CORE_ASSETS = [
   "/style.css",
   "/main.js",
   "/modules/api.js",
-  "/modules/app-state.js",
   "/modules/bootstrap.js",
   "/modules/components/daily-quote.js",
   "/modules/components/dashboard.js",
-  "/modules/components/error-boundary.js",
-  "/modules/components/create-boundary-root.js",
   "/modules/components/navigation.js",
   "/modules/components/notification-panel.js",
   "/modules/components/toast.js",
@@ -55,42 +52,12 @@ function fetchAndCache(request) {
   });
 }
 
-async function precacheApplicationAssets(cache) {
-  const response = await fetch("/");
-  if (!response.ok) {
-    throw new Error(`Could not load the app shell: HTTP ${response.status}`);
-  }
-
-  const html = await response.text();
-  const assetUrls = Array.from(
-    html.matchAll(/(?:src|href)=["']([^"']+)["']/g),
-    (match) => match[1],
-  )
-    .map((asset) => new URL(asset, self.location.origin))
-    .filter(
-      (asset) =>
-        asset.origin === self.location.origin &&
-        /\.(?:js|css|mjs)$/i.test(asset.pathname),
-    )
-    .map((asset) => asset.href);
-
-  if (assetUrls.length > 0) await cache.addAll([...new Set(assetUrls)]);
-}
-
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      try {
-        await cache.addAll(CORE_ASSETS);
-      } catch (error) {
-        console.error("Could not precache core app files", error);
-      }
-
-      try {
-        await precacheApplicationAssets(cache);
-      } catch (error) {
-        console.error("Could not precache built app assets", error);
-      }
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(CORE_ASSETS).catch(() => {
+        // ignore individual failures
+      });
     }),
   );
   self.skipWaiting();

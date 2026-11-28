@@ -157,8 +157,8 @@ Build an intelligent, privacy-first personal finance management tool that helps 
 ### Architecture
 
 - [x] Migrate to modular component structure
-- [x] Select React as the component framework
-- [x] Implement proper error boundaries
+- [x] Use modular vanilla JavaScript for the existing interface
+- [x] Add global runtime error reporting
 - [x] Add state management (if needed)
 - [x] Improve API abstraction layer
 

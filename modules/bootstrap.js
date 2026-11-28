@@ -16,6 +16,7 @@ import {
   showToast,
 } from "./components/toast.js";
 import { mountDailyQuote } from "./components/daily-quote.js";
+import { mountPwaInstallPrompt } from "./pwa-install.js";
 import { installGlobalErrorHandlers, reportError } from "./errors.js";
 import {
   getStorageItem,
@@ -43,6 +44,7 @@ mountDailyQuote();
 mountNotificationPanel();
 mountDashboardComponents();
 mountNavigation();
+mountPwaInstallPrompt();
 
 Object.assign(window, {
   fetchAPI,

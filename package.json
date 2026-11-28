@@ -8,19 +8,23 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test",
-    "test": "node --test tests/api.test.mjs tests/app-state.test.mjs tests/data-features.test.mjs tests/random-quote.test.cjs"
+    "android:add": "cap add android",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "test:e2e": "playwright test --workers=1",
+    "test": "node --test tests/api.test.mjs tests/data-features.test.mjs tests/random-quote.test.cjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "express": "^4.18.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "@playwright/test": "^1.65.1",
     "vite": "^6.4.5"
   }
