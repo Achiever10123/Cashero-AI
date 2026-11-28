@@ -86,6 +86,7 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
     await initializeStorage();
   } catch (error) {
     reportError(error, "Could not initialize encrypted local storage");
+    return;
   }
 
   const appScript = document.createElement("script");
