@@ -3124,7 +3124,6 @@ function renderSettings() {
     Boolean(S.highContrast);
   document.getElementById("text-size-selector").value =
     String(S.textScale || "1");
-  loadCloudConfigFields();
 }
 
 function changeHighContrast() {

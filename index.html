@@ -707,7 +707,7 @@
             style="display: none"
             onchange="restoreJSON(event)" />
           <div class="sidebar-version">
-            v1.0 · <span id="online-status" class="online-status"></span>
+            v2.1 · <span id="online-status" class="online-status"></span>
           </div>
         </div>
       </aside>
@@ -1571,49 +1571,6 @@
             </div>
           </div>
 
-          <div class="card" style="margin-top: 18px">
-            <div class="sec-label" style="margin-bottom: 8px">Encrypted Cloud Backup (Supabase)</div>
-            <p class="setting-desc" style="margin-bottom: 16px">
-              Optional manual backup. Your data is encrypted in this browser before upload. Configure a Supabase project and its row-level-security table using the setup SQL in README.md.
-            </p>
-            <div class="form-grid">
-              <div class="field">
-                <label for="cloud-project-url">Supabase project URL</label>
-                <input id="cloud-project-url" type="url" placeholder="https://your-project.supabase.co" autocomplete="url" />
-              </div>
-              <div class="field">
-                <label for="cloud-anon-key">Supabase publishable / anon key</label>
-                <input id="cloud-anon-key" type="password" placeholder="sb_publishable_..." autocomplete="off" />
-              </div>
-              <button class="btn btn-ghost" type="button" onclick="saveCloudConfig()">Save project settings</button>
-              <div class="form-row">
-                <div class="field">
-                  <label for="cloud-email">Account email</label>
-                  <input id="cloud-email" type="email" autocomplete="email" />
-                </div>
-                <div class="field">
-                  <label for="cloud-password">Account password</label>
-                  <input id="cloud-password" type="password" autocomplete="current-password" />
-                </div>
-              </div>
-              <div class="form-row">
-                <button class="btn btn-primary" type="button" onclick="createCloudAccount()">Create account</button>
-                <button class="btn btn-ghost" type="button" onclick="signInToCloud()">Sign in</button>
-                <button class="btn btn-ghost" type="button" onclick="signOutOfCloud()">Sign out</button>
-              </div>
-              <div id="cloud-status" class="setting-desc" role="status" aria-live="polite">Not signed in. Cloud backup is optional.</div>
-              <div class="field">
-                <label for="cloud-backup-passphrase">Backup encryption passphrase (12+ characters)</label>
-                <input id="cloud-backup-passphrase" type="password" autocomplete="new-password" />
-              </div>
-              <div class="form-row">
-                <button class="btn btn-primary" type="button" onclick="uploadCloudBackup()">Upload encrypted backup</button>
-                <button class="btn btn-ghost" type="button" onclick="restoreCloudBackup()">Restore cloud backup</button>
-              </div>
-              <button class="btn btn-ghost" type="button" onclick="deleteCloudBackup()">Delete cloud backup</button>
-            </div>
-          </div>
-
           <!-- About & Support -->
           <div class="card" style="margin-top: 18px">
             <div class="sec-label" style="margin-bottom: 20px">
@@ -1642,7 +1599,7 @@
                     border-radius: 20px;
                     font-family: var(--font-mono);
                   "
-                  >v1.0</span
+                  >v2.1</span
                 >
               </div>
             </div>
