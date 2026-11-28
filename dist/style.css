@@ -2567,6 +2567,110 @@ nav {
   color: var(--accent2);
 }
 
+.pwa-install-banner {
+  position: fixed;
+  z-index: 10000;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--glass-bg-strong);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+.pwa-install-banner[hidden] {
+  display: none;
+}
+.pwa-install-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--bg4);
+  color: var(--accent2);
+}
+.pwa-install-copy {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+  font-size: 12px;
+}
+.pwa-install-copy span {
+  color: var(--text2);
+  font-size: 10px;
+}
+.pwa-install-action,
+.pwa-install-dismiss {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+.pwa-install-action {
+  padding: 0 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pwa-install-action:focus-visible,
+.pwa-install-dismiss:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.pwa-install-dismiss {
+  width: 36px;
+  flex: 0 0 36px;
+  padding: 0;
+  background: transparent;
+  color: var(--text2);
+  font-size: 24px;
+  line-height: 1;
+}
+.pwa-install-help {
+  width: calc(100% - 32px);
+  max-width: 380px;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: var(--bg2);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.pwa-install-help::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+.pwa-install-help-content {
+  position: relative;
+  padding: 24px;
+}
+.pwa-install-help h2 {
+  padding-right: 28px;
+  font-size: 18px;
+}
+.pwa-install-help p {
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.pwa-install-help-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
 /* small icon slot if present */
 .toast svg {
   width: 16px;
